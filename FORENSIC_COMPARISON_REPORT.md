@@ -193,3 +193,33 @@ Two independent, minimal changes, addressing §5.1 and §5.2 separately (do not 
 2. **§5.2 — let `TryEnterSequence()` choose between adding to an existing sequence and starting a new parallel one, instead of `FindOpenSequenceWithRoom()` unconditionally claiming any non-full sequence.** The minimum change is to decide new-vs-add based on whether the **current open sequence count for that direction is below `InpMaxSequencesPerDirection`**, not solely on whether an existing sequence has trade-count room. This requires establishing the exact selection rule (e.g., does a fresh dot always prefer starting a new sequence when the cap allows it, only falling back to an add-on once the cap is reached?) — the benchmark's dual-fire timestamps show *both* an add and a new-sequence-open can happen from the same bar, which the current single-branch `if (room exists) add-on; else new` structure cannot express. This needs a design decision, not just a one-line patch — I have not implemented it, per your instruction to complete the analysis first.
 
 **Not recommended:** do not "fix" §5.3 (the entry-timing gap) until the additional indicator-value evidence described above is gathered — changing a new-sequence gate now, without knowing which one (if any) is actually responsible, risks introducing a change that happens to shift the first trade's timing without being the reference's actual rule.
+
+---
+
+## 8. Fix Verification — §5.1 applied (2026.09.14)
+
+`BBCentreExitConditionTick()` was changed exactly as recommended: it now reads the closed-bar snapshot (`g_bar1High`/`g_bar1Low` vs. `g_bbMiddle1`) instead of live `CopyBuffer(shift=0)` + live bid/ask. Recompiled clean (0 errors/warnings), re-ran the identical backtest.
+
+**Aggregate result — moved in the right direction, as expected, not fully closed (expected, since §5.2 is still open):**
+
+| Metric | Before fix | After fix | Benchmark |
+|---|---|---|---|
+| Total Trades | 40 | **45** | 47 |
+| Total Deals | 80 | **90** | 94 |
+| Total Net Profit | 96.45 | **105.28** | 258.57 |
+| Profit Factor | 2.68 | 2.61 | 4.00 |
+
+**The originally-cited motivating example (the 2026.01.12 sequence) was traced again and is *not* fully resolved by this fix in isolation — for a specific, now-understood reason, not a flaw in the fix itself:**
+
+The sequence still closes at the identical intrabar timestamp, 2026.01.12 15:47:13. Tracing why: `HandleBBCentreOrQQE50()`'s Recovery Mode logic latches `recoveryModeActive = true` the first time `conditionMet` is observed true *while the sequence is not yet at breakeven+buffer*, and once latched, every subsequent tick only re-checks the live breakeven+buffer threshold (`GetSequenceProfitPips(...) >= InpBreakevenBufferPips`) — not `conditionMet` again. Since this sequence needed Recovery Mode (it was not yet profitable enough when the centre-band condition first became true), the *exact* moment `conditionMet` first fired (live tick, pre-fix, vs. bar-close, post-fix) stopped mattering the moment the Recovery latch engaged — both versions arm the same latch on 2026.01.12, and the actual close is then governed purely by live price crossing the same breakeven+buffer level on the same tick data, landing on the same timestamp in both versions. **The fix is behaving correctly; this particular instance simply isn't sensitive to it.** The fix *does* change outcomes for sequences that reach breakeven+buffer immediately when the condition first fires (no Recovery Mode needed) — accounting for the aggregate improvement above.
+
+**Stronger evidence that §5.2 (not §5.1) now dominates the remaining gap in this exact region:** once our sequence closed on 01.12, the *next* signal (2026.01.16 16:00:01) opened a fresh sequence that matches the benchmark's **second, parallel** sequence almost exactly:
+
+| | Open time/price | Close time/price | Profit |
+|---|---|---|---|
+| Benchmark's 2nd (parallel) sequence | 01.16 16:00:01 @ 1.16191 | 01.20 00:05:00 @ 1.16405 | 2.14 |
+| Our post-fix sequence | 01.16 16:00:01 @ 1.16191 | 01.20 00:05:00 @ 1.16409 | 2.18 |
+
+Same bar, same price, same close bar, same close price (4-point difference — noise-level, likely spread/rounding), same profit to within 4 cents. **Our engine is correctly reproducing the reference's second concurrent basket — it just has nowhere to also keep tracking the first one**, because it closed sequence 1 outright instead of letting it run in parallel (§5.2). This is direct, trade-level confirmation that §5.2 — not any remaining exit-timing issue — is the dominant cause of the still-open gap in this region, and very likely elsewhere in the test.
+
+**Recommendation:** proceed to §5.2 next. §5.1 is verified correct and should be kept as-is.

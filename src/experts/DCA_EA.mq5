@@ -1802,20 +1802,26 @@ double TrailingDistance()
   }
 
 //+------------------------------------------------------------------+
-//| BB Centre Band exit condition. Per InpBBExitOnBreach: "true" reacts |
-//| immediately to a live intrabar touch of the centre band (reads the  |
-//| CURRENT, still-forming bar's middle band); "false" waits for the    |
-//| closed bar to actually close beyond it (reuses Phase 2's per-bar    |
-//| snapshot — see the file-level note above on why no separate         |
-//| per-bar pass is needed).                                            |
+//| BB Centre Band exit condition. Both modes evaluate the same CLOSED  |
+//| bar (Phase 2's per-bar snapshot) — they differ only in the price     |
+//| threshold: InpBBExitOnBreach=true is a "touch" (the bar's high/low   |
+//| reached the middle band), =false requires the bar to actually       |
+//| CLOSE beyond it (a stricter version of the same check). Per the      |
+//| input's own name — "Exit on Breach, Not Just Close" — Breach/Close   |
+//| are two candidate PRICE thresholds, not two different TIMINGS.       |
+//|                                                                      |
+//| FIX (see FORENSIC_COMPARISON_REPORT.md §5.1): this function          |
+//| previously read the live, still-forming bar (shift 0) against live   |
+//| bid/ask every tick, which let a transient intrabar excursion close    |
+//| a sequence the reference implementation clearly did not close at     |
+//| that moment (confirmed by trade-log comparison against the           |
+//| benchmark — our old behavior exited intrabar at a non-bar-boundary   |
+//| timestamp mid-sequence; the reference stayed in for four more days). |
 //+------------------------------------------------------------------+
 bool BBCentreExitConditionTick(bool isBuy)
   {
-   if(g_bbHandle == INVALID_HANDLE) return(false);
-   double mid[1];
-   if(CopyBuffer(g_bbHandle, 0, 0, 1, mid) <= 0) return(false);
-   double price = isBuy ? SymbolInfoDouble(_Symbol, SYMBOL_BID) : SymbolInfoDouble(_Symbol, SYMBOL_ASK);
-   return(isBuy ? price >= mid[0] : price <= mid[0]);
+   if(!g_bbSnapshotValid) return(false);
+   return(isBuy ? g_bar1High >= g_bbMiddle1 : g_bar1Low <= g_bbMiddle1);
   }
 
 bool BBCentreExitConditionBar(bool isBuy)
