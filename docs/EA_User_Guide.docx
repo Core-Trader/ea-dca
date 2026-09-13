@@ -1,0 +1,731 @@
+# EA User Guide 
+
+**Description**:  
+
+This MT5 EA is primarily designed to be used as a dollar cost averaging trade management technique. Dollar cost averaging, or DCA as it is popularly known by, is a higher risk strategy where you are adding to an overall trade position as price goes against you.  
+
+It is a popular trading technique amongst stock traders where they would buy a stock at a set price, and if price fell, they would buy more of the same stock at a predetermined lower price. By doing this, you are reducing your average overall entry price for the stock, where eventually you are looking for price to head back up, where the trader could profit on this move. With regards to stocks, as they tend to head up in price most of the time (bullish bias), the vast majority of this type of trading was done on the buy (long) side only. With Forex trading though, and the unique feature that it involves two currencies (a pair), it is also not a problem trading on the sell (short) side. This then gives the user way more trading opportunities on the one instrument.  
+
+Another common term you may hear with DCA trading is 'reversion to the mean'. This basically means that if price has over extended in one direction, then generally price will eventually come back to a midpoint at some time in the future.  
+
+With DCA trading, there is the need for a plan. The plan should cover the entry criteria, the addition of trades (if required) and trade management. This EA covers all of that and gives you many options for each of those criteria.  
+
+**But I must warn you this can be a high risk strategy at times.** The reason I say that is that you will be adding to positions if the trade goes against you. For example, the trading instrument might be falling quickly in price and you are buying. Everyone has heard the expression "catching a falling knife", and this is what this refers to.  
+
+You are also entering trades without a Stop Loss in play, which will freak a lot of traders out, as this is considered a big 'no no' by a lot of traders. But having said that, there are many successful traders that don't use Stops when trading, but they do have a plan when things go against them, as does this EA.  
+
+Then you would have other considerations like margin requirements, where adding many trades in one direction may eat into your account's available margin, hence better to go with brokers that offer higher leverage. You would also have to consider your broker's own trading rules, especially if trading in both directions at the same time, which may affect your ability to trade like this. Here I am mainly referring to US traders that may not be permitted to use a hedging technique. If using it to trade prop firm accounts, then you may have other issues like strict drawdown rules and consistency rule compliance etc. There are also Swap (overnight interest) fees to consider, and broker selection may be as a result of that. 
+
+It's not all doom & gloom though as there are settings that allow you to reduce risk and also comply with most jurisdiction's trading rules. For example, you can elect just to trade in one direction at the one time, or you can either control the size of each position, or even limit the number of positions etc.  
+
+This EA uses four technical indicators to enter and manage the trades. Three of these indicators are custom indicators, which basically mean that they are not freely available as default indicators on the MT5 platform. The three custom indicators that the EA uses are the following: 
+
+- QMP Filter  
+
+- MACD Platinum 
+
+- QQE Adv 
+
+There is one other standard (default) indicator that is freely available on most trading platforms, and that is called Bollinger Bands.  But I have also added my version of Bollinger Bands to the upload package as it is a little more flexible when it comes to the settings. 
+
+To keep things simple, throughout this guide, I will just refer to them as QMP, QQE, MP & BB.  
+
+You don't have to actually display any of these indicators on the chart that you have the EA attached to.. But it is a good idea to have them displayed on the chart (via a template) so you can check that the EA is doing what it is supposed to be doing. You have been given access to these indicators as a part of the EA download package.  
+
+I'll give you a brief explanation on each so you will have basic knowledge on how they work. I know from writing Forex trading books that there are some traders that need to know the internal workings of all the indicators. I get that, and I'll give you a few links to check out for yourself if that is your thing.  
+
+The QMP is actually an indicator I had built just to make life easier for me. All this indicator does is put red & blue dots on the actual price chart. These dots won't appear on the chart until the candle closes, and once they are there, they will remain there. They do not re-paint. So if the dot appears on the close of the candle, and it is a valid trade signal according to the EA rules, then a trade is taken on the open of the next candle.  
+
+This indicator is just to show when both the MP and the QQE are in sync with each other. When you have a look at the MP and the QQE, you will see that both have two lines that cross each other at different times. On the MP, this is also displayed by a red or blue dot similar to the QMP. So if there is both a buy signal on the MP and the QQE, then a blue Buy QMP dot will be displayed on the price chart, and it will be the opposite for a Sell signal.  
+
+A lot of the time, the QMP dot and the MP dot will be displayed on the same candle. But this is not always the case as there will be times when the MP dot presents before the QMP dot, and this is not a problem, and it doesn't matter how many candles after, as long as the signal is still valid according to the rules. 
+
+The other indicator that displays on the price chart is the BB. These are shown as upper and lower bands that generally follow extreme price levels. There is also a centre band, which is basically a 
+
+moving average. The upper & lower bands compress/expand depending on volatility. If you really want to dig deep on how Bollinger Bands work, then Google is definitely your friend.    
+
+Then there is the MP which is just a fancy name for what they call a Zero Lag MACD. If you want to know what a Zero Lag MACD is then you can check out https://www.mql5.com/en/code/9993 or you can Google it as the Al search result pretty well describes it.  
+
+And lastly there is the QQE which is basically a modified RSI, which you can get more information about either from https://dewinforex.com/forex-indicators/qge-indicator-not-quite-grail-but-accurately-defines-trend-and-fla t.html or https://www.mql5.com/en/code/20650. And again, Google is your friend.  
+
+The EA uses the following default settings for the indicators, but this updated version, all of these settings can now be adjusted to suit your preferred requirements 
+
+QMP Filter (QMP) 
+
+Fast 12, Slow 26, Smooth 9, SF 1, RSI Period 8 & WP 3 
+
+  
+
+Bollinger Bands (BB) 
+
+Period 35, Width 2.25 & Applied Price is High Price  
+
+MACD Platinum (MP) 
+
+Fast 12, Slow 26 & Smooth 9  
+
+QQE Adv (QQE) 
+
+SF 7, RSI Period 14 & WP 1  
+
+As a part of the download package, I have included a basic template that I use on my charts when back testing this method, which you can change to suit your own needs. But it will at least give you an idea of how the chart should look. Just make sure that if you are using a template (indicators) on your chart, whether that is for testing or live trading, that the settings or your indicators actually match the settings of the indicators used on the EA so there is no confusion.  
+
+With regards to the MP, you will not actually see this displayed on the template I have supplied as there is no need to display it on the chart for the EA to work. I like to have the MP displayed on my chart though, but that is more of a personal thing for me.  
+
+Now it is time to explain how the EA actually works. It basically uses the overbought or oversold areas on the BB or the QQE to determine whether the EA is looking for trade signals, and if a trade signal is identified, then the QMP on the price chart then activates the trade/s to be taken. 
+
+Technically, BB are considered to be a volatility indicator, but we will use them as an overbought/oversold indicator. Keeping it really simple, if price at some point touches the upper band, then the EA would be looking to take sell trade/s, and if price were to touch the lower band, then the EA would be looking to take buy trade/s. Basically looking for price to come back to the centre band.  
+
+The QQE is a modified RSI (Relative Strength Index), and it is considered to be a momentum oscillator. In the trading world, any indicator that is considered an oscillator basically means that the indicator moves from one side of a central horizontal line to the other side and then back again. It continually oscillates around that centre line. With regards to the QQE, that centre line (or middle line) is the 50 level. If you were looking at the MP, which is also an oscillator, then the centre line for that is the zero level. It doesn't really matter what the reading is, just as long as you understand the concept.  
+
+I mentioned overbought and oversold above, and whether you agree with these terms or not is neither here nor there, but I will use them to help describe the workings of the EA. Again, Google is your friend if you want a more in depth understanding of these terms. To simplify it though, if price heads up more than usual and the QQE line goes to a high level that it doesn't usually go to, then it could be considered as overbought. And if price drops more than usual and the QQE line heads down to levels where it doesn't normally go, then this could be considered as oversold.  
+
+The general consensus is that when these extreme levels on the BB or QQE (or any oscillator) are reached, they are not sustainable, and will eventually come back to the centre line. So just think of a rubber band being stretched right out, where the further it is stretched, the more it wants to come back to its natural state. The same theory applies to an oscillator.  
+
+But, and this is a big but...... the BB or the QQE (or any other oscillator) can stay in the overbought or oversold area for a long time. Most of the time it won't, especially when trading Forex, but it can and this is something you have to be aware of. Just for your information .... there are successful traders that actually take trades in the same direction as the overbought/oversold levels, and even though they have a low % strike rate for winning trades, their big wins can make them an overall profitable trader, which means traders that trade in the opposite direction (you & I), may struggle at these times.  
+
+So with this EA, the user will nominate their BB settings and also their overbought/oversold levels on the QQE, and when any of those levels are reached, the EA will start looking for trade setups. These trade setups are based on the QMP dots (red & blue dots on the price chart).  
+
+For example, if the overbought QQE level was set at 60, and at any time that the 60 level was breached, the EA would be looking for sell trades. Then if a red QMP dot presented, then a sell trade would be taken. That's the basic concept of it. Obviously there is a lot more to it when it comes to various other settings like position sizing (including subsequent trades), trade direction, number of trades, time of day, etc. It would be the opposite for a buy trade where the nominated QQE oversold level was breached, then the EA would be looking for buy trades, and if a blue QMP dot presented, then a buy trade would be taken. The same applies to the BB, but instead it is the upper and lower bands.  
+
+When I use the term 'breached’, all it means is a touch of that nominated level. If for example I was referring to the 65 level on the QQE, then if at any time that 65 or higher was reached and confirmed, then that is a breach of that level. It doesn't have to close at 65 or higher, just as long as it hits that level at some point. And when I say 'confirmed', that means at the close of the current price candle. There are times when a level is breached whilst a candle is still open, however when the candle closes, it shows that there was in fact no breach of the level due to subsequent price action.  
+
+When we first built this EA, the basic plan was to exit any trades once the QQE 50 level was breached. So if you were in a sell trade from the upside of the QQE, then it would have to come down and have a confirmed breach of the 50 level, where any sell trades would be closed. The opposite for buy trades, where the QQE would have to move up to the 50 level before any buy trades were closed. And this is still one of the exit options available, including adding a buffer (in pips) to that. We have also included a few other options to manage trades now, whether that is based on a QQE entry or a BB entry.  
+
+There are basically 6x methods for exiting trade sequences, and some of these methods also include a 
+
+few options to choose from e.g. with the take profit option, you can elect a target in pips, or a target in dollars, or level based on ATR.. So there are plenty of options available and these will be explained in more detail when the input fields are explained in this manual.  
+
+When it comes to the actual entry of trades, other than nominating the QQE overbought/oversold levels or the BB upper/lower bands, the user can also nominate the following:  
+
+Initial base lot size  
+
+Any subsequent lot sizing  
+
+Lot sizing mode (compounding)  
+
+Maximum spread & slippage permitted  
+
+Maximum number of trades per sequence  
+
+Maximum concurrent sequences per direction  
+
+Trade direction filter (buy, sell or both)  
+
+Trading times of the day  
+
+Trading days  
+
+And what action to be taken at end of the day  
+
+A Friday close time & what action to be taken  
+
+A couple of options for risk reduction  
+
+All the various exit strategies as briefly mentioned above  
+
+And some visual aids on the charts  
+
+And much more 
+
+All of the above will be explained shortly as I go through all of the input fields in detail, including sharing my thoughts or ideas on each. And as previously mentioned, there are many different settings (and combinations), so the user can get a little creative and experiment to find something they would be comfortable with. But before you go live with any settings, it is imperative that you have a good understanding of the settings and how they perform on the charts. I find the easiest way to do this is by using the MT5 Strategy Tester and testing it in visual mode. Here you can add a template to the chart being tested that would reflect the settings you are using on the EA, where you could go through a nominated period of time and watch the EA operate in real time, ensuring that it is doing what you expected it to do.  
+
+Just keep in mind that this is a test only and the time period will be condensed into a few minutes. For example, the test may be over a one year period where the EA went into drawdown for a couple of months. This seems easy enough to deal with at the end of a test that took a few minutes, but in real time over an actual year, going through a few months of drawdown, may be a lot tougher to handle from a mindset point of view. 
+
+This brings me to my next point. I can just about guarantee *you *that anyone that has access to this EA will try it out on the super low time frames eg 1m, 3m, 5m charts. **But be warned! **As spectacular as the results may look in testing, things can get messy and out of hand quickly. Trust me on this as I have tested these time frames extensively and also done some live trading on them, so please listen to me when I give you these warnings.  
+
+When you get on these lower time frames, obviously there will be way more trades, and these will be executed quickly. There are a few issues with this, one being the potential sheer high number of trades, which may either adversely affect your margin requirements (you may run out of margin to trade with), or your broker has a maximum limit on the number of open trades you are permitted at any one time. Then there is more of a chance of technical issues with the EA due to its workload, and you also have to take into consideration things like commission or swap fees etc. The main thing is the potential for a high number of trades, where on a big move in the wrong direction, the losses can add up quickly.  
+
+The EA does have some features where you can control some of the above and these will be discussed in more detail later. But if you are going to use the EA on the low time frames, these are things you have to be aware of, so it is either best to trade on an account with very high leverage, or a very high balance, or even consider using something like a Cent account to help with position sizing. But I would strongly suggest that you first forward test it on a demo account for a decent period of time, using the exact same account balance and leverage that you would be using on a live account. This will give you a very good idea on how your live account would handle it. Please understand that I'm not trying to talk you out of using the EA on the lower time frames, but just be smart about it and don't get caught up in the potential results.... test first and monitor,,,, as you can always ramp up over time when you see how things are progressing.  
+
+And because this EA is built for MT5, most MT5 platforms offer many more trading instruments other than Forex. So if you are going to apply the EA to any of these other instruments, then you must have a good understanding on how they work. By this, I mean be aware of their spreads, margin requirements, lot sizing, opening times, swap fees etc. Just because a particular set of settings works well on the EUR/USD 8hr chart, it may not work at all on the Bitcoin or Gold 8hr charts for various reasons. Again, I can't stress how important testing is, and also a bit of preparation and learning that may save you some grief in the future.  
+
+So the main takeaway from all of my ramblings above.... is make sure you fully understand how the EA works and fully understand your risk requirements before going live with this EA. The best way to achieve this is by watching it in action in visual mode in the MT5 Strategy Tester or forward testing it on a demo account. I can't stress how important that is. Trust me on this. 
+
+**IMPORTANT: **For this EA to work, you have to follow this step at any point prior to running the EA, and it is something that you only have to do once on each platform. Here are the easy to follow steps:  
+
+On the top menu of your platform, click on 'Tools', and then from the dropdown menu, select 'Options'. This will open the Options box in the middle of your chart. Then look for the tab titled 'Expert Advisors' and click on that. This should give you a list with a number of boxes to be checked or unchecked.  
+
+My preferences are that I check the following boxes only:  
+
+Allow algorithmic trading  
+
+ 
+
+# Input Fields  
+
+## Position Sizing  
+
+This block of input fields all refer to the position sizing that the EA will take. So this is your first step in helping determine your risk. Because of the type of EA, it may take multiple trades in the same direction at times, so this is something you have to be aware of from an overall risk point of view.  
+
+Any block of trades that are grouped together looking for a common goal, are called a sequence. There could be any number of trades in a sequence, from one trade to many trades.  
+
+The input field titled **Multiplier System**** **is the feature that dictates your position sizing based on your initial base lot. There is a choice in the drop down menu where you can select one of the suggested sequences, or you can create your own sequence. If you wanted to create your own, then you would select 'Custom (uses string below)' from the drop down menu and then insert your preferred sequence in the input field titled **Custom Multiplier String (if selected)****  **
+
+The multiplier system, as the name suggests, uses the number in the sequence to determine each position size by multiplying the base lot size by the corresponding number in the sequence. An example of how this works is probably the easiest way to explain it.  
+
+If you had nominated a base lot of 0.20 and your sequence was 1,3,5,8,13, then this is how the 1st and subsequent trades are calculated by the EA:  
+
+1st trade is 0.20 x 1 = 0.20 lots  
+
+2nd trade is 0.20 x 3 = 0.60 lots  
+
+3rd trade is 0.20 x 5 = 1.00 lots  
+
+4th trade is 0.20 x 8 = 1.60 lots  
+
+5th trade is 0.20 x 13 **= **2.60 lots  
+
+If using the same base lot size of 0.20 and the sequence was 2,8,3,10, then this is how the 1st and subsequent trades would be calculated by the EA. 
+
+1st trade is 0.20 x 2 = 0.40 lots 
+
+2nd trade is 0.20 x 8 = 1.60 lots  
+
+3rd trade is 0.20 x 3 = 0.60 lots  
+
+4th trade is 0.20 x 10 = 2.00 lots  
+
+The format for the sequence is simple but there are a few rules to follow. It must start with a number (1 or greater) and there must be at least one number nominated. If you wish to add further numbers, then you put a comma directly after your 1st number and then immediately add your 2nd number. There is no spacing between the numbers or the commas. When a sequence of numbers is completed, do not put anything after the last number. If you do put a comma after the last number or there is a space anywhere in your sequence, the EA will not work correctly.  
+
+And further to that, whatever your last number is in the sequence, any subsequent trades will use that same number as a multiplier. So if your sequence was 1,2,3 with a base lot of 0.01 lot and there were 5x trades taken in the sequence, then the EA would take the following trades:  
+
+1st trade is 0.01 x 1 = 0.01 lot  
+
+2nd trade is 0.01 x 2 = 0.02 lots  
+
+3rd trade is 0.01 x 3 = 0.03 lots  
+
+4th trade is 0.01 x 3 = 0.03 lots  
+
+5th trade is 0.01 x 3 = 0.03 lots  
+
+My personal preference for the sequence multiplier is either 1,3,5,8,13 or 1,2,3,4,5,6,7 (Linear Arithmetic). But you can either choose one of the sequences from the dropdown menu or you can come up with one of your own. Even something simple like having a sequence of just 1 where every trade the EA takes will just be 1x the base lot. This is a great way of reducing risk, especially if combined with other features of the EA. You can use your imagination here and experiment a little as there are plenty of options.  
+
+The next input field is called **Base Lot Size**, which I have already mentioned above. From a risk standpoint, this is an important field to make sure you get right. I would strongly suggest you keep this as small as possible initially, and once you are comfortable with your results, you can always modify it accordingly. This is your position size for the 1st trade in every sequence. Now this position size may vary depending on the settings you have put into the multiplier system. For example, if your base lot was 0.01 and your multiplier was 1,3,5,8,13, then your 1st trade will be for 0.01 lot. But if your multiplier was 9,5,1, then your 1st trade would be for 0.09 lots. So be careful when choosing your base lot size, taking into consideration what may happen if you have multiple sequences open with multiple trades open.  
+
+The next input field is **Lot Sizing Mode**** **which goes hand in hand with the base lot size and gives you some options on how to determine your base lot size. In the input field, there is a dropdown menu that gives you 5x choices.  
+
+The simplest choice is the Fixed Lot Size, where if this is selected, then whatever value you put in the Base Lot Size input field will be your starting trade size (depending on your multiplier settings).  
+
+Then you have 2x choices that refer to a percentage (%) of either available account equity or available account balance. These will remain constant throughout any sequence once a sequence begins. For example, if the account equity or balance had changed midway through a sequence, then the new account equity or balance would be ignored and the sequence would continue based on the initial calculation for the 1st trade.  
+
+Then the remaining 2x choices refer to a nominated trade size for a nominated amount of account equity or account balance. For example, for every $4000 you have in your account, you may wish to risk 0.02 lots. So when your account balance reaches $8000, then your base lot would double to 0.04 lots, and when the balance got up to $12000, then the base lot would be 0.06 lots, hence the reference to the phrase Step-Based, for those 2x choices..  
+
+If you had selected Fixed Lot Size in the Lot Sizing Mode input field, then you can just ignore the next 4x input fields as they only apply to the other Lot Sizing Mode options. If you had selected % of balance or % of equity, then you would have put a number in the **% of balance/equity per trade**** **input field, which can be anything above 0. This is something you should test in visual mode to give you an idea on what your initial base lot size would be. Just keep in mind that you can also select numbers greater than 100. If you were using this feature, then you would ignore the next 3x input fields as they only refer to the Step-Based feature. In my example above with $4000 and 0.02, you would put 4000 in the **Step**** ****Amount (account increment)**** **input field and 0.02 in the **Lot Size per**** ****Step**** **input field. And with the Step Based position sizing you can choose to cap your maximum initial trade size in a sequence by entering that number in the **Max Initial Lot Size** input field. If you entered 0 in this field, then this would not be capped.  
+
+I can't stress how important it is to have a good understanding of these input fields and how they work, and how they affect your risk. You could blow an account quickly if you get these numbers wrong. I know that greed will be an issue for some, where you will be tempted to go hard on these numbers and make as much profit as quickly as possible. I get that, and you may get lucky for a while, but I can assure you that eventually you will crash & burn. Just be smart & sensible here as you can always slowly ramp up as you start gaining confidence & seeing good results. 
+
+  
+
+## Trading Parameters  
+
+**Base Magic Number**** **is just a random 6 digit number. So each time you add this EA to a chart, you can just put any random 6 digit number in this field, but make sure every one is different. The MT5 platform then matches each chart to this unique magic number, so there is no confusion when managing multiple trades, especially if you were trading the same pair on multiple time frames, or also doing manual trading on that same pair. If you were going to load up 20x charts with the EA, then the smart thing would be to keep a record of these magic numbers and make sure that they are all different.  
+
+The next 2x input fields refer to **Slippage **and **Maximum Spread **which ensures that you are not caught out on crazy price slippage or crazy spreads. Just be aware that these are both nominated in points and not pips. It can be a little confusing but that is just the way most EAs use this feature. The easiest way to remember it is that 1 pip = 10 points, or 5 pips = 50 points. I don't get too concerned about the slippage field too much and normally just leave that at 3. But the maximum spread is important, especially around the new Daily candle time or even around major news events.  
+
+  
+
+So if you had put 30 (3 pips) in the maximum spread field on a chart like the EUR/USD, and if the spread goes out to 4 pips during a certain period, then even if a new trade signal is identified by the EA, that trade will not be taken at that time. But it may be taken at any time later if the spread comes into 3 pips or lower AND the trade signal is still valid. This is something you have to be aware of, especially as different pairs, and even different instruments, have varying spreads at times. In other words, not one size fits all. If you were testing the EA out on a Bitcoin chart, this is one of the main fields you would have to change to suit the huge normal spreads on instruments like Bitcoin.  
+
+The **Max Trades per Sequence**** **just limits the number of trades the EA can take in any sequence. If you put 0 in this field, then there is no limit and the EA will take as many trades as required. So if you put 3 in this field, once the EA has taken 3x trades in any sequence, and further trade signals are identified, it will not take those trade signals, and that sequence will continue to run with only the 3x trades until it closes. Just remember that every sequence is separate to any other sequence, so the EA may be ignoring trade signals on one sequence, but taking those same trades in relation to another sequence.  
+
+Then there is the **Max Concurrent Sequence per Direction**** **input field, which can limit the number of sequences the EA takes in any one direction at one time. For example, if you were to put 2 in this field, then the EA could only have a maximum of 2x open Buy sequences and 2x open Sell sequences at any one time, and will ignore any new trade signals that are not related to any of those open sequences. So in this example, there would be no more than 4x sequences open at any one time, with a maximum of 2x Buy sequences and 2x Sell sequences. Just another way to reduce risk. For me personally, this is not a feature that I use that often, so I normally just put 100 in this field, so the EA will take all trade sequences when they present.  
+
+The **Allowed Trade Directions** input field gives you a dropdown menu with 3x options. You can either select Both Buy & Sell where the EA will take trades in both directions, or you could select either Buy Only or Sell Only. It may be the case where you are trading stocks and only wish to take buy trades, so this is where you would select Buy Only. 
+
+**Allow buy/sell at the same time** is for traders that may not be permitted to be in both buy and sell trades on the same pair at the same time due to a particular jurisdiction's trading laws. Here you can limit the EA to only taking trades in one direction at a time, or you choose not to. It is a true or false selection from the dropdown menu.  
+
+**Trade Comment** is simply the comment you wish to be displayed on your MT5 Trade Terminal to help you identify your trades. It can get a little confusing if you are trading the same pair with multiple settings or time frames, so by inserting some information into this field, it helps with trade identification. Eg EURUSD 4hr BB Exit +$50. You can also leave this field blank if you wish. 
+
+As you can see, there are plenty of options when it comes to helping control risk with this EA. You could either go super aggressive with many trade sequences and position sizing, or *you *could limit your risk substantially by reducing the number trade sequences open at any one time, and also limiting your position sizing to something way more conservative. And this will also be expanded on later with even more risk reducing options. 
+
+  
+
+## Indicator Mode 
+
+The **Indicator Mode** has a dropdown menu with 3x choices. This is where you choose which indicator you would like to use for your entry setup. You have a choice of either Bollinger Bands, QQE Adv or Both Bollinger Bands & QQE. 
+
+The Both Bollinger Bands & QQE option is a little different as even though it uses the BB for entry, the QQE also has to be in sync with it. For example if your upper level on the QQE was set at 60, then if there was a sell signal because of an upper BB breach, then the QQE must also have breached the 60 level for that sell signal to be confirmed. Basically the QQE is acting as a filter.  . 
+
+Just keep in mind that whatever you select here, the exit strategy you select must also match it or else the EA will not work. So if you enter using BB then you must select one of the BB exit strategies. Same applies to the QQE. If you select the wrong exit strategy, the EA will not work. 
+
+ 
+
+## QMP Filter Settings  
+
+This is the custom indicator attached to the price chart that displays the red & blue dots. It is an indicator that combines both the MP and the QQE hence the settings reflect the 6x input fields required. I generally don’t adjust these settings too often as I find the default settings to work just fine. 
+
+For the MP component, the default settings are 12, 26, 9 and for the QQE component, the default settings are 1, 8, 3. 
+
+ 
+
+## Bollinger Band Settings 
+
+**BB Period**, **BB Deviation **& **BB Applied Price** refer to the actual BB settings. The default settings are 35, 2.25 & High Price (from dropdown menu). Most MT5 platforms offer the BB as a default indicator with the settings of 20, 2.0 & Close Price. You will find a BB indicator in the download package as this version allows you to differentiate the colours of the bands, which makes it a better visual experience.   
+
+The **Use BB width filter** & the **Min width %** input fields are a little tricky to explain and you would probably understand them better by running a visual test in the MT5 Strategy Tester. As you know, BB expand & contract depending on volatility at the time, so it may be the case that you don’t want to commence a trade sequence unless there is a certain width between the upper & lower bands. So if you selected ‘true’ in the Use BB width filter field, then you would have to enter a number in the Min width % field. This is the tricky part as it is hard to eyeball what this number should be, and it will take a little bit of testing on your part to see what setting works best for you. The default setting is 0.5, but if you were to change this to 2.0, then the EA would take less trades as the bands would be wider apart. Trial & error on this setting. 
+
+**Require Center Band Cross Before New Sequence** is either true/false from the dropdown menu. If you select ‘true’, then price would have to cross the BB centre band before a new trade sequence was commenced. If you select ‘false’, then each time price goes back and breaches the upper/lower BB band, a new trade sequence will commence. I tend to select ‘true’ here as that will reduce the number of trade sequences open at any one time. It is a risk management feature. 
+
+**Don’t open 1st trades on central band breach** is another filter to reduce risk and is either a true/false selection from the dropdown menu. If you select ‘true’, then if at any time the signal candle (the candle with the QMP dot) had already breached the BB centre band, then the trade signal would be ignored for any 1st trades. If you had selected ‘false’, then even though there had been a breach of the BB centre band by the QMP signal candle, as long as that candle had closed on the correct side of the centre band, a new trade sequence would commence. In all of my testing, I found that if the centre band had already been breached, there tended to be a lower percentage of winning sequences overall, hence I tend to select ‘true’ for this setting. 
+
+**Require band touch before re-entry** is a true/false selection from the dropdown menu and is simply a filter to avoid the EA taking subsequent trades after a sequence has closed before the BB centre band is breached. It may be the case that a sequence has closed out quickly according to your settings, and then another valid buy/sell signal presents, but unless price has gone back & breached the outer band, any subsequent trades won’t be taken. It is just a way of avoiding trade setups that don’t meet your initial criteria. It may be the case that you are happy for the EA to take every trade setup until the centre band is breached, then if that is the case, you would just select ‘false’.  
+
+**Exit on breach (not just close)**, which applies to the BB Central Band exit only, is also a true/false selection from the dropdown menu. If you had selected ‘true’ for this, then at any time there has been a breach of the BB centre band, and the sequence is in overall profit, the sequence will close on the close of that candle. It does not matter where the actual candle closes in relation to the BB centre band. If you had selected ‘false’, the actual candle has to close on the other side of the BB centre band before the sequence will close.  
+
+I found that when stuck in a big trend and the EA was taking trades in the opposite direction to that trend, then a lot of times, price would struggle to close on the other side of the BB centre band, but more often than not, price did at least breach the BB centre band at some point, hence why I tend to select ‘true’ for this input most of the time. 
+
+**Always close on opposite band**, which applies to the BB Opposite Band exit only, is also a true/false selection from the dropdown menu. With the BB Opposite Band exit feature, you are basically trading from one outer band to the opposite outer band. If by the time price hits this opposite band, if the trade sequence is not overall profitable, then the EA would continue to take trades until it was. This would be the case if you had selected ‘false’ in this input field. If you select ‘true’, then as soon as price breaches that opposite BB band, then the sequence will close completely, whether it is in profit or not. This is one time where a sequence could close at an overall loss, but it also means that risk has been reduced and the EA can start afresh looking for new sequences. There is a trade off and this is one setting that does require testing. 
+
+ 
+
+## QQE Settings  
+
+**QQE Overbought Level** & **QQE Oversold Level** refers to the levels where the EA will start taking trades based on the breaching of these levels on the QQE. As discussed earlier, the EA can start looking for sell trades above the 50 level and can start looking for buy trades below the 50 level. So the Overbought Level has to be 50 or higher and the Oversold Level has to be 50 or lower. The default settings are 65/35.  
+
+Just a few things I would like to point out here. The further your levels are away from the 50 level (middle), then generally the less trades will be taken, which in turn can reduce your overall risk. So the closer your levels are to the 50 level, then more trades will be taken and your overall risk may be higher. There is always that trade off when it comes to risk & reward, where generally it is assumed that for a higher reward, you need to risk more, which makes sense most of the time. I tend to use the 60/40 levels as my main setting, but you could also consider 65/35, 70/30 or any other combination. If you wanted to just trade either side of the 50 level, you could select 50/50, but I tend to go with 51/49 just to give myself a little breathing room.  
+
+You are also not limited to having each level the same distance from the 50 level as in the abovementioned settings. For example, as I mentioned earlier, you may have a bullish bias with Bitcoin where you are only comfortable taking Buy trades, but you also don't want to miss out on any decent pullbacks (retracements). Here you may set the oversold level at 40, but then set the overbought level at 70. Most of the time, the EA will produce a steady stream of Buy trade setups, and only when the overbought goes out the extreme levels, will the EA then start taking Sell trades.  
+
+And as I have mentioned already, the QQE only has to touch these levels and be confirmed by a candle close to be considered as a breach of that level. There is no requirement for price to close above/below any level, nor is there any time limit on the breach. And I can just about guarantee you that someone will ask me something like ..... If there is a 60 level touch and the QMP red dot was 5x candles later, is this still okay? Yes it is, as long as the trade signal is still valid. There is no time limit or x number of candles, or anything like that. Just keeping it very simple here.  
+
+Which brings me to my next point about the QMP dots and the breaching of the QQE levels. Most of the time, there will be a QQE level breach and then the relevant QMP dot will present either on the same candle as the breach or on any subsequent candles after the breach. This happens about 95% of the time.  
+
+Then you will have the odd occasion where there is a QMP dot but the QQE level has not yet been breached, but a few candles later there is a breach of the QQE level, where that previous QMP dot is still a valid trade signal for that breach. So once the breach has been confirmed by a candle close, the EA will then take that trade to commence a new sequence.   
+
+For example, the overbought QQE level was set at 65 and before price got to it, there was a red QMP dot. Then price continued up and 5x candles later, the QQE 65 level was confirmed as being breached and the last QMP signal was still that red dot, so as soon as the new candle opened, a sell trade would be taken. Most of the time, you will get a better price fill for your entry compared to if you had taken the trade on the actual red QMP dot. Just something you have to be aware of. This also happens with the BB, but it is not as common.  
+
+**SF**, **RSI Period** & **WP** are just the 3x settings for the QQE, similar to mentioned above in relation to the QMP. However these are normally not the same as the QQE component of the QMP settings. The QMP QQE settings are 1,8,3 but with this separate QQE, I like to use 7,14,1 which are also the default settings of the EA. But like any of the settings, you can adjust to suit your needs. 
+
+**Require QQE extreme before re-entry** is a true/false selection from the dropdown menu and is simply a filter to avoid the EA taking subsequent trades after a sequence has closed before the QQE 50 level is breached. It may be the case that a sequence has closed out quickly according to your settings, and then another valid buy/sell signal presents, but unless price has gone back & breached the upper/lower level, any subsequent trades won’t be taken. It is just a way of avoiding trade setups that don’t meet your initial criteria. It may be the case that you are happy for the EA to take every trade setup until the QQE 50 level is breached, then if that is the case, you would just select ‘false’.   
+
+ 
+
+## Exit Strategy  
+
+**Exit Strategy** simply refers to which exit strategy you want the EA to use. As we all know, it is easy enough to get into a trade, or a sequence of trades, but then you have to have a plan on how to manage and exit those trades. And this is where you start this process.  
+
+There is a dropdown menu that presents your with 6x choices, with these being: 
+
+- BB Centre Band (BB Mode) 
+
+- BB Opposite Band (BB Mode) 
+
+- QQE 50+ Recovery (QQE Mode) 
+
+- First Profitable Close (Both Modes) 
+
+- Fixed Profit Target (Both Modes) 
+
+- Pure Trailing Stop (Both Modes) 
+
+As you can see in the brackets, each selection either refers to BB mode, QQE mode or both modes. By modes, we are referring to the Indicator Mode mentioned above, which relates to how you chose to enter the trades. You will have to select one of these 6x options, and then the subsequent input field blocks will expand on each of these in detail. 
+
+Options 1, 2, 3, 5, & 6 are self explanatory as they are just specific targets before the EA commences any trade management. However option 4, First Profitable Close, is a little different. It doesn’t matter if there is 1x trade or 20x trades in the sequence, but if a candle closes and the sequence is in overall profit, then the sequence will close. Basically taking lots of small wins when they present.    
+
+**Use Dynamic Stop**, and you see noted in the brackets that this is not compatible with the Partial Close feature which I will cover later. So basically you will have to choose one or the other. You can’t use both at the same time. This is just a true/false selection from the dropdown menu. If you select ‘true’, then you will have to enter a number in the **Dynamic Stop Distance** input field, which is measured in pips. 
+
+The Dynamic Stop is a little confusing when first explained to you so I would strongly suggest that you test it first in visual mode on the MT5 Strategy Tester where you will see how the Stop line moves,which also includes disappearing at times. 
+
+The dynamic stop activates when an exit condition is met (e.g., QQE 50 line or BB centre band). Instead of closing immediately, it switches to trailing stop mode, which will give you the potential to earn more profit on a big sustained move in one direction, instead of just closing the sequence. It trails by keeping a fixed distance behind the current price (e.g., 20 pips). As price moves in your favour, the stop moves with it, only in the favourable direction. For buy trades, it only moves up; and for sell trades, it only moves down. It never moves against you. 
+
+ 
+
+If the sequence profit goes to zero or negative, the Dynamic Stop deactivates. The stop loss is removed, and the sequence can continue adding trades. This lets the sequence recover instead of being stopped out. It may be the case that the sequence is then back in profit where the Dynamic Stop is reactivated and so on. Trade sequences close when price hits or crosses the Dynamic Stop level. At that point, the sequence is closed and the dynamic stop is turned off. 
+
+ 
+
+Key points: 
+
+Only works when the exit strategy is either BB Centre Band or QQE 50 + Recovery  
+
+Only activates when an exit condition is met 
+
+Maintains a fixed distance from current price 
+
+Only moves in the favourable direction (locks in profit) 
+
+Deactivates if profit goes negative (allows recovery) 
+
+Cannot be used at the same time as Partial Close mode 
+
+In short, it’s a trailing stop that activates on exit conditions, protects profit, and steps aside if the trade goes negative so the sequence can continue. 
+
+ 
+
+**Partial Close** and **Dynamic Stop** only run when the exit strategy is **BB Central Band** or **QQE Recovery ** They do not work with the First Profitable, Fixed Target, or Pure Trailing Stop exit strategies. 
+
+ 
+
+ 
+
+## Recovery Mode Settings 
+
+** **
+
+**Recovery Buffer above Breakeven** is the only input field in this block, and is a setting measured in pips. It is used with the BB Centre Band, BB Opposite Band and QQE 50 + Recovery exit strategies. 
+
+There are 2x ways the trade sequence could close using these exit strategies. Just remember that a sequence could be 1x trade or multiple trades, and that every trade in that sequence will be closed at the same time, hence the EA is looking for an overall result based on all trades in that particular sequence.  
+
+The 1st type of close using these exit strategies is simply by a breach of the desired level **AND** if** **the sequence is at overall break even or profitable, then that sequence will be closed. End of story..  
+
+The 2nd type of close using these exit strategies needs an alternate trade management strategy for when the desired level is breached and the trade sequence is not at overall break even or profitable. The EA will recognise this and then start to look for an overall break even level plus the number of pips you entered in the Recovery Buffer above Breakeven field. So if you had nominated 5 in that field, then EA will continue to look for an overall break even level plus 5 pips, hence the term 'buffer'. This is handy to cover any possible Swap fees or to avoid any possible slippage or re-quotes.  
+
+The EA will also continue to take any new trade signals when looking for this overall break even plus buffer level,,and any QMP dot trades will be taken no matter where the QQE level is at. Basically taking every QMP dot in that same direction to get to that overall break even plus buffer level as soon as possible. 
+
+ 
+
+## Exit Parameters - Fixed Target  
+
+If you had selected Fixed Profit Target as your exit strategy then this block of input fields refer to the various settings required for this. This feature can be used with both the BB & QQE strategies.  
+
+In the **Fixed Target Type**** **input field there is a dropdown menu with a choice of 3x options.  
+
+ 
+
+- Fixed currency amount   
+
+- Fixed pips from entry 
+
+- ATR Multiple 
+
+  
+
+**Profit Target (Currency)**** **is fairly self explanatory. If you were after an overall $50 in profit from a trade sequence, then you would simply enter 50 into this field. Just keep in mind that it refers to the same currency as your deposit currency with your broker, which could be 50 USD, 50 GBP, 50 CAD etc. Also be aware that the $50 is the total for all trades in the sequence, whether that be 1x trade or 8x trades. Another thing to consider is your base lot size as this will have an affect on using this setting. For example, if your base lot was 0.01, then it will take a much bigger move on price to achieve a $50 target based on $ value per pip, compared to say if you were using 0.20 as your base lot.  
+
+**Profit Target (Pips)**** **which is simple enough to understand if there is only the 1x trade in the sequence. But if there are multiple trades in the sequence then it becomes a little more complicated, where the nominated target will remain at a constant distance from the overall break even level.  
+
+For example, if the target was 100 pips in a Buy sequence, then every time a new trade is taken in the sequence, the overall break even level will move to a new position on the chart, where the profit target will remain at 100 pips above that break even level at all times, until the profit target has been taken out. Again this is something that is easier to understand by testing the EA in the Strategy Tester using the visual mode.  
+
+**ATR Period** refers to a target based on the ATR. If you had selected ATR Multiple from the above mentioned dropdown menu, then you would have to nominate a number in this field and also the following ATR Multiplier field for it to work. 
+
+Now if you don’t know what ATR refers to, then this is the basic definition direct from Google AI …. ATR stands for [Average](https://www.google.com/search?q=Average+True+Range&rlz=1C1CHZL_enAU823AU823&sca_esv=e065bd0726b76230&biw=1536&bih=695&sxsrf=ANbL-n4PDVnzagYdlanEPw3AaRPRpGrjZA%3A1770991759860&ei=jzCPab3HM93k2roP7K2b2QE&ved=2ahUKEwjY9uKa1NiSAxVPqVYBHfAZLf4QgK4QegQIARAB&uact=5&oq=what+does+ATR+mean+in+trading&gs_lp=Egxnd3Mtd2l6LXNlcnAiHXdoYXQgZG9lcyBBVFIgbWVhbiBpbiB0cmFkaW5nMgUQABiABDIGEAAYFhgeMgYQABgWGB4yBhAAGBYYHjIGEAAYFhgeMgYQABgWGB4yBhAAGBYYHjIGEAAYFhgeMgsQABiABBiGAxiKBTILEAAYgAQYhgMYigVI9rHMIFAAWJavzCBwAngBkAEAmAHYBKAB8FOqAQoyLTQuMjYuMS4xuAEDyAEA-AEB-AECmAImoALh4gHCAgQQIxgnwgIKECMYgAQYJxiKBcICCxAAGIAEGJECGIoFwgILEC4YgAQYsQMYgwHCAgsQABiABBixAxiDAcICCBAAGIAEGLEDwgIOEC4YgAQYsQMYgwEYigXCAg4QABiABBixAxiDARiKBcICChAjGPAFGCcYngbCAgoQABiABBhDGIoFwgINEAAYgAQYsQMYFBiHAsICBRAuGIAEwgIQEAAYgAQYsQMYQxiDARiKBcICERAuGIAEGLEDGNEDGIMBGMcBwgIPECMYgAQYJxiKBRhGGPkBwgIEEAAYA8ICJxAAGIAEGIoFGEYY-QEYlwUYjAUY3QQYRhj5ARj0Axj1Axj2A9gBAcICChAAGIAEGEYY-QHCAiQQABiABBhGGPkBGJcFGIwFGN0EGEYY-QEY9AMY9QMY9gPYAQHCAggQABiABBiiBJgDALoGBggBEAEYE5IHEjIuMC4xLjI5LjEuMi44LTEuMqAHx9ICsgcKMi0xLjI5LjEuMbgHmlXCBwkwLjE1LjIxLjLIB6QBgAgA&sclient=gws-wiz-serp&mstk=AUtExfCnO4nnlME8RRjd2VXWCk08ODFGaysI47gTjySMmmMx6yHzFzXgp07LQKWVzHGlnF5aGhFH-8HyO83G5MydmcJOSpoS8J0oC6LROak_tr2dyDJOBKG1ThxqCNNvZWSG-dFTylCZ82H5mFcb4R1e3nxJxctl8ecIvCKvb6gmsFktSI4&csui=3)[ ](https://www.google.com/search?q=Average+True+Range&rlz=1C1CHZL_enAU823AU823&sca_esv=e065bd0726b76230&biw=1536&bih=695&sxsrf=ANbL-n4PDVnzagYdlanEPw3AaRPRpGrjZA%3A1770991759860&ei=jzCPab3HM93k2roP7K2b2QE&ved=2ahUKEwjY9uKa1NiSAxVPqVYBHfAZLf4QgK4QegQIARAB&uact=5&oq=what+does+ATR+mean+in+trading&gs_lp=Egxnd3Mtd2l6LXNlcnAiHXdoYXQgZG9lcyBBVFIgbWVhbiBpbiB0cmFkaW5nMgUQABiABDIGEAAYFhgeMgYQABgWGB4yBhAAGBYYHjIGEAAYFhgeMgYQABgWGB4yBhAAGBYYHjIGEAAYFhgeMgsQABiABBiGAxiKBTILEAAYgAQYhgMYigVI9rHMIFAAWJavzCBwAngBkAEAmAHYBKAB8FOqAQoyLTQuMjYuMS4xuAEDyAEA-AEB-AECmAImoALh4gHCAgQQIxgnwgIKECMYgAQYJxiKBcICCxAAGIAEGJECGIoFwgILEC4YgAQYsQMYgwHCAgsQABiABBixAxiDAcICCBAAGIAEGLEDwgIOEC4YgAQYsQMYgwEYigXCAg4QABiABBixAxiDARiKBcICChAjGPAFGCcYngbCAgoQABiABBhDGIoFwgINEAAYgAQYsQMYFBiHAsICBRAuGIAEwgIQEAAYgAQYsQMYQxiDARiKBcICERAuGIAEGLEDGNEDGIMBGMcBwgIPECMYgAQYJxiKBRhGGPkBwgIEEAAYA8ICJxAAGIAEGIoFGEYY-QEYlwUYjAUY3QQYRhj5ARj0Axj1Axj2A9gBAcICChAAGIAEGEYY-QHCAiQQABiABBhGGPkBGJcFGIwFGN0EGEYY-QEY9AMY9QMY9gPYAQHCAggQABiABBiiBJgDALoGBggBEAEYE5IHEjIuMC4xLjI5LjEuMi44LTEuMqAHx9ICsgcKMi0xLjI5LjEuMbgHmlXCBwkwLjE1LjIxLjLIB6QBgAgA&sclient=gws-wiz-serp&mstk=AUtExfCnO4nnlME8RRjd2VXWCk08ODFGaysI47gTjySMmmMx6yHzFzXgp07LQKWVzHGlnF5aGhFH-8HyO83G5MydmcJOSpoS8J0oC6LROak_tr2dyDJOBKG1ThxqCNNvZWSG-dFTylCZ82H5mFcb4R1e3nxJxctl8ecIvCKvb6gmsFktSI4&csui=3)[True](https://www.google.com/search?q=Average+True+Range&rlz=1C1CHZL_enAU823AU823&sca_esv=e065bd0726b76230&biw=1536&bih=695&sxsrf=ANbL-n4PDVnzagYdlanEPw3AaRPRpGrjZA%3A1770991759860&ei=jzCPab3HM93k2roP7K2b2QE&ved=2ahUKEwjY9uKa1NiSAxVPqVYBHfAZLf4QgK4QegQIARAB&uact=5&oq=what+does+ATR+mean+in+trading&gs_lp=Egxnd3Mtd2l6LXNlcnAiHXdoYXQgZG9lcyBBVFIgbWVhbiBpbiB0cmFkaW5nMgUQABiABDIGEAAYFhgeMgYQABgWGB4yBhAAGBYYHjIGEAAYFhgeMgYQABgWGB4yBhAAGBYYHjIGEAAYFhgeMgsQABiABBiGAxiKBTILEAAYgAQYhgMYigVI9rHMIFAAWJavzCBwAngBkAEAmAHYBKAB8FOqAQoyLTQuMjYuMS4xuAEDyAEA-AEB-AECmAImoALh4gHCAgQQIxgnwgIKECMYgAQYJxiKBcICCxAAGIAEGJECGIoFwgILEC4YgAQYsQMYgwHCAgsQABiABBixAxiDAcICCBAAGIAEGLEDwgIOEC4YgAQYsQMYgwEYigXCAg4QABiABBixAxiDARiKBcICChAjGPAFGCcYngbCAgoQABiABBhDGIoFwgINEAAYgAQYsQMYFBiHAsICBRAuGIAEwgIQEAAYgAQYsQMYQxiDARiKBcICERAuGIAEGLEDGNEDGIMBGMcBwgIPECMYgAQYJxiKBRhGGPkBwgIEEAAYA8ICJxAAGIAEGIoFGEYY-QEYlwUYjAUY3QQYRhj5ARj0Axj1Axj2A9gBAcICChAAGIAEGEYY-QHCAiQQABiABBhGGPkBGJcFGIwFGN0EGEYY-QEY9AMY9QMY9gPYAQHCAggQABiABBiiBJgDALoGBggBEAEYE5IHEjIuMC4xLjI5LjEuMi44LTEuMqAHx9ICsgcKMi0xLjI5LjEuMbgHmlXCBwkwLjE1LjIxLjLIB6QBgAgA&sclient=gws-wiz-serp&mstk=AUtExfCnO4nnlME8RRjd2VXWCk08ODFGaysI47gTjySMmmMx6yHzFzXgp07LQKWVzHGlnF5aGhFH-8HyO83G5MydmcJOSpoS8J0oC6LROak_tr2dyDJOBKG1ThxqCNNvZWSG-dFTylCZ82H5mFcb4R1e3nxJxctl8ecIvCKvb6gmsFktSI4&csui=3)[ ](https://www.google.com/search?q=Average+True+Range&rlz=1C1CHZL_enAU823AU823&sca_esv=e065bd0726b76230&biw=1536&bih=695&sxsrf=ANbL-n4PDVnzagYdlanEPw3AaRPRpGrjZA%3A1770991759860&ei=jzCPab3HM93k2roP7K2b2QE&ved=2ahUKEwjY9uKa1NiSAxVPqVYBHfAZLf4QgK4QegQIARAB&uact=5&oq=what+does+ATR+mean+in+trading&gs_lp=Egxnd3Mtd2l6LXNlcnAiHXdoYXQgZG9lcyBBVFIgbWVhbiBpbiB0cmFkaW5nMgUQABiABDIGEAAYFhgeMgYQABgWGB4yBhAAGBYYHjIGEAAYFhgeMgYQABgWGB4yBhAAGBYYHjIGEAAYFhgeMgsQABiABBiGAxiKBTILEAAYgAQYhgMYigVI9rHMIFAAWJavzCBwAngBkAEAmAHYBKAB8FOqAQoyLTQuMjYuMS4xuAEDyAEA-AEB-AECmAImoALh4gHCAgQQIxgnwgIKECMYgAQYJxiKBcICCxAAGIAEGJECGIoFwgILEC4YgAQYsQMYgwHCAgsQABiABBixAxiDAcICCBAAGIAEGLEDwgIOEC4YgAQYsQMYgwEYigXCAg4QABiABBixAxiDARiKBcICChAjGPAFGCcYngbCAgoQABiABBhDGIoFwgINEAAYgAQYsQMYFBiHAsICBRAuGIAEwgIQEAAYgAQYsQMYQxiDARiKBcICERAuGIAEGLEDGNEDGIMBGMcBwgIPECMYgAQYJxiKBRhGGPkBwgIEEAAYA8ICJxAAGIAEGIoFGEYY-QEYlwUYjAUY3QQYRhj5ARj0Axj1Axj2A9gBAcICChAAGIAEGEYY-QHCAiQQABiABBhGGPkBGJcFGIwFGN0EGEYY-QEY9AMY9QMY9gPYAQHCAggQABiABBiiBJgDALoGBggBEAEYE5IHEjIuMC4xLjI5LjEuMi44LTEuMqAHx9ICsgcKMi0xLjI5LjEuMbgHmlXCBwkwLjE1LjIxLjLIB6QBgAgA&sclient=gws-wiz-serp&mstk=AUtExfCnO4nnlME8RRjd2VXWCk08ODFGaysI47gTjySMmmMx6yHzFzXgp07LQKWVzHGlnF5aGhFH-8HyO83G5MydmcJOSpoS8J0oC6LROak_tr2dyDJOBKG1ThxqCNNvZWSG-dFTylCZ82H5mFcb4R1e3nxJxctl8ecIvCKvb6gmsFktSI4&csui=3)[Range](https://www.google.com/search?q=Average+True+Range&rlz=1C1CHZL_enAU823AU823&sca_esv=e065bd0726b76230&biw=1536&bih=695&sxsrf=ANbL-n4PDVnzagYdlanEPw3AaRPRpGrjZA%3A1770991759860&ei=jzCPab3HM93k2roP7K2b2QE&ved=2ahUKEwjY9uKa1NiSAxVPqVYBHfAZLf4QgK4QegQIARAB&uact=5&oq=what+does+ATR+mean+in+trading&gs_lp=Egxnd3Mtd2l6LXNlcnAiHXdoYXQgZG9lcyBBVFIgbWVhbiBpbiB0cmFkaW5nMgUQABiABDIGEAAYFhgeMgYQABgWGB4yBhAAGBYYHjIGEAAYFhgeMgYQABgWGB4yBhAAGBYYHjIGEAAYFhgeMgsQABiABBiGAxiKBTILEAAYgAQYhgMYigVI9rHMIFAAWJavzCBwAngBkAEAmAHYBKAB8FOqAQoyLTQuMjYuMS4xuAEDyAEA-AEB-AECmAImoALh4gHCAgQQIxgnwgIKECMYgAQYJxiKBcICCxAAGIAEGJECGIoFwgILEC4YgAQYsQMYgwHCAgsQABiABBixAxiDAcICCBAAGIAEGLEDwgIOEC4YgAQYsQMYgwEYigXCAg4QABiABBixAxiDARiKBcICChAjGPAFGCcYngbCAgoQABiABBhDGIoFwgINEAAYgAQYsQMYFBiHAsICBRAuGIAEwgIQEAAYgAQYsQMYQxiDARiKBcICERAuGIAEGLEDGNEDGIMBGMcBwgIPECMYgAQYJxiKBRhGGPkBwgIEEAAYA8ICJxAAGIAEGIoFGEYY-QEYlwUYjAUY3QQYRhj5ARj0Axj1Axj2A9gBAcICChAAGIAEGEYY-QHCAiQQABiABBhGGPkBGJcFGIwFGN0EGEYY-QEY9AMY9QMY9gPYAQHCAggQABiABBiiBJgDALoGBggBEAEYE5IHEjIuMC4xLjI5LjEuMi44LTEuMqAHx9ICsgcKMi0xLjI5LjEuMbgHmlXCBwkwLjE1LjIxLjLIB6QBgAgA&sclient=gws-wiz-serp&mstk=AUtExfCnO4nnlME8RRjd2VXWCk08ODFGaysI47gTjySMmmMx6yHzFzXgp07LQKWVzHGlnF5aGhFH-8HyO83G5MydmcJOSpoS8J0oC6LROak_tr2dyDJOBKG1ThxqCNNvZWSG-dFTylCZ82H5mFcb4R1e3nxJxctl8ecIvCKvb6gmsFktSI4&csui=3), a technical analysis indicator used to measure market volatility by averaging price movement ranges over a set period. It helps traders quantify how much an asset moves, on average, within a given timeframe.  
+
+So the actual ATR period refers to the number of candles over a set period. If you put 14 in this field, then it would take the average range of the last 14x candles to determine the actual ATR. Keep in mind that on a Daily chart, those 14x candles would be the same as 14x trading days, whereas on a 5 minute chart, those 14x candles would be over a period of 70 minutes.  
+
+**ATR Multiplier**, as mentioned above, is also required if using the ATR as your profit target. And here is the Google AI definition for it …. an ATR multiplier is a factor applied to the volatility-measuring ATR indicator, typically used to determine stop-loss levels, take-profit targets, or trailing stops based on market volatility. Common multipliers range from 0.5 to 3. For example, If you had selected 1.5 as your ATR Multiplier and the ATR was 30, then the profit target would be 1.5 x 30 = 45 pips. 
+
+Be aware that when testing this in visual mode, you will see the profit target line move around on the chart even though no new trades have been taken. This is because the value of the ATR is always adjusting due to the fact that it is an average over a set period.    
+
+Note: Whichever selection you choose from the Fixed Target Type dropdown menu, you only have to populate the relevant fields applicable to that selection. 
+
+**Show Take Profit Line** & **Take Profit Line ****Colour** just refer to whether you want to see this line marked on your chart, either when the EA is running on a live chart or in testing mode. It only displays with the Profit Target in Pips and the ATR modes, and not with Profit Target in Currency mode, as it uses too many of the EA’s power resources to continually calculate this line.  
+
+ 
+
+## Exit Parameters - Trailing Stop  
+
+**TRAILING_START_INFO** is not an input field as such, but a reminder that if you select both Trailing Start profit in pips and Trailing Start profit in $, then which every one activates first will then be the main driver on your Trailing Stop, and the other will be ignored. 
+
+Note: Depending on your settings, it is possible to have losing sequences using the trailing stop, as once your trailing stop is activated, there is an actual Stop Loss in place. 
+
+And secondly, if you are in a trade sequence, and even though your trailing stop has been activated, the EA will continue to take new trade signals until the sequence is closed out.  
+
+The actual trailing stop level is the average of all the trade entries in the sequence. For example, if the trailing stop was set at 20 and there was only the 1x trade in the sequence, then it would just trail the price 20 pips behind. But if there were 2x or more trades in the sequence, then it would take an average of those trade entry prices. As more trades are added to the sequence, then the trailing stop parameters will be adjusted accordingly. It can get a little confusing with trailing stop settings when you have multiple trades open with different position sizing on each.  
+
+Again, if you want to use this feature, I would strongly suggest you do some back testing in visual mode in the MT5 Strategy Tester with the settings you want to use. As I will discuss later, you can add visual lines to the charts when testing, so it is quite easy to follow what the EA is actually doing with regards to adding trades and managing them in visual mode.  
+
+So with any trailing stop, you will have to nominate an activation level and also nominate a distance the stop will trail. That is the minimum required.   
+
+**Trailing Start (profit in pips**, **0 = disabled) **is one of the available activation levels and as you can see, it refers to that level in pips. So when the sequence hits that pip level, the trail stop will be activated.** **
+
+**Trailing Start (profit in $****, ****0 = disabled)** is similar to the above, but it is in $ instead of pips. 
+
+ 
+
+As mentioned above, both of these levels can be nominated, and then whichever one is activated first will dictate the remaining trade management and the other one would be ignored. But if you don’t want to use either, then just put a ‘0’ in that input field. 
+
+  
+
+**Trailing Distance (pips)** is one way of setting your trail distance, which is in pips only. 
+
+** **
+
+**Use ATR for trailing start** is another option instead of using the abovementioned options. This is a true/false selection from the dropdown menu. If you are not sure what the ATR is, then refer to my notes above in the Fixed Target settings as it is all explained there. 
+
+** **
+
+**Trailing start ATR Multiplier** which is a required field if you want to use the ATR for this function. Again, the notes in the Fixed Target settings explain this. 
+
+ 
+
+**Use ATR for trailing distance** is another option to nominate the distance the stop will trail once activated. This is also a true/false selection from the dropdown menu. 
+
+** **
+
+**Trailing distance ATR multiplier** is a required field if using the above ATR for Trailing Distance.  
+
+**  **
+
+**Trailing ****Step Block** is where you can choose if you would like the stop to move in blocks instead of just trailing at every pip. For example if you had put '1' in the Trailing Step, then every time price makes a new high or low by even 1x pip, the trailing stop is adjusted. However if you had put '12' in that field, the price would have to move to a new high or low by 12x pips for the trailing stop to be adjusted. I generally leave it at 0 or 1. 
+
+ 
+
+Just remember that if you are using this Trailing Stop exit strategy that you have to at least nominate 1x start point and 1x trail distance point. The trail step is optional. 
+
+ 
+
+ 
+
+## Risk Reduction 
+
+And as the name implies, this is another block of input fields that can assist with controlling overall risk. It may be the case based on previous settings that the EA could take an infinite number of trades in a sequence, which may prove difficult to recover from. So using this feature, the trader could elect a cut off point after a certain number of trades, where the EA will change its exit objectives.  
+
+Probably best to describe an example of how this may work. The user has nominated that this feature should be activated after 4x trades have been taken in a sequence, and that if activated, they would like a 5x pip buffer.. Now assuming the trade sequence had a big profit target and was nowhere close to that, and the 4th trade was taken, then the EA will automatically calculate an overall break even price level plus 5x pips. If price then hits that level, then all the trades are closed for basically an overall break even + 5 pips result, and that particular sequence is completed.  
+
+All this is doing is assisting the trader with an easier exit option if they are stuck in a trend that is going against them, where it is a lot easier to have a retracement (pullback) to an overall break level than a 
+
+specific target that may be a little more difficult to achieve. So basically the EA closes the trades and resets.  
+
+It may then commence a new sequence in the same direction if the trading rules are still met. It may also be the case where after 4x trades, the sequence has still not reached the overall break even + 5 pips level and a 5th trade has to be taken. In this scenario, no matter how many trades are taken, the EA will exit all open trades at the overall break even level + 5 pips and then reset.  
+
+**Enable Risk Reduction** is where you decide if you want to use this feature or not, with a true or false choice from the dropdown menu. 
+
+**Minimum trades to activate** has to be nominated if you had selected ‘true’ above, and this dictates the number of trades in a sequence before this feature initiates..  
+
+**Breakeven ****+ ****buffer pips** lets you nominate a set number of pips past the overall break even level where you may want to cover a negative swap fee. As the name suggests, it is a buffer. 
+
+ 
+
+## Trading Session Times  
+
+This block of input fields gives the user control over the EA when it comes to when it can actually trade, whether that be the time of the day or which days of the week you want it to trade. This is useful for the day traders that want to limit their time in the market, or trading on the smaller time frames. Some traders don't like to hold trades overnight or over the weekend, so this is the area where you would adjust those parameters.  
+
+**Enable Trading Hours** is just asking you if you want to use this feature or not. True or False from the dropdown menu. If you select false, then the EA will trade the entire time that the market is open.  
+
+**Time Reference**, which is sometimes one of the most confusing fields on a lot of EAs as some people just have problems with calculating different time zones, and then when you add daylight savings shift to the mix twice a year, then it just gets more confusing. The good thing these days is that you can just ask Google what time it is in London or New York now, or if you are like me, when I click on my laptop's clock, it also brings up those 2x time zones.  
+
+So you have 3x choices from the dropdown menu for the time reference. These being Broker Time (Server), Local Time (Computer) and GMT+ Offset.  
+
+Personally, I tend to stick with the Broker Time option and just work out my times based on that. You really only need to do this once and then you are set. You could use the Local Time also, but if you travel and change time zones, then this may be an issue and something you would have to keep an eye on. Then there is the GMT+ Offset, which is the one I rarely use. GMT stands for Greenwich Mean Time and most brokers base their time on this depending on where their main servers are located in the world compared to GMT. I can't wrap my head around it, but if you want more information on it, then Google is your friend. A lot of traders use it for whatever reason and it is a common input field in a lot of EAs, so you too also get that choice.  
+
+But like I said, you only have to work out these times once, and other than the daylight savings shift, you can leave them as is. If you are trading say from London open to NY lunch, then once you work out your EA's trading times, you could also add a MT5 custom indicator (i Paramon Work Time) to your chart that shows those exact times (different coloured chart background) that helps with knowing when the EA will start (and finish) trading, and that it is also complying with your specific inputs.  
+
+If you did select the GMT+ Offset option, then the next input field applies to that. So in the **GMT Offset**** ****Hours**** **field you have to manually type in the required setting which will be anything from -12 to +12. So if your broker was GMT -5, then you simply type in -5 in that field, and if your broker was GMT +2, then you would type in 2 (no need for the +). If you are not using the GMT+ Offset option, then you can just ignore this field.  
+
+Then there is the **Trading Start Time**** **and **Trading End Time**, which are both in the 24hr time format. For example if you want to start your trading at 8am and finish at 9.45pm, then it would be 08:00 for the start time and 21:45 for the end time. Just make sure there are 2x digits followed by the colon, and then the next 2x digits. No spacing between them at all.  
+
+The following input fields just refer to the days of the week. Here you can select either true or false for each day as you see fit. For example, some day traders don't like trading on Monday and Friday for various reasons, so on those days you would simply select false. Just keep in mind that the crypto markets trade 24/7 so Saturday and Sunday could be an option for them. Also, depending on your broker, there may be Sunday trading on the Forex market, so this is also something you have to consider. 
+
+  
+
+## End of Day  
+
+This block of input fields basically control what happens with trades at the end of each day. There are many day traders that don't like to have open trades overnight, whether that be for mental health reasons or to avoid Swap fees.  
+
+**Enable End of Day Actions**** **input field is either true or false from the dropdown menu and refers to the individual days from Monday to Sunday.  
+
+**Daily Close Time (independent from Trading ****Hours)** refers to the above Enable End of Day Actions input field if ‘true’ had been selected. You would have to enter a time in this field in the same format as mentioned above. This feature can be used at any time and is independent from the above Trading Session Times.. 
+
+**End of Day Action**** **input field offers the user a dropdown menu with a choice of 4x options which are self explanatory. So if you choose either ‘Close if Profitable’ or ‘Close if Losing’, the EA will continue to take trades as normal on the remaining sequences to complete those sequences, however it will not commence any new trade sequences until the next day's start time. Obviously if you select to close all sequences at the end time, then all trades will be closed, no matter what the result. And the other option is to do nothing, which again will mean that all sequences will close out as normal and no new sequences will commence until the nominated start time. 
+
+ 
+
+## End of Week 
+
+  
+
+The next 3x input fields all refer to the Friday close, or end of week (EOW) closing time and the action taken at that time. Very similar options to those mentioned above for the End of Day settings.  
+
+ 
+
+**Enable End of Week Actions (Friday)** is either true or false from the dropdown menu.. 
+
+ 
+
+**Friday Close Time** would be required if you had selected ‘true’ above.  The time format is the same as mentioned above. 
+
+ 
+
+**End of Week Action** has the same options as the End of Day settings mentioned above.  
+
+An example of using the Friday close time feature may be where the user has a bullish bias all week and has only taken Buy trades via other EA settings without any legitimate exit strategy e.g. fixed profit at a ridiculous high target. So during the week, the EA would be building a portfolio of Buy trades only, where you could then close out all trades at the end of the week, hopefully for a substantial overall profit. This is just one way of approaching this, as there are many ways to get a little creative using this EA's settings. 
+
+ 
+
+## ADVANCED SETTINGS 
+
+As the title implies, we are getting into the more advanced settings of the EA, where you can get a little creative and possibly improve profit and reduce drawdown etc. 
+
+ 
+
+## Partial Close Management 
+
+** **
+
+Note that this feature only works with the BB Centre Band & QQE 50 + Recovery exit strategies, and it cannot be used at the same time as the Dynamic Stop feature. 
+
+ 
+
+For this feature to be activated, there has to be at least 2x trades in the sequence, and either the BB Centre Band of QQE 50 exit condition has been met and that the sequence is in profit.  
+
+ 
+
+If there is only 1x trade in the sequence, the EA still runs the partial-close logic but It does not close that trade. It treats it as the “remaining” position, sets a breakeven stop at the sequence’s average price, and (if Trailing Distance > 0) then trails that stop. So the single trade is managed only by that breakeven (and optional trailing) stop. 
+
+  
+
+**(info only)** is just an advisory stating that if this feature is activated, then all trades in a sequence except one will be closed. 
+
+** **
+
+**Enable Partial Close Management** is either a true or false selection from the dropdown menu 
+
+ 
+
+**Percent to close on remaining position** refers to what is done with the remaining trade once the Partial Close has been activated, keeping in mind that there will only be the 1x trade left open  There is a choice of 2x options from the dropdown menu where you can either select to close ‘None (leave full position open)’ or ‘50%’.  
+
+ 
+
+For example, there were 4x trades in the sequence and the Enable Partial Close was activated, and there was a setting of ‘None leave full position open’, then the EA would close 3x trades and leave the remaining 4th trade intact. If ‘50%’ had been selected, again 3x trades would be closed and also ½ of the remaining 4th trade would also be closed. 
+
+ 
+
+If the position size is in non-divisible amounts or 0.01, then the EA handles this internally & ensures at least the minimum lot size remains. 
+
+ 
+
+**Trailing Distance (pips, 0=disabled)** refers to the distance in pips the remaining trade will trail price. If you have selected ‘0’ for this field, it will be disabled, however the EA will set the Stop at break even. 
+
+ 
+
+This is definitely one feature that you should do some testing on so you get a good understanding on how it works before actually going live with it.  
+
+ 
+
+ 
+
+## Signal Distance Filter  
+
+This feature can assist with reducing overall risk. Most common DCA strategies either use a grid type system or specific price levels to add positions to the sequence. As this EA uses the QMP dots for trade entries, the price gap between entries can be very random at times. It may be the case where there are 2x trade signals in a row that have very similar entry prices. Here the user may elect to pass on that 2nd trade if it is within a certain number of pips from the previous trade entry.  
+
+**Enable minimum distance between signals** controls whether you want to use this feature or not by selecting either true or false from the dropdown menu. 
+
+**Minimum distance between signals (pips)** refers to the minimum number of pips you would like between each trade signal. Keep in mind that this only refers to the new trade signal and the previous trade only. 
+
+**Use ATR for minimum distance** is also an option to determine the minimum distance between trade signals, and it is either a true or false selection from the dropdown menu. 
+
+**Minimum distance ATR multiplier** is a number greater than 0 and calculates the distance in pips based on what your ATR had been nominated as. So if the ATR was 14, and you had nominated 1.5 in this field, then the minimum distance between trades would be 14 x 1.5 = 21. 
+
+**ATR Period Source** is not an input field as such, but an instruction to advise that the user has to nominate the ATR period via the Exit Parameters Fixed Target ATR Field. Just something you have to be aware of. 
+
+ 
+
+## Session Profit Limit  
+
+Some may use this EA as a day trading tool and may have a specific daily $ target in mind, or they are just happy with a specific daily profit for other reasons. This feature allows you to do this by nominating a $ amount. Once that target is met, the EA will stop taking new trades in the sequence and will close that sequence at the next opportunity, and no new sequences will be commenced until the next start time. 
+
+The start & end times for this feature are nominated via the above Trading Session Times input fields. You can leave the Enable Trading Hours Filter as ‘false’ but you would have to populate the Trading Start & End times at least. 
+
+**Stop trading after profit per session** is the $ amount you wish to achieve. If you were after $100, then it’s just a matter of entering 100 in this field. If you don’t want to use this feature, then simply put a 0 in there. 
+
+ 
+
+## Advanced Entry Options 
+
+**(info only)** is just an advisory stating that if this feature is activated, then there will only be one sequence per direction at any one time. 
+
+If you select this feature, it changes the entry method for subsequent trades in a sequence. After the 1st trade in sequence is taken as per your selected entry strategy, subsequent trades in this sequence will only be taken when there has been a new valid BB/QQE & QMP trade signal… not just a QMP signal. 
+
+ 
+
+An example is probably the easiest way to explain this ... .If I was using the BB entry method and my exit strategy was the opposite BB band, and a valid sell signal presented, then the EA would take that sell trade as per normal. However, until the exit of that sequence, no further sell trades would be taken unless price had first breached the BB centre band and then gone back up to the upper band and a QMP dot also presented, and so on until the sequence exits. 
+
+ 
+
+This greatly reduces the number of trades and can possibly limit drawdown. But having said that, you may be in sequences a lot longer and you may suffer a bigger drawdown on the lower number of trades anyway.  
+
+ 
+
+**All DCA Signals Must Match Entry** is simply a true or false selection from the dropdown menu to decide if you want to use this feature or not.  
+
+ 
+
+If you wanted to limit the maximum number of trades in a sequence whilst using this feature, then you would have to populate the input field above titled **Max Trades Per Sequence** in the Trading Parameter block. 
+
+ 
+
+ 
+
+## Higher Timeframe Direction Filter 
+
+** **
+
+Exactly what the name suggests where you can use a higher time frame to filter trades. For example, if you applied the EA to a 1hr chart and were using the BB as your entry method, and had selected the Daily chart as your higher time frame filter, then the Daily chart would have to be displaying the same signal before any trades are taken on the 1hr chart. So basically whatever settings you use on the 1hr chart with the EA, will also apply to the Daily chart. 
+
+ 
+
+With this feature activated, there will be a much lower number of trades taken, but the overall risk should also be greatly reduced. 
+
+ 
+
+**Trade only in higher TF direction** is just a simple true or false selection from the dropdown menu if you want to use this feature or not. 
+
+ 
+
+**Higher Timeframe** is obviously the time frame you want to use and is selected from the dropdown menu. Just be aware that this time has to be higher than the chart time frame that the EA is attached to or the EA may not work correctly. 
+
+ 
+
+ 
+
+## MA Filter (first trade only) 
+
+ 
+
+Another filter option where you can elect to use a Moving Average (MA) as a filter to help reduce risk. The MA can be used in 2x different ways and only applies to the 1st trade in any sequence. All your other settings are also considered when using this filter.. 
+
+ 
+
+**Use MA Filter** is just a simple true or false selection from the dropdown menu if you want to use this feature or not. 
+
+ 
+
+**MA Filter ****Behaviour** is where you choose which way you want this MA filter to work. You have 2x choices in the dropdown menu …. Buy Above / Sell Below or Buy Below / Sell Above. Some traders like to trade away from the MA and some traders like to trade towards the MA, so this is where you make that choice. 
+
+ 
+
+If you select Buy Above / Sell Below, you will get a lot less trades and therefore your risk should be reduced. Here you are basically choosing to trade in the same direction as the MA with buy trades above the MA and sell trades below the MA.  
+
+ 
+
+If you select Buy Below / Sell Above, it is similar to reversion to the mean type trading where you are hoping price goes back to the MA, which it always does, but keep in mind that it could take a long time to do so. It's not necessarily price coming back to the MA, as it could be the MA going to the price. 
+
+ 
+
+**MA Period**, **MA Method** & **MA Applied Price** are just the preferred settings for your MA Filter. You would type a number in the MA Period field and the other 2x fields are selected from their dropdown menus.  
+
+ 
+
+ 
+
+## On Screen Displays 
+
+This block of  settings refers to the displaying of lines on the chart, where the user can either elect to display these or not, and also nominate the colour and style of them. I shouldn't need to go through them all individually as the input fields describe each one in enough detail.  
+
+It is a good idea to have these lines on the charts as they give you a good idea of where you are at in a sequence, especially the overall break even level. These lines can be a great visual aid, especially in visual testing mode in the MT5 Strategy Tester.  
+
+** **
+
+## Display Panel  
+
+This refers to the information box that is displayed on the chart when the EA has been activated. This is just some basic account info and open trade/sequence information etc. Some traders refer to this as the On Screen Display (OSD), and you have a choice of whether you wish to display this or not by selecting either true or false in the **Show info panel on chart**** **input field. The remaining input fields refer to the position of this panel on the chart and the colours you wish to use. If you are going to move it, then just make a note of the default settings before adjusting these, so if you do make a mess of it, then you know where to go back to.  
+
+## Summary  
+
+That's it for the description of the EA and also the explanation of the various settings it uses. As you can see, there are many options available, where the user could get a little creative. But like I have been saying over and over again, make sure you test the settings you want to use so you have a very good understanding on how they work.  
+
+And I will say it again..... this can be a high risk EA that can blow up an account if you are not smart about your money management. You have been warned! Start small and once you are comfortable with things, then you can always slowly ramp things up, whether that be by increasing your base lot size or adding more pairs etc.  
+
+So if you are going to open a $2000 live account with 30:1 leverage, then test the EA either in the Strategy Tester or a demo account using the same broker with the same balance and leverage. There is no point in opening a $2000 account with Oanda with 50:1 leverage and then doing all your testing on a $100000 Eightcap account with 300:1 leverage as that would be like comparing apples to oranges. 
+
+ 
+
+This EA has been extensively tested by us, but it is not possible to test every combination on every MT5 platform, so there may be some issues with some users. If there is, then we are more than happy to assist you with any problems you may be experiencing. It may be the case that it is a problem at our end that requires an actual fix or modification to the EA itself. That is something we would be more than happy to attend to.  
+
+All we ask is that you give us as much information as possible about the problem, which could include a 
+
+set file and information about the instrument traded, the time frame it was traded on and the time period in question. And any other information you think would be relevant, including screenshots if possible. But just make sure you check all the EA settings first as it may be something as simple as having too small of a max spread where the EA is not taking any trades at all, or something similar.  
+
+We would also appreciate any feedback (or constructive criticism) and we are open to suggestions on ways to possibly improve the EA. We do have a few ideas of our own and have begun working on some of these already, but are always happy to listen to other users' suggestions.

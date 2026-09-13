@@ -1,0 +1,147 @@
+; === Position Sizing ===
+InpMultiplierSystem=1
+InpFibSequence=1
+InpInitialLot=0.01
+InpLotSizeMode=0
+InpLotPercent=15.0
+InpStepAmount=1000.0
+InpLotPerStep=0.01
+InpMaxInitialLot=1.0
+; === Trading Parameters ===
+InpMagicNumber=123456
+InpSlippage=3
+InpMaxSpread=40
+InpMaxTradesPerSequence=0
+InpMaxSequencesPerDirection=3
+InpTradeDirection=0
+InpAllowBuySellAtSameTime=true
+InpUserComment=DCA-EA-V21.0
+; === Indicator Mode ===
+InpIndicatorMode=0
+; QMP Filter Settings ===
+InpQMPFast=12
+InpQMPSlow=26
+InpQMPSmooth=9
+InpQMPSF=1
+InpQMPRSI_Period=8
+InpQMPWP=3
+; Bollinger Band Settings ---
+InpBBPeriod=35
+InpBBDeviation=2.25
+InpBBAppliedPrice=3
+InpUseBBWidthFilter=false
+InpBBMinWidthPercent=0.5
+InpRequireCenterBandCross=true
+InpNoTriggerOnCentralBandBreach=true
+InpRequireBBBandTouchForReentry=false
+InpBBExitOnBreach=true
+InpAlwaysCloseOnOppositeBand=false
+; QQE Settings ===
+InpQQEOverbought=60.0
+InpQQEOversold=40.0
+InpQQESmoothingPeriod=7
+InpQQERSIPeriod=14
+InpQQEMultiplier=1
+InpRequireQQEScenarioBForReentry=false
+; === Exit Strategy ===
+InpExitStrategy=0
+InpUseDynamicStop=false
+InpDynamicStopDistancePips=20.0
+; Recovery Mode Settings ===
+InpBreakevenBufferPips=10.0
+; === Exit Parameters - Fixed Target ===
+InpFixedTargetType=1
+InpProfitTargetCurrency=50.0
+InpProfitTargetPips=50.0
+InpATRPeriod=14
+InpATRMultiplier=2.0
+InpShowTakeProfitLine=true
+InpTakeProfitLineColor=16748574
+; === Exit Parameters - Trailing Stop ===
+TRAILING_START_INFO=Trailing starts on first pips or dollar setting
+InpTrailingStartPips=50
+InpTrailingStartDollars=50.0
+InpTrailingStepPips=40
+InpUseATRForTrailingStart=false
+InpTrailingStartATRMultiplier=1.5
+InpUseATRForTrailingDistance=false
+InpTrailingDistanceATRMultiplier=1.0
+InpTrailingStepBlockPips=1
+; === Risk Reduction ===
+InpUseRiskReduction=false
+InpRiskReductionMinTrades=5
+InpRiskReductionBufferPips=10.0
+; === Trading Session Times ===
+InpUseTimeFilter=false
+InpTimeReference=0
+InpGMTOffset=0
+InpTradingStartTime=08:00
+InpTradingEndTime=20:00
+InpTradeMonday=true
+InpTradeTuesday=true
+InpTradeWednesday=true
+InpTradeThursday=true
+InpTradeFriday=true
+InpTradeSaturday=true
+InpTradeSunday=true
+; === End of Day ===
+InpUseEOD=false
+InpEODTime=20:00
+InpEODAction=0
+; === End of Week ===
+InpUseEOW=false
+InpEOWTime=22:00
+InpEOWAction=0
+; === ADVANCED SETTINGS ===
+; --- Partial Close Management ---
+InpPartialClose_Info=This will close all but one trade.
+InpUsePartialClose=false
+InpPartialClosePercent=50
+InpPartialCloseBreakevenStepPips=10.0
+; --- Signal Distance Filter ---
+InpUseMinimumSignalDistance=false
+InpMinDistancePips=10.0
+InpUseATRForMinDistance=false
+InpMinDistanceATRMultiplier=1.5
+SIGNAL_DISTANCE_ATR_INFO=Note: ATR Period is taken from 'Exit Parameters - Fixed Target' section (InpATRPeriod)
+; --- Session Profit Limit ---
+InpStopAfterProfitPerSession=0.0
+; --- Advanced Entry Options ---
+InpAllDCA_SignalsMatchEntry_Info=If this is selected there will only be one sequence per direction.
+InpAllSignalsMatchEntryCriteria=false
+; --- Higher Timeframe Direction Filter ---
+InpTradeInHigherTFDirection=false
+InpHigherTimeframe=16388
+; --- MA Filter (first trade only) ---
+InpUseMAFilter=false
+InpMAFilterBehaviour=0
+InpMAPeriod=50
+InpMAMethod=1
+InpMAAppliedPrice=1
+; === On Screen Displays ===
+InpShowTrailingStops=true
+InpBuyTrailingColor=65280
+InpSellTrailingColor=255
+InpTrailingLineStyle=1
+InpTrailingLineWidth=1
+InpShowBreakevenBufferLine=true
+InpBreakevenBufferColor=42495
+InpShowBreakevenLine=true
+InpBreakevenLineColor=65535
+InpShowRiskReductionLine=true
+InpRiskReductionColor=16776960
+InpShowSequenceStartEndLines=true
+InpSequenceStartColor=16748574
+InpSequenceEndColor=16711935
+InpSequenceLineStyle=2
+InpSequenceLineWidth=1
+; === Display Panel ===
+InpShowDisplayPanel=true
+InpPanelX=12
+InpPanelY=24
+InpPanelHeaderColor=55295
+InpPanelProfitColor=65280
+InpPanelLossColor=4678655
+InpPanelInfoColor=12632256
+InpPanelBgColor=2103830
+InpPanelBorderColor=5916220
