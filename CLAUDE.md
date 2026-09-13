@@ -50,6 +50,12 @@ lives. Always compile through the actual portable install:
 
 ## Strategy Tester
 
+**Always ask the user first — every time — whether they want you to run a**
+**backtest yourself or run it manually and share the results.** This applies
+to every backtest and diagnostic run, not just the first one in a session;
+don't assume standing permission from an earlier "yes" in the same
+conversation carries forward to the next run.
+
 `terminal64.exe /portable /config:"<ini>"` runs a headless backtest — but:
 
 - **Close the live terminal first.** MT5 allows only one instance per data
