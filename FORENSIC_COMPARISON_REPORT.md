@@ -278,3 +278,27 @@ The only candidate breach *before* the dot is 2025.12.31 16:00 — a genuine tou
 **Fix applied:** `g_bbBuyArmed = true, g_bbSellArmed = true, g_qqeBuyArmed = true, g_qqeSellArmed = true` (was `false` for all four). Compiles clean (0 errors/warnings). Not yet re-verified against the benchmark — pending the user's decision on whether to run that backtest now or run it themselves.
 
 **Why this doesn't reopen a live-trading risk:** in live/demo use, `LoadState()` overwrites this default with the actual persisted latch value on every restart after the first; the `true` default only ever matters for a genuinely fresh chart with no state file yet — the same situation the other three latches were already designed for.
+
+---
+
+## 11. §5.3 Fix Verification — Blanket Pre-Arm Was Wrong, Refined, and a Second Bug Found
+
+**First verification result:** the blanket "all four latches start true" fix produced 49 trades / 98 deals — overshooting the benchmark's 47/94 (which the pre-§5.3 code had matched exactly). Tracing why: our SELL side's first-ever trade already matched the benchmark exactly *before* this fix (2026.01.21 12:00:00 @ 1.17034, with `g_bbSellArmed` starting `false`). Pre-arming it unconditionally introduced a spurious extra SELL sequence on 2026.01.02 16:00:00 that the reference never opens — the fix was correct for BUY (which needed a pre-armed start) but wrong for SELL (which didn't).
+
+**Refined fix:** `InitializeZoneLatchesFromHistory()`, called once from `OnInit()` before `LoadState()`, scans a bounded 10-bar window of real historical bars immediately preceding the EA's first bar and computes each of the four latches' actual starting value from genuine breach/oversold/overbought conditions — instead of assuming a fixed default (true or false) for all of them. This is the same "no time limit" carry-forward rule already confirmed correct for in-test breaches everywhere else in this report, just applied retroactively to the handful of bars right before the EA's own tracking begins. The 10-bar window is a deliberately generous, clearly-flagged margin over the one confirmed data point (the reference's BUY entry is explained by a breach exactly 2 bars before its first live bar) — not a reverse-engineered exact constant.
+
+**Second verification result:** 48 trades / 96 deals — down from 49/98, but still one extra trade over the benchmark's 47/94. The BUY-side fix held exactly (2026.01.02 04:00:06 @ 1.17609, matching the reference precisely) and the spurious Jan 2 SELL sequence was gone, but a *new* spurious sequence appeared: a second BUY sequence opened on 2026.01.05 20:00:05 (0.01 lot) alongside the correct add-on to sequence 1 (0.02 lot) — something the reference does not do.
+
+**Tracing this surfaced a second, independent, confirmed bug** — not a further tuning problem with the lookback window. `UpdateCentreCrossReadiness()`:
+
+```mql5
+// as written (wrong):
+if(g_bar1Close > g_bbMiddle1)      g_centreCrossReadySell = true;
+else if(g_bar1Close < g_bbMiddle1) g_centreCrossReadyBuy  = true;
+```
+
+This has BUY and SELL swapped — a close *below* centre was arming BUY-readiness, when `CentreCrossReady()`'s own logic (a new BUY sequence requires `g_centreCrossReadyBuy`) and the function's own doc comment both require the opposite: BUY-readiness should arm on a close *above* centre (a genuine recovery, away from buy territory, that a fresh down-move can later reverse from). With the bug, `g_centreCrossReadyBuy` was true on every single bar throughout the sustained downtrend from Jan 2 onward — defeating the gate exactly the way the original stateless positional check (§9) did, just via an inverted stateful assignment instead. This is a plain implementation bug (evidenced by direct contradiction between the code and its own adjacent comment/caller logic), not a modeling ambiguity requiring further inference. Fixed by swapping the two assignments.
+
+**Status:** both fixes applied and compiled clean (0 errors/warnings). Re-verification backtest pending — to be run by the user this time, per the standing "always ask before running a backtest" rule.
+
+**Unrelated, noted in passing:** two display-input defaults (`InpShowTrailingStops`, `InpShowDisplayPanel`) were found changed to `false` outside this session, in both the live file and the archived `DCA_EA_V1.mq5` snapshot. Confirmed with the user and kept as-is — not reverted, and not related to any of the trading-logic findings above.
