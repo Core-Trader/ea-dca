@@ -1,0 +1,9 @@
+# Compiled MQL5 binaries — never version these, only source (.mq5/.mq4)
+*.ex5
+*.ex4
+
+# Logs
+*.log
+
+# Local, machine-specific Claude instructions (never shared/committed)
+CLAUDE.local.md

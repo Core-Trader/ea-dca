@@ -328,3 +328,155 @@ After Step 6 shipped, the EA exhibited severe slowness and freezing, most notice
 
 **Verified**: file re-checked line-by-line for brace/paren/bracket balance, global-variable-before-declaration, and function-called-before-defined — all clean.
 5. Ready to start drafting the EA's `input` block and the `OnInit()` validation logic (hedging warning, magic-number collision check, exit-strategy/indicator-mode compatibility) as the first concrete code artifact whenever you'd like to proceed.
+
+---
+
+## 16. Round-2 Review: Correction to §14 Step 6 (SUPERSEDED — see §20)
+
+> **§20 supersedes this section.** `reference/DCA_EA.mq5` was removed from the project by the user specifically so the new build would not be anchored to decisions made in that draft. Everything below is kept only as a historical record of what that file contained — it is **not** a status report on the current project and must not be used as a starting point, code source, or completeness baseline for the new EA.
+
+A fresh full read of `reference/DCA_EA.mq5` (now 2,842 lines) shows **§14 step 6 is stale**. Session/EOD/EOW/Session-Profit-Limit gating and the on-screen chart display (Step 7) — both previously logged as "still deferred" — are now fully implemented and wired into `OnTick()`:
+
+- `OnInit()`: `ResetGlobalState()` → `CheckAlgoTradingAllowed()` → `CTrade` setup → `CheckHedgingAccount()` → `CheckMagicNumberCollision()` → `ValidateExitStrategyCompatibility()` → `CreateIndicatorHandles()` → `LoadState()`. Complete and correctly ordered.
+- `OnTick()`: `CheckExitsPerTick()` → `UpdateSessionProfitTracking()` → `CheckEndOfDayAndWeek()` → new-bar detection → `ProcessNewBar()` → `UpdateChartDisplay()` → `SaveStateThrottled()`. Complete.
+- `OnDeinit()`: `SaveState()`, releases all 7 indicator handles, `ReleaseMagicNumberLock()`, `ObjectsDeleteAll()`. Complete.
+- Entry pipeline, all 9 entry gates, all 5 lot-sizing modes, all 6 exit strategies, Dynamic Stop, Partial Close, Risk Reduction, state persistence with the tester-guard and throttle fix (§15) — all present and match the guide's worked examples.
+
+**Practical implication (as it stood before removal):** at the time of this pass, a substantially complete, compiling draft existed at `reference/DCA_EA.mq5`. That file has since been removed (§20) — the project is now, by deliberate decision, back to fresh development from the core spec files in §2.
+
+### Two concrete bugs found in this pass
+
+1. **Take-Profit line is never drawn.** `InpShowTakeProfitLine` / `InpTakeProfitLineColor` are declared and documented (guide: visible only in Pips/ATR target modes, not Currency), but no function anywhere creates or updates a TP `HLine` object — `UpdateSequenceLines()` only handles Trail/BE/BEBuffer/RiskReduction/Start-End lines. A real gap against a documented, input-backed feature.
+2. **Possible Dynamic Stop regression bug.** `HandleProfitGatedExit()` runs on every bar while the BB-centre/QQE-50 exit condition still holds, and unconditionally calls `SetTrailStop(..., stopPrice)` computed fresh from `currentPrice ∓ distance` — with no "only move favorably" guard. The separate per-tick `HandleDynamicStop()` path only tightens the stop via `ActivateOrUpdateTrailingStop()` (favorable-only). Net effect: a later bar-close while still inside the exit zone could silently **loosen** a stop that the per-tick logic had already trailed tighter — which would contradict the guide's explicit "the dynamic stop never moves against you." Needs a Visual Mode test or a direct fix before relying on it.
+
+### Two lower-priority findings
+
+3. Trailing-stop trails behind live bid/ask, using `avgPrice` only to gate the *activation* threshold — almost certainly correct/intended, but the guide's own wording ("trailing stop level is the average of all the trade entries") could be misread literally. Worth a one-line doc clarification.
+4. `ParseCustomMultiplierString()` does a plain `StringToDouble` per comma-split token with no validation. The guide explicitly warns that a stray space or trailing comma in `InpFibSequence` "will not work correctly" — currently that failure mode is a **silently zeroed lot size** on a bad token, not a caught error. Worth adding an `OnInit()` validation pass over the parsed sequence (reject/alert on any zero or negative value) rather than trusting the input string blindly, given lot-size correctness is the EA's core risk control.
+
+---
+
+## 17. Round-2 Review: `_0_JFX_DCA_Type_V_v1_Money.mq5` (third-party reference EA)
+
+This file (~9,140 lines) was not part of the original seven analyzed files. It is **auto-generated output from a no-code EA generator ("EA Builder Pro")**, not hand-written code — so it's reviewed here for *design ideas and risk-control gaps to consider*, not as a code-quality benchmark.
+
+**Confirms the lineage of the new EA's design**: it uses the exact same `QMPFilter`/`QQEAdv` indicator pair, with QQE at SF=7/RSI=14/WP=2 and QMP at Fast=12/Slow=26/Smooth=9/SF=1/RSI=8/WP=3 — matching this project's defaults almost exactly. It also independently arrived at a "clamp to last value" rule for an exhausted custom lot sequence, the same rule already implemented in the new EA.
+
+**Risk/feature ideas present here but absent from the new EA's design** (candidates for §19 stakeholder questions, not automatic additions):
+- An **equity-percentage-of-balance circuit breaker** (`AccountEquity < AccountBalance * BalPercenToClose`) that force-closes the whole basket — a basket-level drawdown stop the new EA currently has no equivalent of (its only circuit breakers are session profit limit and EOD/EOW actions, both profit-side, not loss-side).
+- **Pre-trade margin validation** via `OrderCalcMargin` before sending each order — the new EA does not currently check available margin before opening a DCA add-on, which is a real gap given DCA's margin-usage risk profile (already flagged generically in §8, now confirmed as a concrete missing check by comparison).
+- **Trading-session exclusion windows** (separate from the new EA's inclusion-only session filter) — e.g. "never trade 12:00–13:00" nested inside an otherwise-open session.
+- Commission-aware profit calculations feeding into TP/close decisions — the new EA's profit-target/exit math does not currently account for commission.
+
+**Red flags noted (do not replicate)**: raw `OrderSend()` mixed inconsistently with `CTrade` calls; no `IndicatorRelease()` calls found (likely handle leak); hardcoded magic number with zero collision detection; heavy copy-pasted per-instance module classes instead of parameterization. None of this affects the new EA, which already avoids all four of these patterns.
+
+---
+
+## 18. Round-2 Review: Docx cross-check — nothing material missed, four notes worth flagging
+
+A targeted re-read of `EA_User_Guide.docx` and `DCA_EA_Walkthrough.docx` found no numeric table in the original report (§4 indicator/exit/parameter values) that was wrong. Four smaller items worth carrying forward:
+
+1. The guide states in one passage that "the default settings are 65/35" for QQE Overbought/Oversold, while `default.set` and the code ship **60/40** (elsewhere the guide calls 60/40 "my main setting"). Not a bug — just don't "fix" the code to 65/35 by mistake if someone re-reads that sentence in isolation.
+2. The guide's own worked example for the Signal Distance ATR filter ("if the ATR was 14... 14 × 1.5 = 21") conflates the ATR *period* (14) with an ATR *value* — the code's actual formula (`atr_value × multiplier`) is correct; the guide's example number is just confusing, not a spec to match literally.
+3. The guide describes the HTF Direction Filter as reusing the *same* BB/QQE settings on the higher timeframe (no separate HTF-specific inputs) — confirmed consistent with the code.
+4. The guide calls the Magic Number "6 digit" as a convention, but there's no digit-count validation in code — cosmetic, not worth enforcing.
+
+---
+
+## 19. Round-2 Open Questions for Stakeholders (as originally raised — see §20 for current status)
+
+1. ~~**File location**: should `reference/DCA_EA.mq5` be promoted to `src/experts/DCA_EA.mq5`?~~ — **MOOT.** The file was removed by the user (§20); the new build starts fresh directly in `src/experts/`.
+2. **Take-Profit line**: when the new build reaches display logic, implement `InpShowTakeProfitLine`/`InpTakeProfitLineColor` as a real drawn `HLine` (visible only in Pips/ATR target modes, per the guide) rather than declaring the input and forgetting to wire it — flagged here as a **known pitfall to avoid**, since the removed draft made exactly this mistake.
+3. **Dynamic Stop directionality**: whatever Dynamic Stop implementation the new build uses, make sure per-bar re-evaluation and per-tick tightening can't fight each other and loosen a stop that was already trailed favorably — flagged here as a **design caution**, since the removed draft had a plausible bug of exactly this shape. Not a fix to carry over — a trap to design around from the start.
+4. **Equity-% drawdown circuit breaker (§17)**: adopt something like the JFX EA's "close everything if equity < X% of balance," add it as a new input, or explicitly decide the existing profit-side-only circuit breakers (Session Profit Limit, EOD/EOW) are sufficient by design? *(Still open — independent of the removed file.)*
+5. **Pre-trade margin validation (§17)**: add an `OrderCalcMargin` check before opening each new DCA add-on (reject if insufficient free margin) rather than letting the broker reject the order at send-time? *(Still open.)*
+6. **Session exclusion windows (§17)**: worth adding alongside the planned inclusion-only session filter, or out of scope for V1? *(Still open.)*
+7. **Custom multiplier string validation**: the guide warns a stray space or trailing comma in `InpFibSequence` "will not work correctly" — whatever parser the new build writes should reject/alert on a zero-or-negative parsed value at `OnInit()` rather than silently zeroing a trade's lot size. *(Design requirement to build in from the start, not a patch.)*
+
+---
+
+## 20. Decision: `reference/DCA_EA.mq5` removed — new build starts fresh
+
+**Decision (user-directed):** `reference/DCA_EA.mq5` — the ~2,842-line draft EA reviewed in §16 — has been deleted from the project. The user's stated reason: the new EA should not be biased by implementation decisions already baked into that draft.
+
+**Scope of this decision:**
+- §16 is retained above as a historical record only. None of its code, function names, data structures, or "what's already implemented" claims should be treated as a starting point, template, or completeness baseline for the new build.
+- §19 items 2, 3, and 7 have been reframed from "here's a bug in the existing file" to "here's a pitfall/requirement to design around from the start" — the *lessons* from that draft's mistakes are worth keeping even though the *code* is not.
+- §17 (JFX third-party EA review) and §18 (docx cross-check) are **unaffected** — neither depended on the removed file, and both remain valid inputs for the new build.
+- The core spec (§2–§15: the seven originally analyzed files, the architecture map, the full input inventory, the functional requirements extracted from the guide, the coding standards, and the original nine resolved questions) is **unaffected** and remains the ground truth for development.
+
+**Effective state going forward:** development resumes from the seven core spec files (§2) with no `.mq5` EA source anywhere in the project — `src/experts/` currently holds only a compiled `Diag_DCA_EA_Reference.ex5` and no source file. The next concrete artifact is a new `src/experts/DCA_EA.mq5`, written from the spec in §2–§15, informed by (but not copying) the design ideas in §17 and the pitfalls flagged in §19.
+
+**§19 items 4–6, resolved by the user:**
+- Item 4 (equity-% drawdown circuit breaker): **Skip for V1.** The EA relies on the existing profit-side circuit breakers (Session Profit Limit, EOD/EOW) only; no new input added.
+- Item 5 (pre-trade margin validation): **Add it.** An `OrderCalcMargin` check will gate every new trade (including DCA add-ons) before sending — reject with a logged reason rather than relying on the broker to bounce the order. No new input required; this is an internal safety check in the trade-opening path (built when that path is implemented).
+- Item 6 (session exclusion windows): **Skip for V1.** The session filter stays inclusion-only (start/end time + day-of-week toggles), matching `default.set` exactly.
+
+---
+
+## 21. Build Log — Phase 1 & 2 complete (`src/experts/DCA_EA.mq5`)
+
+**Phase 1** (input block, enums, `OnInit()`/`OnDeinit()` validation, indicator handles) and **Phase 2** (sequence tracking, entry-signal pipeline, lot sizing) are now implemented in `src/experts/DCA_EA.mq5`, written fresh against the spec in §2–§15 with no code carried over from the removed draft. Verified: every `Inp*` name in `default.set` has an exact 1:1 match in the file's input block (scripted diff, zero mismatches); brace/parenthesis balance checked (151/151, 587/587); every function is defined before its first call site (MQL5's define-before-use requirement), checked function-by-function.
+
+**What Phase 2 added:**
+- `Sequence` struct + `g_buySequences[]`/`g_sellSequences[]` arrays, with `SyncSequenceFromLivePositions()` / `PruneClosedSequences()` re-validating against live positions every bar (a position can vanish outside the EA's control — manual close, broker stop-out).
+- Multiplier-array construction (`BuildMultiplierSequence()`) for all five named systems plus Custom (parsed from the now-validated `InpFibSequence`), with last-value clamping beyond array length.
+- All five lot-sizing modes (`ComputeBaseLotForNewSequence()`): Fixed, %Balance/%Equity (margin-based, via `OrderCalcMargin` for a 1-lot reference), Step-Balance/Step-Equity (capped by `InpMaxInitialLot`).
+- The full entry pipeline: per-closed-bar indicator snapshot caching, sticky BB/QQE zone-breach latches (armed on breach, consumed only by a brand-new sequence's first trade — add-ons never consume them), the pending-signal carry-forward mechanic (no time limit, per the guide), and all nine entry gates from §5.3, split into new-sequence-only vs. add-on-only exactly as categorized in §14 step 5.
+- The pre-trade margin check decided in §20 (`MarginOk()`), and the custom-multiplier-string `OnInit()` validation decided in §19 item 7 (`ValidateCustomMultiplierString()`), both built in from the start rather than retrofitted.
+- Robust position-ticket resolution on order send (`SendMarketOrder()` reads `DEAL_POSITION_ID` off the fill deal, not the order/result ticket) — required for correctness on hedging accounts where several positions can coexist on one symbol.
+
+**Explicit assumptions made (spec doesn't give an exact formula — flagged here, not silently decided):**
+1. **%Balance/%Equity lot sizing**: sized so the position's required margin equals `InpLotPercent`% of account balance/equity, using `OrderCalcMargin` for a 1.0-lot reference price. (Same category of inference the original report already flagged for this exact input.)
+2. **Step-Balance/Step-Equity lot sizing**: `base = InpInitialLot + floor(accountValue / InpStepAmount) * InpLotPerStep`, capped at `InpMaxInitialLot` if set.
+3. **"Require Centre Band Cross Before New Sequence"**: implemented as a positional check — a new BUY sequence requires the closed bar to be currently below the BB middle band (SELL: above) — rather than a stateful "must have flipped sides since the last sequence" latch. Simpler and directly testable; flag if the guide intends something stickier.
+4. **"Don't Trigger on Centre Band Breach"**: the signal candle counts as having breached the centre band if its high/low range straddled the middle band (`low <= mid <= high`) — i.e. a whipsaw-prone candle — captured at the moment the signal is recorded.
+5. **Higher Timeframe Direction Filter**: bullish/bearish bias from the HTF's last closed bar — close vs. BB middle band (BB modes) and/or QQE line vs. 50 (QQE modes), reusing the same period/deviation settings as the current-timeframe entry logic. In Both mode, BB and QQE must agree or the direction is neutral (blocks both sides).
+6. **BB Width filter formula**: `(upper − lower) / middle × 100` — same inference the original report already made for this input, now implemented exactly as described there.
+
+**Deliberately stubbed pending Phase 3 (exit logic):** `g_reentryReadyBuy`/`g_reentryReadySell` (the re-entry-after-close gates) start `true` and are read by `ReentryReady()`, but nothing yet sets them `false` on a sequence closing — because no sequence can close yet (no exit logic exists). This is correct/inert for now, not a bug: Phase 3 must set them `false` inside whatever function closes a sequence, and re-arm them on a fresh qualifying BB touch / QQE extreme.
+
+**Not yet built:** exit strategies (all six), Dynamic Stop, Partial Close, Risk Reduction, Recovery Mode, session/EOD/EOW/session-profit-limit gating, state persistence, and the on-screen display — per the original phased plan (§14), these are Phase 3+.
+
+**Compile status:** verified via MetaEditor's command-line compiler (`/portable`, through the actual FTMO portable install at `C:\FTMO Global Markets MT5 Terminal\`, whose `MQL5\Experts\EA-DCA-V1.0` and `MQL5\Indicators\EA-DCA-V1.0` are symlinked directly to this repo's `src\experts` and `src\indicators`) — **0 errors, 0 warnings**, alongside all four indicator files. Note for future compiles: MetaEditor resolves standard-library `#include`s (e.g. `<Trade\Trade.mqh>`) from one fixed shared terminal folder regardless of which data folder the source lives in — always compile through this portable install (`/portable` flag), not an arbitrary AppData terminal profile, or standard includes may fail to resolve.
+
+---
+
+## 22. Build Log — Phase 3 complete (exit strategies, Dynamic Stop, Partial Close, Risk Reduction, Recovery Mode)
+
+All six exit strategies, Dynamic Stop, Partial Close, Risk Reduction, and Recovery Mode are now implemented in `src/experts/DCA_EA.mq5`. Compiles clean (0 errors, 0 warnings, verified via the portable MetaEditor install per above).
+
+**What Phase 3 added:**
+- `Sequence` struct extended with `recoveryModeActive`, `trailStopActive`, `trailStopPrice`, `partialCloseDone`.
+- `CheckExitsPerTick()`, called from `OnTick()` before the entry pipeline, dispatches each open sequence to one of six per-strategy handlers based on `InpExitStrategy`. BB Centre Band's "close" mode and the QQE 50 condition read the same per-closed-bar snapshot Phase 2 already refreshes once per bar, so they're effectively bar-close driven even though evaluated every tick — no separate per-bar exit pass was needed.
+- **Dynamic Stop**: arms once the exit condition is met and the sequence is at breakeven+buffer; tightens favorably only (the exact directionality trap flagged in §19 item 3 is guarded against by construction — `ManageActiveTrailStop()` only ever overwrites the stop with a strictly more favorable value); fully disarms and resumes normal signal-taking if profit falls back to ≤0, exactly per §5.5.
+- **Partial Close**: closes all trades but the most recent once ≥2 trades are open and the exit condition is met in profit, optionally reducing the survivor by 50% (`InpPartialClosePercent`); a 1-trade sequence skips straight to arming a breakeven(+trailing) stop on it directly, per §5.6. Both paths converge on the same protective-stop mechanism. A sequence past Partial Close is now excluded from `FindOpenSequenceWithRoom()` — no further add-ons, matching the spec's "also pauses new entries" behavior.
+- **Recovery Mode** (§5.7): when an exit condition fires while a sequence is below breakeven+buffer, the sequence is marked in-recovery and re-checked every tick (regardless of the condition's later state) until profit reaches the buffer, rather than closing early. Wired into two places: the exit handlers (`HandleBBCentreOrQQE50`, `HandleBBOpposite`) set `recoveryModeActive`, and `AddOnGatesPass()` (Phase 2) now waives the All-Signals-Match-Entry zone requirement — but *not* Minimum Signal Distance — for a sequence currently in recovery, per the guide's specific framing of what Recovery bypasses.
+- **The re-entry-after-close gates Phase 2 stubbed** are now fully wired: `UpdateZoneBreachLatches()` arms `g_reentryReadyBuy/Sell` on a fresh qualifying BB touch or QQE extreme, and `CloseSequenceAndCleanup()` resets them to `false` on every sequence close (harmless no-op when neither `InpRequireBBBandTouchForReentry` nor `InpRequireQQEScenarioBForReentry` is enabled).
+
+**Explicit assumptions made (spec doesn't give exact behavior — flagged here, not silently decided):**
+1. **Risk Reduction semantics**: once a sequence reaches `InpRiskReductionMinTrades` trades, it closes outright as soon as profit reaches `InpRiskReductionBufferPips` — an independent safety net checked first, ahead of (and regardless of) the primary Exit Strategy's own condition. The surviving spec content never described this input beyond its name and defaults.
+2. **`InpAlwaysCloseOnOppositeBand`**: interpreted as bypassing the breakeven+buffer/Recovery Mode gate entirely for the BB Opposite Band strategy — an unconditional close at the opposite band even at a loss when `true`; when `false` (default), Opposite Band exit respects the same Recovery Mode logic as Centre Band/QQE50, consistent with §5.7 explicitly listing it as Recovery-eligible.
+3. **BB Centre Band vs. BB Opposite Band breach timing**: `InpBBExitOnBreach` governs only the Centre Band strategy (per its own input comment); Opposite Band is always a live/per-tick breach check, since the guide gives it no separate toggle.
+4. **Fixed Target (ATR mode)** and **Trailing Start/Distance (ATR mode)** all measure from the sequence's volume-weighted average entry price, consistent with the `ENUM_FIXED_TARGET_TYPE` comment already written in Phase 1 ("Fixed Pips From Average Entry").
+
+**Deliberately not built yet (Phase 4+):** session/EOD/EOW/session-profit-limit gating, state persistence, and the on-screen display panel/chart lines — per the original phased plan (§14).
+
+---
+
+## 23. Build Log — Phase 4 complete (session/EOD/EOW, state persistence, on-screen display)
+
+All remaining planned functionality is now implemented in `src/experts/DCA_EA.mq5`. Compiles clean (0 errors, 0 warnings, portable MetaEditor install). **User-confirmed:** a Strategy Tester backtest with default `default.set` settings ran successfully before this phase began (Phases 1–3 only); since every Phase 4 feature defaults to off/inert in `default.set` (`InpUseTimeFilter=false`, `InpUseEOD=false`, `InpUseEOW=false`, `InpStopAfterProfitPerSession=0.0`), a default-settings backtest should behave identically after this phase — the new code paths are simply no-ops until a stakeholder enables them.
+
+**What Phase 4 added:**
+- **Trading Session filter** (`IsWithinTradingSession()`): gates ALL new position-opening (new sequences and add-ons alike); never gates exits. Handles broker/local/GMT+offset time references and an overnight session that wraps midnight (start > end).
+- **End of Day / End of Week** (`CheckEndOfDayAndWeek()`): fires once per calendar day (EOW additionally requires Friday) the moment the reference time-of-day reaches the configured trigger, applying Close-If-Profitable / Close-If-Losing / Close-All / Do-Nothing per sequence.
+- **Session Profit Limit** (`SessionProfitLimitReached()`): blocks only brand-new sequences once the current day's realized profit (accumulated in `CloseSequenceAndCleanup()` and `ExecutePartialCloseIfDue()`, reset on day rollover) reaches the configured amount.
+- **State persistence**: plain delimited text under `MQL5/Files/`, one file per (Symbol, Magic Number), matching the naming and format decided in §13 item 8. Built the §15 performance fix in from the very start this time, not retrofitted after the fact: routine saves are throttled to ~2 real seconds via `GetTickCount64()`, while trade-open, sequence-close, and partial-close each call `SaveState()` directly. The `MQLInfoInteger(MQL_TESTER)` guard on both `SaveState()` and `LoadState()` — the exact fix for the root cause documented in §15 (a leftover file corrupting a fresh backtest's starting state) — was included from the first line of this code, not discovered the hard way a second time.
+- **On-screen display**: per-sequence Trail/Breakeven/Breakeven-Buffer/Risk-Reduction lines, persistent Sequence Start/End vertical markers, an info panel (open sequence counts, floating P/L, session realized profit), and — closing the one concrete gap found in the removed draft's review (§16 finding 1) — a working **Take-Profit line**, shown only in Pips/ATR Fixed-Target modes per the input's own doc comment.
+
+**Structural note:** several Phase 4 pieces had to be front-loaded earlier in the file than a first pass would suggest, purely due to MQL5's define-before-use requirement — `TryEnterSequence()`/`NewSequenceGatesPass()` (Phase 2) call `IsWithinTradingSession()`/`SessionProfitLimitReached()`/`SaveState()` directly, so the session/time helpers and the save-side of state persistence sit ahead of `NewSequenceGatesPass()` in the file, while `LoadState()` and the display functions (only ever called from `OnInit()`/`OnTick()` at the very end) stay in a later block with no such constraint. This mirrors the exact kind of reordering the original (now-removed) draft needed for the same reason — a consequence of the language, not a design choice inherited from that draft.
+
+**Explicit assumption made:** "session" (for the Session Profit Limit) = one calendar day in `InpTimeReference`'s timezone, resetting at midnight — the surviving spec gives only the input's name and default.
+
+**The EA is now feature-complete against the original nine-step build plan (§14).** Recommended next step: a fresh Strategy Tester pass — ideally Visual Mode — specifically exercising the Phase 4 additions (a trading-hours window, EOD/EOW actions, the session profit limit, and a live/demo-style two-restart cycle to confirm state persistence round-trips correctly), plus the six assumptions flagged across §16–§23 wherever they're easy to eyeball against expectations.

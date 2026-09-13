@@ -37,7 +37,7 @@ input int  Slow               = 26;
 input int  Smooth             = 9;
 input bool ZeroLag            = true;
 input bool ShowMarkersOnCross = true;
-input bool PopUp_Alert        = true;
+input bool PopUp_Alert        = false;
 input bool PushNotifications  = false;
 //+------------------------------------------------------------------+
 //| Global variabels                                                 |
