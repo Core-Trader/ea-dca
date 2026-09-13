@@ -223,3 +223,30 @@ The sequence still closes at the identical intrabar timestamp, 2026.01.12 15:47:
 Same bar, same price, same close bar, same close price (4-point difference — noise-level, likely spread/rounding), same profit to within 4 cents. **Our engine is correctly reproducing the reference's second concurrent basket — it just has nowhere to also keep tracking the first one**, because it closed sequence 1 outright instead of letting it run in parallel (§5.2). This is direct, trade-level confirmation that §5.2 — not any remaining exit-timing issue — is the dominant cause of the still-open gap in this region, and very likely elsewhere in the test.
 
 **Recommendation:** proceed to §5.2 next. §5.1 is verified correct and should be kept as-is.
+
+---
+
+## 9. §5.2 Implementation and a Second, Related Bug Found During Verification
+
+Implemented the proposed rule: `AddOnToAllOpenSequences()` (loops every open, non-full sequence on a dot, instead of routing to only the first one found) and `TryOpenNewSequence()` (independent check, gated by `NewSequenceGatesPass()` + the `InpMaxSequencesPerDirection` cap), both triggered from the same dot in `ProcessNewBar()` rather than as a mutually-exclusive either/or. `FindOpenSequenceWithRoom()` (the function that made this structurally impossible) was removed as dead code.
+
+**First backtest after this change moved the wrong way** (trades 45→44, not toward 47) — tracing why surfaced a second, independent bug in the same area:
+
+`CentreCrossReady()` (`InpRequireCenterBandCross`, on by default) was a **stateless positional check** — "is price currently below/above the middle band right now" — rather than a stateful latch. During a sustained excursion (e.g., 2026.01.02–01.20, while price stays below the middle band the whole time), this check is true on almost every bar, so as soon as `TryOpenNewSequence()` could actually be reached (after the §5.2 structural fix), it fired far too often — e.g. an extra, incorrect new sequence opened on 2026.01.05 (confirmed in the deal log: a spurious 0.01 BUY alongside the correct 0.02 add-on), which the reference does not do. This exact simplification had already been flagged as a candidate wrong assumption when it was written (§21 of this same report, "implemented as a positional check... rather than a stateful latch").
+
+**Fix:** replaced it with `g_centreCrossReadyBuy`/`g_centreCrossReadySell` — latches that start `true`, are consumed (`false`) when a new sequence opens in that direction, and only re-arm once price *closes on the opposite side of the middle band* at least once afterward (`UpdateCentreCrossReadiness()`, called once per bar). This requires a genuine recovery-then-reversal before a second parallel sequence can be justified, rather than merely "still on the same side of centre as before." Added to state persistence (`SaveState`/`LoadState` GLOBAL line, 2 new trailing fields) for consistency with the other latches.
+
+### Verification
+
+| Metric | §5.1 only | §5.2 (structural, before CentreCrossReady fix) | §5.2 complete | Benchmark |
+|---|---|---|---|---|
+| Total Trades | 45 | 44 | **47** | **47** |
+| Total Deals | 90 | 88 | **94** | **94** |
+| Total Net Profit | 105.28 | 112.11 | 114.89 | 258.57 |
+| Profit Factor | 2.61 | 2.98 | 3.03 | 4.00 |
+| Short Trades | — | — | 12 | 17 |
+| Long Trades | — | — | 35 | 30 |
+
+**Total Trades and Total Deals now match the benchmark exactly (47/94).** Re-traced the 2026.01.02–01.20 region deal-by-deal against the benchmark: the spurious Jan 5 sequence is gone, and the 2026.01.16 16:00:01 sequence (opened fresh after our sequence 1 closed on 01.12, per the still-open §5.1-adjacent Recovery Mode nuance discussed in §8) again matches the benchmark's second sequence's open bar/price exactly.
+
+**Not yet resolved:** the long/short split differs (12 short / 35 long here vs. 17 short / 30 long in the benchmark) despite the identical total, and net profit is still well below the benchmark (114.89 vs. 258.57). The total count matching while the direction split doesn't strongly suggests the remaining gap is concentrated in **which** signals resolve to a trade on each side — consistent with, and possibly the same root cause as, the still-unresolved §5.3 (first-trade entry-timing gap). **Recommended next step:** revisit §5.3 with this new evidence — check whether an equivalent "same bar, different H4 candle" timing gap exists on the SELL side's first trades, the way it does on BUY's.

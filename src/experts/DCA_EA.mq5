@@ -344,6 +344,18 @@ bool g_bbBuyArmed = false, g_bbSellArmed = false, g_qqeBuyArmed = false, g_qqeSe
 //--- the zone-breach detection re-arms them on a fresh qualifying touch/extreme.
 bool g_reentryReadyBuy = true, g_reentryReadySell = true;
 
+//--- Require Centre Band Cross Before New Sequence (InpRequireCenterBandCross).
+//--- A STATEFUL latch, not a positional snapshot: starts ready (so the very
+//--- first sequence isn't blocked), is consumed when a new sequence opens in
+//--- that direction, and only re-arms once price closes on the OPPOSITE side
+//--- of the centre band at least once afterward. A plain "is price currently
+//--- below/above centre right now" check (tried first, see
+//--- FORENSIC_COMPARISON_REPORT.md §9) is nearly always true throughout a
+//--- single sustained excursion, letting new sequences open far more often
+//--- than the reference does — the whole point of this gate is to require a
+//--- genuine recovery-then-reversal, not just "still on the same side."
+bool g_centreCrossReadyBuy = true, g_centreCrossReadySell = true;
+
 //--- Higher Timeframe Direction Filter bias, recomputed once per new bar.
 int g_htfDirection = 0;   // -1 bearish, 0 unknown/neutral (both directions blocked), +1 bullish
 
@@ -981,27 +993,6 @@ bool OppositeDirectionBlocked(bool isBuy)
   }
 
 //+------------------------------------------------------------------+
-//| Finds an open sequence in the given direction that still has room  |
-//| for another trade (InpMaxTradesPerSequence, 0 = unlimited).        |
-//| Returns -1 if none — i.e. a fresh dot must start a NEW sequence.   |
-//| A sequence past Partial Close is never a valid add-on target — its |
-//| remaining trade is being managed toward closure, not grown.        |
-//+------------------------------------------------------------------+
-int FindOpenSequenceWithRoom(bool isBuy)
-  {
-   int total = isBuy ? ArraySize(g_buySequences) : ArraySize(g_sellSequences);
-   for(int i = 0; i < total; i++)
-     {
-      int  count       = isBuy ? g_buySequences[i].count          : g_sellSequences[i].count;
-      bool partialDone  = isBuy ? g_buySequences[i].partialCloseDone : g_sellSequences[i].partialCloseDone;
-      if(partialDone) continue;
-      if(InpMaxTradesPerSequence <= 0 || count < InpMaxTradesPerSequence)
-         return(i);
-     }
-   return(-1);
-  }
-
-//+------------------------------------------------------------------+
 //| New-sequence-only entry gates (report §5.3 / §14 step 5 category). |
 //| Each is a no-op (returns true) when its governing input is off or  |
 //| when it doesn't apply to the active Indicator Mode.                |
@@ -1010,8 +1001,22 @@ bool CentreCrossReady(bool isBuy)
   {
    if(!InpRequireCenterBandCross) return(true);
    if(InpIndicatorMode == INDICATOR_QQE_ONLY) return(true);   // no centre band in QQE-only mode
-   if(!g_bbSnapshotValid) return(false);
-   return(isBuy ? (g_bar1Close < g_bbMiddle1) : (g_bar1Close > g_bbMiddle1));
+   return(isBuy ? g_centreCrossReadyBuy : g_centreCrossReadySell);
+  }
+
+//+------------------------------------------------------------------+
+//| Updates the centre-cross-ready latches from this bar's close       |
+//| relative to the middle band — a close on one side re-arms new-      |
+//| sequence readiness for the OPPOSITE direction (a close below centre |
+//| means price has recovered away from any open SELL sequence's        |
+//| territory, so a fresh SELL sequence can only be justified after a   |
+//| genuine reversal back above centre, and vice versa).                |
+//+------------------------------------------------------------------+
+void UpdateCentreCrossReadiness()
+  {
+   if(!g_bbSnapshotValid) return;
+   if(g_bar1Close > g_bbMiddle1)      g_centreCrossReadySell = true;
+   else if(g_bar1Close < g_bbMiddle1) g_centreCrossReadyBuy  = true;
   }
 
 bool NoTriggerOnCentreBreachOk()
@@ -1100,7 +1105,7 @@ bool HtfDirectionOk(bool isBuy)
 //+====================================================================+
 //| Front-loaded PHASE 4 helpers (chart-object primitives, session/     |
 //| time-of-day helpers). MQL5 requires define-before-use in the same   |
-//| file, and CreateNewSequence()/TryEnterSequence() below need these — |
+//| file, and CreateNewSequence()/TryOpenNewSequence() below need these — |
 //| so, like the chart-object helpers and Sequence-array plumbing in    |
 //| Phase 2, they're defined here rather than down with the rest of     |
 //| the Phase 4 code (session/EOD/EOW handling, state persistence, the  |
@@ -1289,9 +1294,10 @@ bool SessionProfitLimitReached()
 //| Magic Number), rewritten in full on every save. Front-loaded here,  |
 //| ahead of LoadState() (later in the file, once its own dependencies  |
 //| RemoveSequenceAt()/SyncSequenceFromLivePositions() exist), because   |
-//| TryEnterSequence() below calls SaveState() directly on a successful |
-//| entry (a structural event that must survive a crash without         |
-//| waiting for the next throttled tick — see §15).                     |
+//| AddOnToAllOpenSequences()/TryOpenNewSequence() below call SaveState()|
+//| directly on a successful entry (a structural event that must         |
+//| survive a crash without waiting for the next throttled tick — see    |
+//| §15).                                                                 |
 //|                                                                      |
 //| CRITICAL: never runs inside the Strategy Tester. A saved file        |
 //| persists between SEPARATE backtest runs on the same symbol/magic —  |
@@ -1344,13 +1350,15 @@ void SaveState()
    //--- field order: GLOBAL|bbBuyArmed|bbSellArmed|qqeBuyArmed|qqeSellArmed|
    //--- reentryReadyBuy|reentryReadySell|pendingSignal|pendingSignalIsBuy|
    //--- pendingSignalCentreBreached|sessionRealizedProfit|sessionDate|
-   //--- lastEODActionDate|lastEOWActionDate|nextSequenceId
-   string globalLine = StringFormat("GLOBAL|%d|%d|%d|%d|%d|%d|%d|%d|%d|%.2f|%I64d|%I64d|%I64d|%I64d",
+   //--- lastEODActionDate|lastEOWActionDate|nextSequenceId|
+   //--- centreCrossReadyBuy|centreCrossReadySell
+   string globalLine = StringFormat("GLOBAL|%d|%d|%d|%d|%d|%d|%d|%d|%d|%.2f|%I64d|%I64d|%I64d|%I64d|%d|%d",
                                      (int)g_bbBuyArmed, (int)g_bbSellArmed, (int)g_qqeBuyArmed, (int)g_qqeSellArmed,
                                      (int)g_reentryReadyBuy, (int)g_reentryReadySell,
                                      (int)g_pendingSignal, (int)g_pendingSignalIsBuy, (int)g_pendingSignalCentreBreached,
                                      g_sessionRealizedProfit, (long)g_sessionDate,
-                                     (long)g_lastEODActionDate, (long)g_lastEOWActionDate, g_nextSequenceId);
+                                     (long)g_lastEODActionDate, (long)g_lastEOWActionDate, g_nextSequenceId,
+                                     (int)g_centreCrossReadyBuy, (int)g_centreCrossReadySell);
    FileWriteString(handle, globalLine + "\n");
 
    WriteSequencesToFile(handle, true);
@@ -1631,55 +1639,85 @@ void PruneClosedSequences()
   }
 
 //+------------------------------------------------------------------+
-//| Attempts to act on a qualifying signal in the given direction —    |
-//| either as an add-on to an already-open sequence (no zone check     |
-//| needed, unless InpAllSignalsMatchEntryCriteria is on), or as the    |
-//| first trade of a brand-new sequence (full new-sequence gate set,   |
-//| including the zone-armed check). Returns true only if a trade was  |
-//| actually opened.                                                    |
+//| §5.2 fix (see FORENSIC_COMPARISON_REPORT.md): a dot's "add to an     |
+//| existing sequence" and "open a brand-new parallel sequence" are      |
+//| INDEPENDENT triggers, not a mutually-exclusive either/or — both can  |
+//| fire from the same dot, confirmed directly by the reference EA's own |
+//| deal log (e.g. 2026.06.12: one dot adds to TWO different already-    |
+//| open sequences simultaneously; 2026.01.16 and 2026.06.09: one dot    |
+//| both adds to an existing sequence AND opens a new parallel one).     |
+//|                                                                       |
+//| Adds a trade to EVERY currently open, non-full, non-partial-closed   |
+//| sequence in the given direction — not just the first one found.     |
+//| The general trading-permission gates (session/direction/spread/      |
+//| opposite-direction) are checked once, since they don't vary per      |
+//| sequence within the same bar.                                        |
 //+------------------------------------------------------------------+
-bool TryEnterSequence(bool isBuy)
+void AddOnToAllOpenSequences(bool isBuy)
+  {
+   if(!IsWithinTradingSession())       return;
+   if(!DirectionAllowed(isBuy))        return;
+   if(!SpreadOk())                     return;
+   if(OppositeDirectionBlocked(isBuy)) return;
+
+   int total = isBuy ? ArraySize(g_buySequences) : ArraySize(g_sellSequences);
+   for(int i = 0; i < total; i++)
+     {
+      int  count      = isBuy ? g_buySequences[i].count          : g_sellSequences[i].count;
+      bool partialDone = isBuy ? g_buySequences[i].partialCloseDone : g_sellSequences[i].partialCloseDone;
+      if(partialDone) continue;
+      if(!(InpMaxTradesPerSequence <= 0 || count < InpMaxTradesPerSequence)) continue;
+      if(!AddOnGatesPass(isBuy, i)) continue;
+
+      double baseLot    = isBuy ? g_buySequences[i].lockedBaseLot : g_sellSequences[i].lockedBaseLot;
+      int    tradeIndex = isBuy ? g_buySequences[i].count         : g_sellSequences[i].count;
+      double lot        = NormalizeLot(baseLot * GetMultiplierForIndex(tradeIndex));
+
+      if(!MarginOk(isBuy, lot)) continue;
+
+      double filledPrice = 0.0;
+      ulong  ticket = SendMarketOrder(isBuy, lot, filledPrice);
+      if(ticket == 0) continue;
+
+      AppendToSequence(isBuy, i, ticket, lot, filledPrice);
+      SaveState();   // structural event — bypass the per-tick throttle (§15)
+     }
+  }
+
+//+------------------------------------------------------------------+
+//| The new-sequence path — independent of AddOnToAllOpenSequences()    |
+//| above, and of how many sequences are already open (up to the        |
+//| InpMaxSequencesPerDirection cap). Uses the existing sticky zone-     |
+//| armed latch exactly as before; ConsumeZoneLatch() on success is      |
+//| what naturally rations how often a new parallel sequence can open —  |
+//| the latch only re-arms on a genuine fresh breach, which is why new   |
+//| sequences are rare in practice despite being checked every bar.      |
+//| Returns true only if a trade was actually opened.                    |
+//+------------------------------------------------------------------+
+bool TryOpenNewSequence(bool isBuy)
   {
    if(!IsWithinTradingSession())       return(false);
    if(!DirectionAllowed(isBuy))        return(false);
    if(!SpreadOk())                     return(false);
    if(OppositeDirectionBlocked(isBuy)) return(false);
 
-   int  seqIdx       = FindOpenSequenceWithRoom(isBuy);
-   bool isNewSequence = (seqIdx < 0);
+   int maxSeq = InpMaxSequencesPerDirection;
+   if(InpAllSignalsMatchEntryCriteria && (maxSeq <= 0 || maxSeq > 1))
+      maxSeq = 1;
+   if(maxSeq > 0 && CountOpenSequences(isBuy) >= maxSeq) return(false);
+   if(!NewSequenceGatesPass(isBuy)) return(false);
 
-   if(isNewSequence)
-     {
-      int maxSeq = InpMaxSequencesPerDirection;
-      if(InpAllSignalsMatchEntryCriteria && (maxSeq <= 0 || maxSeq > 1))
-         maxSeq = 1;
-      if(maxSeq > 0 && CountOpenSequences(isBuy) >= maxSeq) return(false);
-      if(!NewSequenceGatesPass(isBuy)) return(false);
-     }
-   else
-     {
-      if(!AddOnGatesPass(isBuy, seqIdx)) return(false);
-     }
-
-   double baseLot    = isNewSequence ? ComputeBaseLotForNewSequence(isBuy)
-                                      : (isBuy ? g_buySequences[seqIdx].lockedBaseLot : g_sellSequences[seqIdx].lockedBaseLot);
-   int    tradeIndex = isNewSequence ? 0 : (isBuy ? g_buySequences[seqIdx].count : g_sellSequences[seqIdx].count);
-   double lot        = NormalizeLot(baseLot * GetMultiplierForIndex(tradeIndex));
-
+   double baseLot = ComputeBaseLotForNewSequence(isBuy);
+   double lot     = NormalizeLot(baseLot * GetMultiplierForIndex(0));
    if(!MarginOk(isBuy, lot)) return(false);
 
    double filledPrice = 0.0;
    ulong  ticket = SendMarketOrder(isBuy, lot, filledPrice);
    if(ticket == 0) return(false);
 
-   if(isNewSequence)
-      CreateNewSequence(isBuy, ticket, baseLot, filledPrice);
-   else
-      AppendToSequence(isBuy, seqIdx, ticket, lot, filledPrice);
-
-   if(isNewSequence)
-      ConsumeZoneLatch(isBuy);
-
+   CreateNewSequence(isBuy, ticket, baseLot, filledPrice);
+   ConsumeZoneLatch(isBuy);
+   if(isBuy) g_centreCrossReadyBuy = false; else g_centreCrossReadySell = false;
    SaveState();   // structural event — bypass the per-tick throttle (§15)
    return(true);
   }
@@ -1688,15 +1726,18 @@ bool TryEnterSequence(bool isBuy)
 //| Runs once per closed bar: refreshes the indicator snapshot, updates|
 //| the zone-breach latches and HTF bias, prunes any sequence that has |
 //| gone flat outside the EA's control, then processes this bar's QMP  |
-//| dot — either as an immediate add-on (if a sequence is already open |
-//| in that direction) or as a pending new-sequence signal that keeps  |
-//| retrying on every future bar until the matching zone arms (no time |
-//| limit, per the guide).                                             |
+//| dot. A dot triggers BOTH independent paths — add-ons to every open  |
+//| sequence with room, and (separately) an attempt to open a new       |
+//| parallel sequence if the zone is armed and the concurrent-sequence   |
+//| cap allows it. The new-sequence attempt keeps retrying on every      |
+//| future bar (via the pending-signal latch) until the zone arms — no   |
+//| time limit, per the guide — even across bars with no further dot.   |
 //+------------------------------------------------------------------+
 void ProcessNewBar()
   {
    RefreshBarSnapshot();
    UpdateZoneBreachLatches();
+   UpdateCentreCrossReadiness();
    UpdateHtfDirection();
    PruneClosedSequences();
 
@@ -1704,37 +1745,19 @@ void ProcessNewBar()
    if(dot != 0)
      {
       bool isBuy = (dot > 0);
-      if(FindOpenSequenceWithRoom(isBuy) >= 0)
-        {
-         //--- an open sequence exists in this direction — attempt an immediate add-on
-         TryEnterSequence(isBuy);
-        }
-      else
-        {
-         //--- no open sequence to add to — this dot can only start a NEW sequence,
-         //--- which needs the matching zone armed. A fresh dot always supersedes
-         //--- any older pending one, matching QMP's own trend-flip semantics.
-         g_pendingSignal               = true;
-         g_pendingSignalIsBuy          = isBuy;
-         g_pendingSignalCentreBreached = g_bbSnapshotValid &&
-                                          (g_bar1Low <= g_bbMiddle1 && g_bar1High >= g_bbMiddle1);
-        }
+
+      AddOnToAllOpenSequences(isBuy);
+
+      //--- a fresh dot always supersedes any older pending one, matching
+      //--- QMP's own trend-flip semantics.
+      g_pendingSignal               = true;
+      g_pendingSignalIsBuy          = isBuy;
+      g_pendingSignalCentreBreached = g_bbSnapshotValid &&
+                                       (g_bar1Low <= g_bbMiddle1 && g_bar1High >= g_bbMiddle1);
      }
 
-   if(g_pendingSignal)
-     {
-      if(FindOpenSequenceWithRoom(g_pendingSignalIsBuy) >= 0)
-        {
-         //--- a sequence opened in the meantime (e.g. via the add-on branch above) —
-         //--- the pending new-sequence signal is now moot
-         g_pendingSignal = false;
-        }
-      else if(TryEnterSequence(g_pendingSignalIsBuy))
-        {
-         g_pendingSignal = false;   // consumed
-        }
-      //--- else: keep pending, retry on a future bar once the zone arms
-     }
+   if(g_pendingSignal && TryOpenNewSequence(g_pendingSignalIsBuy))
+      g_pendingSignal = false;   // consumed; else keep pending, retry once the zone arms
   }
 
 bool IsNewBar()
@@ -2232,7 +2255,7 @@ void CheckExitsPerTick()
 //| EOW gating, and the on-screen display. All three are called only    |
 //| from OnInit()/OnTick() at the very end of the file, so unlike the   |
 //| save-side persistence and session/time helpers front-loaded above   |
-//| (needed by TryEnterSequence()/NewSequenceGatesPass()), these have   |
+//| (needed by TryOpenNewSequence()/NewSequenceGatesPass()), these have |
 //| no define-before-use constraint forcing them earlier.               |
 //+====================================================================+
 
@@ -2264,7 +2287,7 @@ void LoadState()
       int n = StringSplit(line, '|', parts);
       if(n < 1) continue;
 
-      if(parts[0] == "GLOBAL" && n >= 15)
+      if(parts[0] == "GLOBAL" && n >= 17)
         {
          g_bbBuyArmed                  = (StringToInteger(parts[1])  != 0);
          g_bbSellArmed                 = (StringToInteger(parts[2])  != 0);
@@ -2280,6 +2303,8 @@ void LoadState()
          g_lastEODActionDate           = (datetime)StringToInteger(parts[12]);
          g_lastEOWActionDate           = (datetime)StringToInteger(parts[13]);
          g_nextSequenceId              = StringToInteger(parts[14]);
+         g_centreCrossReadyBuy         = (StringToInteger(parts[15]) != 0);
+         g_centreCrossReadySell        = (StringToInteger(parts[16]) != 0);
         }
       else if(parts[0] == "SEQ" && n >= 15)
         {
