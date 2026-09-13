@@ -2553,18 +2553,35 @@ void UpdateTakeProfitLine(bool isBuy, int idx)
 //+------------------------------------------------------------------+
 //| Info panel: EA name/symbol header, open sequence counts, floating   |
 //| P/L (colour-coded), and the current session's realized profit.      |
+//|                                                                      |
+//| FIX: OBJ_LABEL does not render embedded "\n" as multiple lines — a   |
+//| single label's OBJPROP_TEXT is always shown as one line, so the      |
+//| previous three-line body collapsed/garbled. Each line is now its     |
+//| own label object at its own Y offset. Also wires up InpPanelInfoColor|
+//| (declared since Phase 1, never actually used until now) for the      |
+//| neutral lines, reserving Profit/Loss colour for the P/L line only.  |
 //+------------------------------------------------------------------+
 #define PANEL_BG_NAME     (EA_DCA_OBJ_PREFIX + "PanelBg")
 #define PANEL_HEADER_NAME (EA_DCA_OBJ_PREFIX + "PanelHeader")
-#define PANEL_BODY_NAME   (EA_DCA_OBJ_PREFIX + "PanelBody")
+#define PANEL_LINE1_NAME  (EA_DCA_OBJ_PREFIX + "PanelLine1")
+#define PANEL_LINE2_NAME  (EA_DCA_OBJ_PREFIX + "PanelLine2")
+#define PANEL_LINE3_NAME  (EA_DCA_OBJ_PREFIX + "PanelLine3")
+#define PANEL_LINE_HEIGHT 16
+
+void DeleteInfoPanelObjects()
+  {
+   DeleteObjectIfExists(PANEL_BG_NAME);
+   DeleteObjectIfExists(PANEL_HEADER_NAME);
+   DeleteObjectIfExists(PANEL_LINE1_NAME);
+   DeleteObjectIfExists(PANEL_LINE2_NAME);
+   DeleteObjectIfExists(PANEL_LINE3_NAME);
+  }
 
 void UpdateInfoPanel()
   {
    if(!InpShowDisplayPanel)
      {
-      DeleteObjectIfExists(PANEL_BG_NAME);
-      DeleteObjectIfExists(PANEL_HEADER_NAME);
-      DeleteObjectIfExists(PANEL_BODY_NAME);
+      DeleteInfoPanelObjects();
       return;
      }
 
@@ -2573,14 +2590,17 @@ void UpdateInfoPanel()
    for(int i = 0; i < ArraySize(g_sellSequences); i++) totalFloating += GetSequenceProfitMoney(false, i);
 
    string header = StringFormat("EA-DCA - %s", _Symbol);
-   string body   = StringFormat("Buy seq: %d   Sell seq: %d\nFloating P/L: %.2f\nSession realized: %.2f",
-                                 ArraySize(g_buySequences), ArraySize(g_sellSequences),
-                                 totalFloating, g_sessionRealizedProfit);
+   string line1  = StringFormat("Buy seq: %d   Sell seq: %d", ArraySize(g_buySequences), ArraySize(g_sellSequences));
+   string line2  = StringFormat("Floating P/L: %.2f", totalFloating);
+   string line3  = StringFormat("Session realized: %.2f", g_sessionRealizedProfit);
+   color  plColor = (totalFloating >= 0.0) ? InpPanelProfitColor : InpPanelLossColor;
 
-   CreateOrUpdateRectangle(PANEL_BG_NAME, InpPanelX - 6, InpPanelY - 4, 220, 60, InpPanelBgColor, InpPanelBorderColor);
-   CreateOrUpdateLabel(PANEL_HEADER_NAME, InpPanelX, InpPanelY, header, InpPanelHeaderColor, 10);
-   CreateOrUpdateLabel(PANEL_BODY_NAME, InpPanelX, InpPanelY + 16, body,
-                        (totalFloating >= 0.0) ? InpPanelProfitColor : InpPanelLossColor, 9);
+   CreateOrUpdateRectangle(PANEL_BG_NAME, InpPanelX - 6, InpPanelY - 4, 220, PANEL_LINE_HEIGHT * 4 + 8,
+                            InpPanelBgColor, InpPanelBorderColor);
+   CreateOrUpdateLabel(PANEL_HEADER_NAME, InpPanelX, InpPanelY,                          header, InpPanelHeaderColor, 10);
+   CreateOrUpdateLabel(PANEL_LINE1_NAME,  InpPanelX, InpPanelY + PANEL_LINE_HEIGHT,       line1,  InpPanelInfoColor,   9);
+   CreateOrUpdateLabel(PANEL_LINE2_NAME,  InpPanelX, InpPanelY + PANEL_LINE_HEIGHT * 2,   line2,  plColor,             9);
+   CreateOrUpdateLabel(PANEL_LINE3_NAME,  InpPanelX, InpPanelY + PANEL_LINE_HEIGHT * 3,   line3,  InpPanelInfoColor,   9);
   }
 
 void UpdateChartDisplay()
@@ -2667,9 +2687,7 @@ void OnDeinit(const int reason)
       DeleteSequenceChartObjects(true, g_buySequences[i].sequenceId);
    for(int i = 0; i < ArraySize(g_sellSequences); i++)
       DeleteSequenceChartObjects(false, g_sellSequences[i].sequenceId);
-   DeleteObjectIfExists(PANEL_BG_NAME);
-   DeleteObjectIfExists(PANEL_HEADER_NAME);
-   DeleteObjectIfExists(PANEL_BODY_NAME);
+   DeleteInfoPanelObjects();
 
    ReleaseIndicatorHandles();
    ReleaseMagicNumberLock();
