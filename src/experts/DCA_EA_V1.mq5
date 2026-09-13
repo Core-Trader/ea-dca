@@ -272,7 +272,7 @@ input ENUM_LINE_STYLE         InpSequenceLineStyle         = STYLE_DOT;         
 input int                     InpSequenceLineWidth         = 1;                 // Sequence Start/End Line Width
 
 input group "Display Panel"
-input bool                    InpShowDisplayPanel  = true;               // Show Info Panel on Chart
+input bool                    InpShowDisplayPanel  = false;               // Show Info Panel on Chart
 input int                     InpPanelX            = 12;                 // Panel X Offset (pixels)
 input int                     InpPanelY            = 24;                 // Panel Y Offset (pixels)
 input color                   InpPanelHeaderColor  = (color)55295;       // Panel Header Colour

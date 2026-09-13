@@ -254,7 +254,7 @@ input ENUM_MA_METHOD          InpMAMethod           = MODE_EMA;                 
 input ENUM_APPLIED_PRICE      InpMAAppliedPrice     = PRICE_CLOSE;               // MA Applied Price
 
 input group "On Screen Displays"
-input bool                    InpShowTrailingStops         = true;              // Show Trailing Stop Lines
+input bool                    InpShowTrailingStops         = false;              // Show Trailing Stop Lines
 input color                   InpBuyTrailingColor          = (color)65280;      // Buy Trailing Stop Colour (Lime)
 input color                   InpSellTrailingColor         = (color)255;        // Sell Trailing Stop Colour (Red)
 input ENUM_LINE_STYLE         InpTrailingLineStyle         = STYLE_DASH;        // Trailing Stop Line Style
@@ -272,7 +272,7 @@ input ENUM_LINE_STYLE         InpSequenceLineStyle         = STYLE_DOT;         
 input int                     InpSequenceLineWidth         = 1;                 // Sequence Start/End Line Width
 
 input group "Display Panel"
-input bool                    InpShowDisplayPanel  = true;               // Show Info Panel on Chart
+input bool                    InpShowDisplayPanel  = false;               // Show Info Panel on Chart
 input int                     InpPanelX            = 12;                 // Panel X Offset (pixels)
 input int                     InpPanelY            = 24;                 // Panel Y Offset (pixels)
 input color                   InpPanelHeaderColor  = (color)55295;       // Panel Header Colour
@@ -337,16 +337,15 @@ double g_multiplierSequence[];
 //--- until consumed by a brand-new sequence's first trade (add-on trades never
 //--- consume it — see the design note above).
 //---
-//--- FIX (FORENSIC_COMPARISON_REPORT.md §5.3): start ARMED, not unarmed. Every
-//--- other new-sequence-only latch in this file (g_centreCrossReadyBuy/Sell,
-//--- g_reentryReadyBuy/Sell) already starts true specifically so it doesn't
-//--- artificially block the very first sequence at EA/test start — this was
-//--- the one latch that inconsistently didn't. Confirmed via a diagnostic
-//--- indicator dump: the reference's very first-ever trade fired on a QMP dot
-//--- with NO qualifying BB breach anywhere earlier in the backtest, meaning
-//--- its zone state must start pre-armed. Harmless in live use past the first
-//--- run — LoadState() overwrites this default with the real persisted value.
-bool g_bbBuyArmed = true, g_bbSellArmed = true, g_qqeBuyArmed = true, g_qqeSellArmed = true;
+//--- FIX (FORENSIC_COMPARISON_REPORT.md §5.3, refined in §11): a blanket
+//--- "start all four pre-armed" was tried first and was wrong — it fixed the
+//--- BUY side but incorrectly also pre-armed SELL, producing a spurious extra
+//--- SELL sequence the reference doesn't open. These now start false, as
+//--- before; InitializeZoneLatchesFromHistory() (called once from OnInit(),
+//--- before LoadState()) computes each latch's real starting value from a
+//--- small bounded window of actual historical bars immediately preceding
+//--- the EA's first bar, instead of assuming a fixed default either way.
+bool g_bbBuyArmed = false, g_bbSellArmed = false, g_qqeBuyArmed = false, g_qqeSellArmed = false;
 
 //--- Re-entry-after-close gates (InpRequireBBBandTouchForReentry / InpRequireQQEScenarioBForReentry).
 //--- Start ready so the very first sequence at EA startup isn't blocked artificially;
@@ -710,6 +709,61 @@ bool CreateIndicatorHandles()
   }
 
 //+------------------------------------------------------------------+
+//| §5.3 fix (see FORENSIC_COMPARISON_REPORT.md §11). Computes each    |
+//| zone-armed latch's real starting value from actual historical bars |
+//| immediately preceding the EA's first bar, instead of assuming a    |
+//| fixed true/false default either way (the same "no time limit"      |
+//| carry-forward rule already confirmed correct for in-test breaches, |
+//| applied retroactively to the small window right before startup).   |
+//|                                                                     |
+//| ASSUMPTION (evidence-based, but the exact window size is inferred  |
+//| beyond the one confirmed data point): the reference's own first    |
+//| BUY entry is explained by a breach exactly 2 bars before its first  |
+//| live bar; its first SELL entry shows no equivalent pre-arming, so   |
+//| whatever sell-side breach existed earlier must lie outside whatever |
+//| window it uses. A 10-bar lookback is used here as a clearly-        |
+//| flagged, generous-but-bounded margin — not a reverse-engineered     |
+//| exact constant. Only meaningful for a genuinely fresh start (Strategy|
+//| Tester always, or a live chart's very first run) — LoadState(),     |
+//| called right after this in OnInit(), overwrites these with the real |
+//| persisted values whenever a state file exists.                      |
+//+------------------------------------------------------------------+
+#define ZONE_STARTUP_LOOKBACK_BARS 10
+
+void InitializeZoneLatchesFromHistory()
+  {
+   for(int shift = 1; shift <= ZONE_STARTUP_LOOKBACK_BARS; shift++)
+     {
+      double high  = iHigh(_Symbol, PERIOD_CURRENT, shift);
+      double low   = iLow(_Symbol, PERIOD_CURRENT, shift);
+      double close = iClose(_Symbol, PERIOD_CURRENT, shift);
+      if(high <= 0.0 || low <= 0.0) break;   // ran out of available history
+
+      if(g_bbHandle != INVALID_HANDLE)
+        {
+         double mid[1], up[1], lo[1];
+         if(CopyBuffer(g_bbHandle, 0, shift, 1, mid) > 0 &&
+            CopyBuffer(g_bbHandle, 1, shift, 1, up)  > 0 &&
+            CopyBuffer(g_bbHandle, 2, shift, 1, lo)  > 0)
+           {
+            if(!g_bbBuyArmed  && low  <= lo[0] && close <= lo[0]) g_bbBuyArmed  = true;
+            if(!g_bbSellArmed && high >= up[0] && close >= up[0]) g_bbSellArmed = true;
+           }
+        }
+
+      if(g_qqeHandle != INVALID_HANDLE)
+        {
+         double q[1];
+         if(CopyBuffer(g_qqeHandle, 0, shift, 1, q) > 0)
+           {
+            if(!g_qqeBuyArmed  && q[0] <= InpQQEOversold)   g_qqeBuyArmed  = true;
+            if(!g_qqeSellArmed && q[0] >= InpQQEOverbought) g_qqeSellArmed = true;
+           }
+        }
+     }
+  }
+
+//+------------------------------------------------------------------+
 //| Releases every indicator handle this EA created. Safe to call     |
 //| even if some handles were never created (INVALID_HANDLE guard).   |
 //+------------------------------------------------------------------+
@@ -1025,8 +1079,17 @@ bool CentreCrossReady(bool isBuy)
 void UpdateCentreCrossReadiness()
   {
    if(!g_bbSnapshotValid) return;
-   if(g_bar1Close > g_bbMiddle1)      g_centreCrossReadySell = true;
-   else if(g_bar1Close < g_bbMiddle1) g_centreCrossReadyBuy  = true;
+   //--- BUG FIX (FORENSIC_COMPARISON_REPORT.md §11): these two lines were
+   //--- swapped — a close BELOW centre was arming BUY-readiness instead of
+   //--- SELL-readiness, which is backwards from the reasoning in the comment
+   //--- above (and from CentreCrossReady()'s own check a few lines up: a NEW
+   //--- buy sequence requires g_centreCrossReadyBuy, i.e. price should have
+   //--- recovered ABOVE centre at some point, not stayed below it). The
+   //--- inverted version was true on every bar throughout a one-directional
+   //--- move, defeating the whole gate exactly like the original stateless
+   //--- positional check this replaced.
+   if(g_bar1Close > g_bbMiddle1)      g_centreCrossReadyBuy  = true;
+   else if(g_bar1Close < g_bbMiddle1) g_centreCrossReadySell = true;
   }
 
 bool NoTriggerOnCentreBreachOk()
@@ -2673,6 +2736,7 @@ int OnInit()
 
    g_sessionDate = CurrentReferenceDate();   // seed today's date so the first tick doesn't
                                               // spuriously look like a day rollover
+   InitializeZoneLatchesFromHistory();       // §5.3 — overwritten below if a state file exists
    LoadState();
 
    Print("EA-DCA: initialized on ", _Symbol, " (Magic ", InpMagicNumber, "). "
