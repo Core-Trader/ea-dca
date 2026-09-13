@@ -250,3 +250,31 @@ Implemented the proposed rule: `AddOnToAllOpenSequences()` (loops every open, no
 **Total Trades and Total Deals now match the benchmark exactly (47/94).** Re-traced the 2026.01.02–01.20 region deal-by-deal against the benchmark: the spurious Jan 5 sequence is gone, and the 2026.01.16 16:00:01 sequence (opened fresh after our sequence 1 closed on 01.12, per the still-open §5.1-adjacent Recovery Mode nuance discussed in §8) again matches the benchmark's second sequence's open bar/price exactly.
 
 **Not yet resolved:** the long/short split differs (12 short / 35 long here vs. 17 short / 30 long in the benchmark) despite the identical total, and net profit is still well below the benchmark (114.89 vs. 258.57). The total count matching while the direction split doesn't strongly suggests the remaining gap is concentrated in **which** signals resolve to a trade on each side — consistent with, and possibly the same root cause as, the still-unresolved §5.3 (first-trade entry-timing gap). **Recommended next step:** revisit §5.3 with this new evidence — check whether an equivalent "same bar, different H4 candle" timing gap exists on the SELL side's first trades, the way it does on BUY's.
+
+---
+
+## 10. §5.3 Resolved — Root Cause Confirmed via Indicator Dump, Fix Applied
+
+**New free evidence, no backtest needed:** compared each engine's first-ever SELL trade using deal logs already on hand. **Identical in both** — 2026.01.21 12:00:00 @ 1.17034, exact match. This immediately narrowed the problem: the entry-timing gap is not a general "first trade of any sequence" defect (the SELL side's very first sequence entry is perfect) — it is isolated specifically to the BUY side's very first trade of the *entire* backtest.
+
+**Diagnostic built to close the gap:** a throwaway EA (`Diag_QMP_BB_Dump.mq5`, deleted after use — not part of this repo) dumped the exact QMP dot state and BB upper/middle/lower for every closed H4 bar from 2025.12.01 through 2026.01.05, run via a fast (`Model=2`, Open-prices-only) Strategy Tester pass. Run with the user's explicit approval.
+
+**What it showed, bar by bar:**
+
+| Bar (open time) | Low | Close | BB Lower | Low ≤ Lower? | Close ≤ Lower? | QMP dot |
+|---|---|---|---|---|---|---|
+| 2025.12.31 16:00 | 1.17203 | 1.17361 | 1.17423 | Yes | Yes | — |
+| 2025.12.31 20:00 | 1.17303 | 1.17454 | 1.17403 | Yes | **No** | — |
+| 2026.01.02 00:00 | 1.17447 | 1.17611 | 1.17392 | No | No | **UP** |
+| 2026.01.02 04:00 | 1.17506 | 1.17514 | 1.17383 | No | No | — |
+| 2026.01.02 08:00 | 1.17206 | 1.17215 | 1.17366 | **Yes** | **Yes** | — |
+
+The QMP UP dot fires on the 2026.01.02 00:00 bar — confirmed the moment the 04:00 bar starts, i.e. 2026.01.02 04:00:0x. **That is exactly the reference's entry time.** A genuine "touched-and-closed-beyond" BB breach (both Low and Close under the lower band) doesn't occur until the 08:00 bar — confirmed at 12:00:00, **exactly our EA's entry time**, since our EA correctly held the dot pending until a real zone breach armed it.
+
+The only candidate breach *before* the dot is 2025.12.31 16:00 — a genuine touch-and-close-beyond breach, four bars earlier. If our sticky zone-armed latch (no time limit, by design — the same rule confirmed correct everywhere else in this report) had been active at that point, it would have stayed armed right through to the dot and produced an immediate 04:00 entry, matching the reference. **It wasn't active, because the latch's initial value at EA/test start was `false`.** The 2025.12.31 16:00 breach happened, in effect, "before the EA existed" from the backtest's point of view — there is no bar before the `FromDate` for the EA's own `OnTick()`-driven latch-tracking to have observed it, even though the *indicator* itself has all the historical data it needs.
+
+**Root cause (confirmed, not inferred):** `g_bbBuyArmed`/`g_bbSellArmed`/`g_qqeBuyArmed`/`g_qqeSellArmed` initialized to `false`. Every *other* new-sequence-only latch in the file (`g_centreCrossReadyBuy`/`Sell`, `g_reentryReadyBuy`/`Sell`) was already deliberately initialized to `true`, with an explicit comment explaining why: so the very first sequence at EA/test start isn't artificially blocked. The zone-armed latches were the one place that principle wasn't applied — an inconsistency in the original design, not a spec ambiguity requiring further inference.
+
+**Fix applied:** `g_bbBuyArmed = true, g_bbSellArmed = true, g_qqeBuyArmed = true, g_qqeSellArmed = true` (was `false` for all four). Compiles clean (0 errors/warnings). Not yet re-verified against the benchmark — pending the user's decision on whether to run that backtest now or run it themselves.
+
+**Why this doesn't reopen a live-trading risk:** in live/demo use, `LoadState()` overwrites this default with the actual persisted latch value on every restart after the first; the `true` default only ever matters for a genuinely fresh chart with no state file yet — the same situation the other three latches were already designed for.

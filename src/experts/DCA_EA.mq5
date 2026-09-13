@@ -336,7 +336,17 @@ double g_multiplierSequence[];
 //--- confirms, with no time limit — so once a breach arms a latch, it stays armed
 //--- until consumed by a brand-new sequence's first trade (add-on trades never
 //--- consume it — see the design note above).
-bool g_bbBuyArmed = false, g_bbSellArmed = false, g_qqeBuyArmed = false, g_qqeSellArmed = false;
+//---
+//--- FIX (FORENSIC_COMPARISON_REPORT.md §5.3): start ARMED, not unarmed. Every
+//--- other new-sequence-only latch in this file (g_centreCrossReadyBuy/Sell,
+//--- g_reentryReadyBuy/Sell) already starts true specifically so it doesn't
+//--- artificially block the very first sequence at EA/test start — this was
+//--- the one latch that inconsistently didn't. Confirmed via a diagnostic
+//--- indicator dump: the reference's very first-ever trade fired on a QMP dot
+//--- with NO qualifying BB breach anywhere earlier in the backtest, meaning
+//--- its zone state must start pre-armed. Harmless in live use past the first
+//--- run — LoadState() overwrites this default with the real persisted value.
+bool g_bbBuyArmed = true, g_bbSellArmed = true, g_qqeBuyArmed = true, g_qqeSellArmed = true;
 
 //--- Re-entry-after-close gates (InpRequireBBBandTouchForReentry / InpRequireQQEScenarioBForReentry).
 //--- Start ready so the very first sequence at EA startup isn't blocked artificially;
