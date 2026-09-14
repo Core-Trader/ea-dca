@@ -302,3 +302,20 @@ This has BUY and SELL swapped — a close *below* centre was arming BUY-readines
 **Status:** both fixes applied and compiled clean (0 errors/warnings). Re-verification backtest pending — to be run by the user this time, per the standing "always ask before running a backtest" rule.
 
 **Unrelated, noted in passing:** two display-input defaults (`InpShowTrailingStops`, `InpShowDisplayPanel`) were found changed to `false` outside this session, in both the live file and the archived `DCA_EA_V1.mq5` snapshot. Confirmed with the user and kept as-is — not reverted, and not related to any of the trading-logic findings above.
+
+---
+
+## 12. Correction — the "CentreCrossReady Swap Fix" in §11 Was Itself Wrong
+
+**The "second bug" reported in §11 was a misdiagnosis.** Verifying it produced a clear regression: 42 trades / 84 deals — *worse* than both the benchmark (47/94) and the un-swapped version's 48/96. Re-checked the reasoning: during a sustained one-directional move (exactly the Jan 2–20 stretch under investigation — close stayed below the middle band on every single bar), **both** orientations of the assignment are continuously true for whichever side matches the trend. The swap therefore could not have been the actual mechanism behind the Jan 5 extra-sequence symptom it was diagnosed against — that diagnosis skipped checking what the *un-swapped* code would have done in the same stretch before concluding the swap was the fix. Reverted to the original orientation (confirmed via `git diff` against the exact commit that had already been backtested to 48/96 — logic is byte-identical, so no new backtest was needed to confirm the revert).
+
+**Where this leaves §5.3, honestly:**
+
+| Configuration | Trades / Deals | Jan 2 BUY entry timing | Jan 5 extra sequence |
+|---|---|---|---|
+| Zone latches start `false` (pre-§5.3) | **47 / 94** (exact benchmark match) | Wrong — 2 bars late (the originally-diagnosed bug) | Absent |
+| + `InitializeZoneLatchesFromHistory()` (bounded lookback) | 48 / 96 | **Correct** — matches reference exactly | Present (not yet explained) |
+
+These two configurations trade off against each other, and the correct choice is not simply "whichever count is closer to 47" — per the task's own instruction not to chase final statistics. The bounded-lookback fix is principled (a real historical scan, not a hardcoded assumption) and directly, verifiably fixes the specific bug that motivated the whole §5.3 investigation. The Jan 5 extra sequence it introduces is a **new, distinct, not-yet-diagnosed** question — plausibly not a bug at all: a genuine in-test BB breach *does* occur at 2026.01.02 08:00–12:00, and by the EA's own already-validated "sticky latch, no time limit" rule (confirmed correct everywhere else in this report), that breach legitimately re-arms the zone. Whether the reference treats that same event as a valid trigger for a second sequence this soon is unknown — resolving it would need the same kind of targeted evidence-gathering as the rest of §5.3 (e.g., checking whether the reference has some minimum elapsed-time-or-distance rule between a direction's sequences that isn't captured by any input already inventoried in this project).
+
+**Recommendation:** keep `InitializeZoneLatchesFromHistory()` — it is verified correct for the bug it targets, unlike the reverted swap. Treat the Jan 5 question as a new, separate, open item rather than continuing to iterate on §5.3 itself.
