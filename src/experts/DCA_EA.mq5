@@ -2170,6 +2170,8 @@ bool ExecutePartialCloseIfDue(bool isBuy, int idx)
 //| it stays "active" and is re-checked every tick regardless of the    |
 //| condition's current state, until profit finally reaches the         |
 //| buffer — matching the guide's "no time limit" framing for this.     |
+//| Recovery Mode applies only when Dynamic Stop is OFF — see §24 of     |
+//| DCA_EA_Analysis_Report.md.                                           |
 //|                                                                      |
 //| FIX (FORENSIC_COMPARISON_REPORT.md §13/§14): both conditionMet and   |
 //| the breakeven+buffer check are now bar-close driven, not live/       |
@@ -2183,6 +2185,22 @@ bool ExecutePartialCloseIfDue(bool isBuy, int idx)
 //| price. This is only evidenced for InpBBExitOnBreach=true (the        |
 //| default.set value, the only one tested against the benchmark) — the  |
 //| =false case is untested and may need its own look later.             |
+//|                                                                      |
+//| FIX (§24): per the EA's actual design description, Dynamic Stop      |
+//| activates as soon as the exit condition is met — full stop, no       |
+//| separate profit/breakeven precondition. The breakeven+buffer gate    |
+//| below (and the Recovery-Mode fallback it feeds) is the correct       |
+//| behavior only when Dynamic Stop is OFF, where closing outright at a  |
+//| loss has to be avoided some other way. When Dynamic Stop is ON, that |
+//| gate is skipped entirely: ArmDynamicStopIfDue() always succeeds, so  |
+//| CloseSequenceAndCleanup() below is never reached for this strategy —  |
+//| "closes outright" is replaced by "switches to trailing" unconditionally,|
+//| exactly as described. If the condition fires while the sequence is   |
+//| still at a loss, the stop arms right where price is now and          |
+//| ManageActiveTrailStop()'s existing profit<=0 check disarms it again  |
+//| on the very next tick — net effect: no change, sequence keeps adding |
+//| trades, matching "lets the sequence recover instead of being stopped |
+//| out."                                                                 |
 //+------------------------------------------------------------------+
 void HandleBBCentreOrQQE50(bool isBuy, int idx, bool isBBMode)
   {
@@ -2193,12 +2211,15 @@ void HandleBBCentreOrQQE50(bool isBuy, int idx, bool isBBMode)
    bool recoveryActive = isBuy ? g_buySequences[idx].recoveryModeActive : g_sellSequences[idx].recoveryModeActive;
    if(!conditionMet && !recoveryActive) return;
 
-   bool atBreakeven = GetSequenceProfitPipsFromClose(isBuy, idx) >= InpBreakevenBufferPips;
-   if(!atBreakeven)
+   if(!InpUseDynamicStop)
      {
-      if(isBuy) g_buySequences[idx].recoveryModeActive = true;
-      else      g_sellSequences[idx].recoveryModeActive = true;
-      return;
+      bool atBreakeven = GetSequenceProfitPipsFromClose(isBuy, idx) >= InpBreakevenBufferPips;
+      if(!atBreakeven)
+        {
+         if(isBuy) g_buySequences[idx].recoveryModeActive = true;
+         else      g_sellSequences[idx].recoveryModeActive = true;
+         return;
+        }
      }
 
    if(!ExecutePartialCloseIfDue(isBuy, idx) && !ArmDynamicStopIfDue(isBuy, idx))
