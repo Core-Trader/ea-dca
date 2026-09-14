@@ -132,7 +132,7 @@ input int                    InpMaxTradesPerSequence     = 0;                  /
 input int                    InpMaxSequencesPerDirection = 3;                  // Max Concurrent Sequences per Direction
 input ENUM_TRADE_DIRECTION   InpTradeDirection           = DIRECTION_BOTH;     // Allowed Trade Direction
 input bool                   InpAllowBuySellAtSameTime   = true;               // Allow Buy & Sell at the Same Time (needs a hedging account)
-input string                 InpUserComment              = "DCA-EA-V21.0";     // Trade Comment
+input string                 InpUserComment              = "DCA-EA-V1.0";     // Trade Comment
 
 input group "Indicator Mode"
 input ENUM_INDICATOR_MODE    InpIndicatorMode          = INDICATOR_BB_ONLY;  // Entry Indicator Mode
@@ -1885,6 +1885,27 @@ double GetSequenceProfitPips(bool isBuy, int idx)
    return(diff / g_pipSize);
   }
 
+//+------------------------------------------------------------------+
+//| Bar-close variant of the above, used specifically by the BB Centre |
+//| Band / QQE 50 + Recovery exit path (FORENSIC_COMPARISON_REPORT.md  |
+//| §13/§14): a targeted diagnostic showed the reference's exit price   |
+//| for a representative sequence is EXACTLY the prior closed bar's     |
+//| close, confirmed at the next bar's open — i.e. Recovery Mode's own  |
+//| breakeven+buffer check is bar-close driven, not live/intrabar, the  |
+//| same way the base exit condition already is. Every OTHER exit       |
+//| strategy (Fixed Target, Risk Reduction, Trailing) still uses the    |
+//| live GetSequenceProfitPips() above — there is no evidence either    |
+//| way for those, since default.set's InpExitStrategy never exercises  |
+//| them against the benchmark.                                         |
+//+------------------------------------------------------------------+
+double GetSequenceProfitPipsFromClose(bool isBuy, int idx)
+  {
+   double avg  = isBuy ? g_buySequences[idx].avgPrice : g_sellSequences[idx].avgPrice;
+   double diff = isBuy ? (g_bar1Close - avg) : (avg - g_bar1Close);
+   if(g_pipSize <= 0.0) return(0.0);
+   return(diff / g_pipSize);
+  }
+
 double ATRValue()
   {
    double a[1];
@@ -1899,28 +1920,14 @@ double TrailingDistance()
   }
 
 //+------------------------------------------------------------------+
-//| BB Centre Band exit condition. Both modes evaluate the same CLOSED  |
-//| bar (Phase 2's per-bar snapshot) — they differ only in the price     |
-//| threshold: InpBBExitOnBreach=true is a "touch" (the bar's high/low   |
-//| reached the middle band), =false requires the bar to actually       |
-//| CLOSE beyond it (a stricter version of the same check). Per the      |
-//| input's own name — "Exit on Breach, Not Just Close" — Breach/Close   |
-//| are two candidate PRICE thresholds, not two different TIMINGS.       |
-//|                                                                      |
-//| FIX (see FORENSIC_COMPARISON_REPORT.md §5.1): this function          |
-//| previously read the live, still-forming bar (shift 0) against live   |
-//| bid/ask every tick, which let a transient intrabar excursion close    |
-//| a sequence the reference implementation clearly did not close at     |
-//| that moment (confirmed by trade-log comparison against the           |
-//| benchmark — our old behavior exited intrabar at a non-bar-boundary   |
-//| timestamp mid-sequence; the reference stayed in for four more days). |
+//| BB Centre Band exit condition — bar-close driven (see the §13/§14   |
+//| fix note on HandleBBCentreOrQQE50() below for why the touch-based    |
+//| "breach" variant this function used to also offer, alongside this    |
+//| close-based one, was removed: a targeted diagnostic showed the       |
+//| reference's exit price is exactly a closed bar's close, confirmed    |
+//| at the next bar's open — for InpBBExitOnBreach=true, the only value  |
+//| ever tested against the benchmark).                                  |
 //+------------------------------------------------------------------+
-bool BBCentreExitConditionTick(bool isBuy)
-  {
-   if(!g_bbSnapshotValid) return(false);
-   return(isBuy ? g_bar1High >= g_bbMiddle1 : g_bar1Low <= g_bbMiddle1);
-  }
-
 bool BBCentreExitConditionBar(bool isBuy)
   {
    if(!g_bbSnapshotValid) return(false);
@@ -2139,19 +2146,30 @@ bool ExecutePartialCloseIfDue(bool isBuy, int idx)
 //| it stays "active" and is re-checked every tick regardless of the    |
 //| condition's current state, until profit finally reaches the         |
 //| buffer — matching the guide's "no time limit" framing for this.     |
+//|                                                                      |
+//| FIX (FORENSIC_COMPARISON_REPORT.md §13/§14): both conditionMet and   |
+//| the breakeven+buffer check are now bar-close driven, not live/       |
+//| intrabar. A targeted diagnostic against a representative sequence    |
+//| showed the reference's actual exit price is EXACTLY the prior H4     |
+//| bar's close, confirmed at the next bar's open — for both the base    |
+//| condition and the Recovery Mode buffer check. The previous touch-    |
+//| based InpBBExitOnBreach=true path (BBCentreExitConditionTick, now    |
+//| unused/removed) and the live-price breakeven check were both firing  |
+//| roughly a full bar earlier than the reference, at a less favorable   |
+//| price. This is only evidenced for InpBBExitOnBreach=true (the        |
+//| default.set value, the only one tested against the benchmark) — the  |
+//| =false case is untested and may need its own look later.             |
 //+------------------------------------------------------------------+
 void HandleBBCentreOrQQE50(bool isBuy, int idx, bool isBBMode)
   {
    if(ManageActiveTrailStop(isBuy, idx)) return;
 
-   bool conditionMet = isBBMode
-                        ? (InpBBExitOnBreach ? BBCentreExitConditionTick(isBuy) : BBCentreExitConditionBar(isBuy))
-                        : QQE50ExitConditionBar(isBuy);
+   bool conditionMet = isBBMode ? BBCentreExitConditionBar(isBuy) : QQE50ExitConditionBar(isBuy);
 
    bool recoveryActive = isBuy ? g_buySequences[idx].recoveryModeActive : g_sellSequences[idx].recoveryModeActive;
    if(!conditionMet && !recoveryActive) return;
 
-   bool atBreakeven = GetSequenceProfitPips(isBuy, idx) >= InpBreakevenBufferPips;
+   bool atBreakeven = GetSequenceProfitPipsFromClose(isBuy, idx) >= InpBreakevenBufferPips;
    if(!atBreakeven)
      {
       if(isBuy) g_buySequences[idx].recoveryModeActive = true;

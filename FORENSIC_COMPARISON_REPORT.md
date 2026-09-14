@@ -339,3 +339,30 @@ These two configurations trade off against each other, and the correct choice is
 **Caveat on methodology:** an earlier attempt at full sequence-by-sequence reconstruction (FIFO-matching open legs to closing clusters) produced two internal volume-mismatch warnings and is known to mis-draw sequence boundaries wherever multiple concurrent same-direction sequences overlap (it has no way to distinguish which open leg belongs to which of several simultaneously-open baskets). The balance-curve comparison above does not depend on correct sequence boundaries — it only sums realized P&L in calendar order — so it is reliable for locating *when* the gap opens, even though the FIFO reconstruction's sequence-level labels (used only for descriptive color in the table above) should be treated as approximate.
 
 **Recommendation:** the Jan 5 question from §12 should be promoted back to the top investigative priority — it is very likely the same root cause behind all three events above, not an isolated curiosity. The next concrete step is understanding precisely why our EA's basket-accumulation-vs-fragmentation behavior differs from the reference's in these specific windows (all three involve either a second concurrent sequence opening, or an existing sequence exiting sooner than the reference's equivalent).
+
+---
+
+## 14. Root Cause Found and Fixed — Recovery Mode Was Live-Price-Driven, Not Bar-Close-Driven
+
+Dug into the §13 #1 event (the 2026.01.02–01.20 sequence) directly, with a targeted diagnostic dumping closed-bar High/Low/Close and BB Middle for 2026.01.14–01.21.
+
+**What it showed:** the H4 bar `2026.01.20 04:00` closes at **1.16632** — the first bar where `close >= middle` (the base exit condition, already bar-close driven since §5.1). The H4 bar `2026.01.20 08:00` closes at **exactly 1.17264** — and the benchmark's actual exit for this sequence is **1.17264 at 12:00:00**, the instant the next bar opens. That is not a coincidence: the reference's exit price is literally the prior bar's close, confirmed at the next bar's open, for *both* the base condition and the Recovery Mode breakeven+buffer check.
+
+**Root cause:** `HandleBBCentreOrQQE50()`'s Recovery Mode breakeven+buffer check used `GetSequenceProfitPips()` — live bid/ask, checked every tick — so the moment intrabar price crossed the buffer threshold (computed from this sequence's real average entry: ≈1.16735), it closed immediately. That happened inside the `2026.01.20 08:00–12:00` bar, at `09:22:15`, roughly one bar and ~53 pips earlier and less favorably than the reference. The base condition itself was already bar-close driven since §5.1, but the InpBBExitOnBreach=true "touch" variant (`BBCentreExitConditionTick`, using bar high/low rather than close) was still being used for it and firing a bar earlier than the close-based version would have.
+
+**Fix:** (1) `HandleBBCentreOrQQE50()`'s base condition now always uses `BBCentreExitConditionBar()` (close-based), regardless of `InpBBExitOnBreach` — the touch-based variant is removed as unused; there is no positive evidence for it, only evidence against it, and `InpBBExitOnBreach=false` remains untested since only `=true` (`default.set`'s value) was ever exercised against the benchmark. (2) A new `GetSequenceProfitPipsFromClose()` replaces the live-price check for Recovery Mode's breakeven+buffer test specifically — every *other* exit strategy (Fixed Target, Risk Reduction, Trailing) still uses the live-price `GetSequenceProfitPips()`, since `default.set`'s `InpExitStrategy=0` never exercises those against the benchmark and there is no evidence either way for them.
+
+### Verification
+
+| Metric | Before this fix | After this fix | Benchmark |
+|---|---|---|---|
+| Total Net Profit | $113.76 | **$281.16** | $258.57 |
+| Profit Factor | 2.63 | **4.02** | **4.00** |
+| Expected Payoff | 2.37 | 4.85 | 5.50 |
+| Short Trades | 12 | **17** | **17** |
+| Long Trades | 36 | 41 | 30 |
+| Total Trades / Deals | 48 / 96 | 58 / 116 | 47 / 94 |
+
+Profit Factor is now a near-exact match, and Short Trades matches exactly — strong confirmation this was the dominant remaining bug, not a coincidental statistical shift. Total profit moved from 56% under the benchmark to ~9% over it.
+
+**New, well-scoped remaining discrepancy:** the entire trade-count excess (11 trades) is on the LONG side specifically (41 vs. benchmark's 30) — SHORT is now a perfect match (17/17). This narrows any further investigation to whatever differs specifically in BUY-direction sequence formation, rather than a general mechanism.
