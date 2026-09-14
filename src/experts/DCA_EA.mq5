@@ -1079,17 +1079,18 @@ bool CentreCrossReady(bool isBuy)
 void UpdateCentreCrossReadiness()
   {
    if(!g_bbSnapshotValid) return;
-   //--- BUG FIX (FORENSIC_COMPARISON_REPORT.md §11): these two lines were
-   //--- swapped — a close BELOW centre was arming BUY-readiness instead of
-   //--- SELL-readiness, which is backwards from the reasoning in the comment
-   //--- above (and from CentreCrossReady()'s own check a few lines up: a NEW
-   //--- buy sequence requires g_centreCrossReadyBuy, i.e. price should have
-   //--- recovered ABOVE centre at some point, not stayed below it). The
-   //--- inverted version was true on every bar throughout a one-directional
-   //--- move, defeating the whole gate exactly like the original stateless
-   //--- positional check this replaced.
-   if(g_bar1Close > g_bbMiddle1)      g_centreCrossReadyBuy  = true;
-   else if(g_bar1Close < g_bbMiddle1) g_centreCrossReadySell = true;
+   //--- REVERTED (FORENSIC_COMPARISON_REPORT.md §12): a "swap fix" was tried
+   //--- here based on a misreading of this function's own comment, and it
+   //--- regressed the trade count away from the benchmark (47/94 -> 42/84).
+   //--- The reasoning was flawed: during any sustained one-directional move,
+   //--- BOTH orientations are continuously true for whichever side matches
+   //--- the trend, so the swap could not have been the actual cause of the
+   //--- Jan-5 extra-sequence symptom it was diagnosed against. This is the
+   //--- original, empirically-validated orientation (confirmed exact 47/94
+   //--- match against the benchmark before InitializeZoneLatchesFromHistory()
+   //--- was added) — do not swap it again without a specific counter-example.
+   if(g_bar1Close > g_bbMiddle1)      g_centreCrossReadySell = true;
+   else if(g_bar1Close < g_bbMiddle1) g_centreCrossReadyBuy  = true;
   }
 
 bool NoTriggerOnCentreBreachOk()
