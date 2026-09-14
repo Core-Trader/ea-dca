@@ -526,6 +526,26 @@ Stakeholder proposal: an EA-scoped (symbol + Magic Number) circuit breaker disti
 | $1,750 (1.75%) | 2026-08-20 | $1,905 | $753 | **+$1,152** |
 | ≥ $1,950 (1.95%+) | — | never fires | — | inert (all-time peak was $1,936) |
 
+### Correction — the 1.2% default went stale the moment §24 shipped, and the real backtest caught it
+
+Verified against a real Strategy Tester run (`InpUseEquityProtection=true`, 1.2%, everything else `dynstop10`): the deal log came back **byte-for-byte identical** to the same config without Equity Protection — 150/150 deals matching on every time/price/volume/profit field. Equity Protection never fired once.
+
+**Root cause:** the sweep above was built from the equity-trace *before* the §24 Dynamic Stop arming fix. §24 itself already reduces floating swings (net profit and equity drawdown both dropped in its own verification) — an interaction the original sweep couldn't have accounted for, since it predates that fix. Rebuilt the same diagnostic against the current (post-§24) code and reran the sweep on fresh data:
+
+| Threshold | First trigger | Close-now | Actual eventual | Delta |
+|---|---|---|---|---|
+| < 0.40% | 2026-01 (various) | — | — | Negative throughout |
+| $400 (0.40%) | 2026-01-27 | $466 | $453 | +$13 (breakeven-ish) |
+| $600 (0.60%) | 2026-01-27 | $710 | $453 | **+$257** |
+| $850 (0.85%) | 2026-08-06 | $874 | $507 | **+$367** |
+| ≥ $875 (0.88%+) | — | never fires | — | inert (new all-time peak is $874) |
+
+The all-time peak aggregate floating profit dropped from **$1,936 to $874** between the two code states — the old 1.2% ($1,200) threshold sits entirely above the new ceiling, confirming exactly why it never triggered.
+
+**Fix:** `InpEquityProtectionPercent` default changed from `1.2` to **`0.6`** (in both `DCA_EA.mq5` and `default.set`) — comfortably inside the new 0.40%–0.85% positive band, with margin on both sides. Compiles clean (0 errors/warnings).
+
+**Lesson for this feature going forward:** any threshold-based mechanism calibrated by offline simulation against one code state's equity trace needs re-validation whenever an *upstream* fix changes the EA's own floating-profit dynamics — the two aren't independent just because they're separate features. A real backtest is what caught this; the offline method alone would not have.
+
 Below ~0.35% of balance the mechanism behaves like the tight per-sequence trailing already shown to hurt (catches sequences too early); above it, and increasingly so up to ~1.75%, it consistently captured *more* than the same sequences went on to realize by running to their own natural close — because a percent-of-balance threshold only fires once several sequences have already grown large in combination, typically past the point where further riding gives back more than it gains. Not perfectly monotonic (a small dip around $700–780 where the trigger point transitions between two different basket combinations), and every number here compares against the *same, real, unmodified* continuation — it can't show what new trades would replace the closed ones, which only a real backtest can. **Recommendation from the sweep: 1.0–1.5% of balance**, not a tight threshold, despite this looking superficially like a simple "lock in profit early" feature.
 
 **Implementation.** New input group "Advanced - Equity Protection": `InpUseEquityProtection` (bool, default false), `InpEquityProtectionMode` (`ENUM_EQUITY_PROTECTION_MODE`: percent-of-balance or fixed amount), `InpEquityProtectionPercent` (default 1.2), `InpEquityProtectionAmount` (default 500.0). `GetTotalFloatingProfit()` sums `GetSequenceProfitMoney()` across every `g_buySequences`/`g_sellSequences` entry — already scoped to this EA's own symbol/Magic Number by construction, since `Sequence.tickets[]` only ever holds tickets this EA itself opened, so no extra filtering was needed to satisfy the "don't touch other EAs' or manual positions" requirement. `CheckEquityProtection()`, called from `OnTick()` right after `CheckExitsPerTick()`, closes every open sequence (both directions) the instant the aggregate crosses the threshold. The display panel's pre-existing inline floating-profit sum was refactored to call the same new helper rather than duplicating it. Compiles clean (0 errors/warnings).

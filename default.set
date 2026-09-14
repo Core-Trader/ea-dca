@@ -109,7 +109,7 @@ InpStopAfterProfitPerSession=0.0
 ; --- Equity Protection ---
 InpUseEquityProtection=false
 InpEquityProtectionMode=0
-InpEquityProtectionPercent=1.2
+InpEquityProtectionPercent=0.6
 InpEquityProtectionAmount=500.0
 ; --- Advanced Entry Options ---
 InpAllDCA_SignalsMatchEntry_Info=If this is selected there will only be one sequence per direction.

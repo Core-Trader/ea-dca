@@ -247,7 +247,7 @@ input double                  InpStopAfterProfitPerSession = 0.0; // Stop New Se
 input group "Advanced - Equity Protection"
 input bool                        InpUseEquityProtection     = false;                 // Enable Equity Protection (Close All)
 input ENUM_EQUITY_PROTECTION_MODE InpEquityProtectionMode    = EQUITY_PROTECT_PERCENT; // Threshold Type
-input double                      InpEquityProtectionPercent = 1.2;                   // Threshold (% of Account Balance)
+input double                      InpEquityProtectionPercent = 0.6;                   // Threshold (% of Account Balance)
 input double                      InpEquityProtectionAmount  = 500.0;                 // Threshold (Account Currency)
 
 input group "Advanced - Entry Options"
