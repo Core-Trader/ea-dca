@@ -363,7 +363,21 @@ bool g_reentryReadyBuy = true, g_reentryReadySell = true;
 //--- single sustained excursion, letting new sequences open far more often
 //--- than the reference does — the whole point of this gate is to require a
 //--- genuine recovery-then-reversal, not just "still on the same side."
+//---
+//--- FIX (FORENSIC_COMPARISON_REPORT.md §15): the "positional latch" model
+//--- described above (arm on which side price is CURRENTLY on) turned out to
+//--- be flawed in exactly the way its own comment warns against — during any
+//--- sustained one-directional move, price sits on the SAME side every bar,
+//--- so whichever latch matches the trend direction stays continuously true
+//--- for the entire move. It can never function as a "requires a genuine
+//--- cross" gate; it just tracks current side with a one-bar lag. This is
+//--- confirmed as the mechanism behind repeated spurious extra sequences
+//--- during a trend (e.g. 2026.01.05, 2026.01.12) even after §5.1-§5.3 and
+//--- §14 fixed everything else in this area. g_prevCentreSide tracks the
+//--- previous bar's side so UpdateCentreCrossReadiness() can detect an
+//--- actual TRANSITION instead of a static position.
 bool g_centreCrossReadyBuy = true, g_centreCrossReadySell = true;
+int  g_prevCentreSide = 0;   // -1 = last closed bar was below centre, +1 = above, 0 = unknown yet
 
 //--- Higher Timeframe Direction Filter bias, recomputed once per new bar.
 int g_htfDirection = 0;   // -1 bearish, 0 unknown/neutral (both directions blocked), +1 bullish
@@ -1079,18 +1093,28 @@ bool CentreCrossReady(bool isBuy)
 void UpdateCentreCrossReadiness()
   {
    if(!g_bbSnapshotValid) return;
-   //--- REVERTED (FORENSIC_COMPARISON_REPORT.md §12): a "swap fix" was tried
-   //--- here based on a misreading of this function's own comment, and it
-   //--- regressed the trade count away from the benchmark (47/94 -> 42/84).
-   //--- The reasoning was flawed: during any sustained one-directional move,
-   //--- BOTH orientations are continuously true for whichever side matches
-   //--- the trend, so the swap could not have been the actual cause of the
-   //--- Jan-5 extra-sequence symptom it was diagnosed against. This is the
-   //--- original, empirically-validated orientation (confirmed exact 47/94
-   //--- match against the benchmark before InitializeZoneLatchesFromHistory()
-   //--- was added) — do not swap it again without a specific counter-example.
-   if(g_bar1Close > g_bbMiddle1)      g_centreCrossReadySell = true;
-   else if(g_bar1Close < g_bbMiddle1) g_centreCrossReadyBuy  = true;
+   //--- FIX (FORENSIC_COMPARISON_REPORT.md §15): the previous positional-latch
+   //--- version (see git history / §12) armed readiness based on which side of
+   //--- the centre band price CURRENTLY sat on, re-arming every single bar of
+   //--- a sustained trend. That defeats the gate's documented purpose (require
+   //--- a genuine recovery-then-reversal) and was root-caused as the source of
+   //--- spurious extra sequences opening mid-trend (e.g. 2026.01.05, .01.12)
+   //--- even after §5.1-§5.3 and §14 were all fixed. This version only arms
+   //--- readiness on an actual TRANSITION across the centre band — the side
+   //--- must first be observed on one side, then observed on the other — so
+   //--- it fires once per genuine cross instead of continuously during a
+   //--- trend. Buy/sell mapping is unchanged from the empirically-validated
+   //--- orientation (cross UP arms SELL, cross DOWN arms BUY).
+   int side = (g_bar1Close > g_bbMiddle1) ? 1 : (g_bar1Close < g_bbMiddle1 ? -1 : 0);
+   if(side != 0)
+     {
+      if(g_prevCentreSide != 0 && side != g_prevCentreSide)
+        {
+         if(side > 0) g_centreCrossReadySell = true;   // just crossed UP through centre
+         else         g_centreCrossReadyBuy  = true;   // just crossed DOWN through centre
+        }
+      g_prevCentreSide = side;
+     }
   }
 
 bool NoTriggerOnCentreBreachOk()

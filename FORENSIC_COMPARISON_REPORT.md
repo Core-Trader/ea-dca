@@ -366,3 +366,29 @@ Dug into the §13 #1 event (the 2026.01.02–01.20 sequence) directly, with a ta
 Profit Factor is now a near-exact match, and Short Trades matches exactly — strong confirmation this was the dominant remaining bug, not a coincidental statistical shift. Total profit moved from 56% under the benchmark to ~9% over it.
 
 **New, well-scoped remaining discrepancy:** the entire trade-count excess (11 trades) is on the LONG side specifically (41 vs. benchmark's 30) — SHORT is now a perfect match (17/17). This narrows any further investigation to whatever differs specifically in BUY-direction sequence formation, rather than a general mechanism.
+
+---
+
+## 15. Fix — CentreCrossReady Was a Positional Latch, Not a Crossing Detector
+
+Investigated the §14 long-side-excess finding by re-examining the Jan 2–20 window deal-by-deal. The main 4-leg BUY sequence now closes at 1.17263 @ 2026.01.20 12:00:00 (benchmark: 1.17264 @ 12:00:00 — confirms §14's fix is working). But two spurious extra BUY sequences were still opening mid-trend: one at 2026.01.05 20:00:05, one at 2026.01.12 04:00:00 — the benchmark has neither in this window (only the main sequence plus one parallel sequence starting 2026.01.16).
+
+**Root cause:** `UpdateCentreCrossReadiness()` armed each direction's readiness flag based on which side of the centre band price was **currently** on (`close > middle` → arm SELL, `close < middle` → arm BUY), re-evaluated every closed bar. During the Jan 2–20 downtrend, close sat below the middle band on essentially every bar, so `g_centreCrossReadyBuy` was continuously re-armed the entire time — never meaningfully "consumed and required to re-earn readiness via a genuine reversal," despite that being the gate's own documented purpose. This is a positional check, not a crossing detector, and the flaw exists under either buy/sell orientation (consistent with §12's finding that swapping the assignment didn't fix the symptom either — both orientations are "stuck true" for whichever side matches the trend).
+
+**Fix:** replaced the positional check with a true crossing detector. A new global `g_prevCentreSide` tracks which side of the centre band the previous closed bar was on; a readiness flag now only arms on an observed **transition** (`side != g_prevCentreSide`, both sides known), not merely on "currently on this side." Buy/sell mapping is unchanged from the empirically-validated orientation. Compiled clean (0 errors/warnings).
+
+### Verification
+
+| Metric | Before this fix (§14 state) | After this fix | Benchmark |
+|---|---|---|---|
+| Total Net Profit | $281.16 | $243.67 | $258.57 |
+| Profit Factor | 4.02 | 3.71 | 4.00 |
+| Short Trades | 17 | 16 | 17 |
+| Long Trades | 41 | 33 | 30 |
+| Total Trades / Deals | 58 / 116 | 49 / 98 | 47 / 94 |
+
+**Mixed result, reported honestly:** Total trade count moved substantially closer to the benchmark (58→49 vs. target 47), and the long-side excess this section set out to fix shrank from +11 to +3 (41→33 vs. target 30) — clear evidence the crossing-detector model is closer to correct than the positional-latch model it replaced. However, Short Trades regressed off its previous exact match (17→16) and Profit Factor moved further from the benchmark (4.02→3.71 vs. target 4.00). Net profit is now under-benchmark ($243.67 vs $258.57) rather than over, reversing the direction of the §14 miss.
+
+**Deal-log check on the specific Jan 5 / Jan 12 sequences this section targeted:** the Jan 5 fragmentation is confirmed fixed — deals #2/#3/#4/#6 now form one clean 4-leg main sequence (0.01→0.02→0.03→0.04) with no early split. The Jan 12 sequence is **not** fully fixed: a second sequence still opens at 2026.01.12 20:00:01 (0.01 lot) and adds a leg at 2026.01.16 16:00:01 (0.02 lot), closing 2026.01.20 08:00:00. The benchmark's one parallel sequence in this window starts 2026.01.16 — so our EA is still opening this second sequence's first leg **4 days too early** (01.12 vs 01.16), even though it no longer also fragments the main sequence. This looks like a distinct, narrower remaining timing bug in the same area (something else — not `CentreCrossReady` — is independently arming a new-sequence gate on 01.12), not yet root-caused.
+
+**Recommendation:** keep this fix — it is principled (a genuine crossing detector matches the gate's documented intent, unlike the positional check it replaced) and demonstrably shrinks the long-side excess without reintroducing the Jan 5 fragmentation. The Short-Trades/Profit-Factor regression and the residual Jan 12-vs-Jan 16 timing gap are new, narrower open items for further investigation rather than reasons to revert — per the standing instruction not to chase final statistics or force a match, this trade-off is documented rather than papered over.
