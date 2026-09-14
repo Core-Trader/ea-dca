@@ -389,6 +389,11 @@ bool g_reentryReadyBuy = true, g_reentryReadySell = true;
 //--- previous bar's side so UpdateCentreCrossReadiness() can detect an
 //--- actual TRANSITION instead of a static position.
 bool g_centreCrossReadyBuy = true, g_centreCrossReadySell = true;
+//--- FIX (audit report §A5): seeded from history in InitializeZoneLatchesFromHistory()
+//--- (shift=1 only) and persisted in Save/LoadState() alongside everything else this
+//--- latch depends on — previously started at 0 with no warm-up and wasn't saved, so a
+//--- live restart would silently forget which side price was last on and need two bars
+//--- to "re-learn" it before any cross could be detected again.
 int  g_prevCentreSide = 0;   // -1 = last closed bar was below centre, +1 = above, 0 = unknown yet
 
 //--- Higher Timeframe Direction Filter bias, recomputed once per new bar.
@@ -774,6 +779,15 @@ void InitializeZoneLatchesFromHistory()
            {
             if(!g_bbBuyArmed  && low  <= lo[0] && close <= lo[0]) g_bbBuyArmed  = true;
             if(!g_bbSellArmed && high >= up[0] && close >= up[0]) g_bbSellArmed = true;
+
+            //--- audit report §A5: seed the crossing-detector's "previous bar"
+            //--- memory from the single most recent historical bar (shift=1
+            //--- only — this is a point-in-time state, not a "did it happen
+            //--- anywhere in the window" latch like the zone-breach flags
+            //--- above), so a genuine cross can be detected on the very first
+            //--- live bar instead of needing two bars to "re-learn" it.
+            if(shift == 1)
+               g_prevCentreSide = (close > mid[0]) ? 1 : (close < mid[0] ? -1 : 0);
            }
         }
 
@@ -1461,14 +1475,14 @@ void SaveState()
    //--- reentryReadyBuy|reentryReadySell|pendingSignal|pendingSignalIsBuy|
    //--- pendingSignalCentreBreached|sessionRealizedProfit|sessionDate|
    //--- lastEODActionDate|lastEOWActionDate|nextSequenceId|
-   //--- centreCrossReadyBuy|centreCrossReadySell
-   string globalLine = StringFormat("GLOBAL|%d|%d|%d|%d|%d|%d|%d|%d|%d|%.2f|%I64d|%I64d|%I64d|%I64d|%d|%d",
+   //--- centreCrossReadyBuy|centreCrossReadySell|prevCentreSide (§A5)
+   string globalLine = StringFormat("GLOBAL|%d|%d|%d|%d|%d|%d|%d|%d|%d|%.2f|%I64d|%I64d|%I64d|%I64d|%d|%d|%d",
                                      (int)g_bbBuyArmed, (int)g_bbSellArmed, (int)g_qqeBuyArmed, (int)g_qqeSellArmed,
                                      (int)g_reentryReadyBuy, (int)g_reentryReadySell,
                                      (int)g_pendingSignal, (int)g_pendingSignalIsBuy, (int)g_pendingSignalCentreBreached,
                                      g_sessionRealizedProfit, (long)g_sessionDate,
                                      (long)g_lastEODActionDate, (long)g_lastEOWActionDate, g_nextSequenceId,
-                                     (int)g_centreCrossReadyBuy, (int)g_centreCrossReadySell);
+                                     (int)g_centreCrossReadyBuy, (int)g_centreCrossReadySell, g_prevCentreSide);
    FileWriteString(handle, globalLine + "\n");
 
    WriteSequencesToFile(handle, true);
@@ -1956,18 +1970,34 @@ double TrailingDistance()
   }
 
 //+------------------------------------------------------------------+
-//| BB Centre Band exit condition — bar-close driven (see the §13/§14   |
-//| fix note on HandleBBCentreOrQQE50() below for why the touch-based    |
-//| "breach" variant this function used to also offer, alongside this    |
-//| close-based one, was removed: a targeted diagnostic showed the       |
-//| reference's exit price is exactly a closed bar's close, confirmed    |
-//| at the next bar's open — for InpBBExitOnBreach=true, the only value  |
-//| ever tested against the benchmark).                                  |
+//| BB Centre Band exit condition — bar-close variant. A targeted        |
+//| diagnostic (FORENSIC_COMPARISON_REPORT.md §13/§14) showed the        |
+//| reference's exit price for InpBBExitOnBreach=true was exactly a      |
+//| closed bar's close, confirmed at the next bar's open — the ONLY      |
+//| value of this input ever tested against the benchmark. The touch     |
+//| variant below was removed at that time and restored per the audit    |
+//| report (§A1): a real toggle, both options selectable, default        |
+//| unchanged (still =true/touch) — see HandleBBCentreOrQQE50() for how  |
+//| InpBBExitOnBreach picks between the two, for both the exit condition |
+//| and the breakeven+buffer check together.                             |
 //+------------------------------------------------------------------+
 bool BBCentreExitConditionBar(bool isBuy)
   {
    if(!g_bbSnapshotValid) return(false);
    return(isBuy ? g_bar1Close >= g_bbMiddle1 : g_bar1Close <= g_bbMiddle1);
+  }
+
+//+------------------------------------------------------------------+
+//| BB Centre Band exit condition — touch/live variant. Restored from    |
+//| git history (commit 9f6fbe0, before the §13/§14 removal) verbatim.   |
+//+------------------------------------------------------------------+
+bool BBCentreExitConditionTick(bool isBuy)
+  {
+   if(g_bbHandle == INVALID_HANDLE) return(false);
+   double mid[1];
+   if(CopyBuffer(g_bbHandle, 0, 0, 1, mid) <= 0) return(false);
+   double price = isBuy ? SymbolInfoDouble(_Symbol, SYMBOL_BID) : SymbolInfoDouble(_Symbol, SYMBOL_ASK);
+   return(isBuy ? price >= mid[0] : price <= mid[0]);
   }
 
 //+------------------------------------------------------------------+
@@ -2008,31 +2038,54 @@ bool QQE50ExitConditionBar(bool isBuy)
 //| InpRequireBBBandTouchForReentry nor InpRequireQQEScenarioBForReentry |
 //| is enabled, since ReentryReady() only ever reads this when at least |
 //| one of them is on.                                                  |
+//|                                                                      |
+//| FIX (audit report §A2): a failed trade.PositionClose() on any leg    |
+//| used to be logged and then ignored — the sequence was dropped from   |
+//| tracking regardless, orphaning that leg permanently (no further exit |
+//| management ever again, and PruneClosedSequences() can't rediscover   |
+//| it since it only iterates sequences still being tracked). Now each   |
+//| leg's profit is only credited to g_sessionRealizedProfit if its      |
+//| close actually succeeded, and SyncSequenceFromLivePositions() (the   |
+//| same safety net ExecutePartialCloseIfDue() already uses) re-reads    |
+//| what's genuinely still open afterward — the sequence is only         |
+//| dropped once it's confirmed empty; otherwise it stays tracked and    |
+//| the same exit condition naturally retries the close on a later tick. |
 //+------------------------------------------------------------------+
 void CloseSequenceAndCleanup(bool isBuy, int idx, string reason)
   {
-   long   sequenceId = isBuy ? g_buySequences[idx].sequenceId : g_sellSequences[idx].sequenceId;
-   double realized   = GetSequenceProfitMoney(isBuy, idx);   // captured before closing — positions vanish after
+   long sequenceId = isBuy ? g_buySequences[idx].sequenceId : g_sellSequences[idx].sequenceId;
 
-   int count = isBuy ? g_buySequences[idx].count : g_sellSequences[idx].count;
+   int    count        = isBuy ? g_buySequences[idx].count : g_sellSequences[idx].count;
+   double closedProfit = 0.0;
    for(int i = 0; i < count; i++)
      {
       ulong ticket = isBuy ? g_buySequences[idx].tickets[i] : g_sellSequences[idx].tickets[i];
       if(PositionSelectByTicket(ticket))
         {
-         if(!trade.PositionClose(ticket))
+         double legProfit = PositionGetDouble(POSITION_PROFIT) + PositionGetDouble(POSITION_SWAP);
+         if(trade.PositionClose(ticket))
+            closedProfit += legProfit;
+         else
             Print("EA-DCA: failed to close ticket ", ticket, " while closing sequence — retcode ", trade.ResultRetcode());
         }
      }
    Print("EA-DCA: ", (isBuy ? "BUY" : "SELL"), " sequence closed (", count, " trade(s)) — ", reason);
 
-   g_sessionRealizedProfit += realized;
+   g_sessionRealizedProfit += closedProfit;
    if(isBuy) g_reentryReadyBuy = false; else g_reentryReadySell = false;
 
-   DrawSequenceEndLine(isBuy, sequenceId);
-   DeleteSequenceChartObjects(isBuy, sequenceId);
+   SyncSequenceFromLivePositions(isBuy, idx);
+   int remaining = isBuy ? g_buySequences[idx].count : g_sellSequences[idx].count;
+   if(remaining == 0)
+     {
+      DrawSequenceEndLine(isBuy, sequenceId);
+      DeleteSequenceChartObjects(isBuy, sequenceId);
+      RemoveSequenceAt(isBuy, idx);
+     }
+   else
+      Print("EA-DCA WARNING: ", (isBuy ? "BUY" : "SELL"), " sequence still has ", remaining,
+            " open trade(s) after a close attempt — kept tracked; will retry.");
 
-   RemoveSequenceAt(isBuy, idx);
    SaveState();   // structural event — bypass the per-tick throttle (§15)
   }
 
@@ -2141,11 +2194,19 @@ bool ExecutePartialCloseIfDue(bool isBuy, int idx)
          ulong ticket = isBuy ? g_buySequences[idx].tickets[i] : g_sellSequences[idx].tickets[i];
          if(PositionSelectByTicket(ticket))
            {
-            closedProfit += PositionGetDouble(POSITION_PROFIT) + PositionGetDouble(POSITION_SWAP);
-            trade.PositionClose(ticket);
+            //--- FIX (audit report §A4): only credit a leg's profit once its
+            //--- close is confirmed to have actually succeeded — previously
+            //--- this was added unconditionally before the close attempt, so
+            //--- a failed PositionClose() double-counted that leg's profit
+            //--- (once here, again later whenever it genuinely closes).
+            double legProfit = PositionGetDouble(POSITION_PROFIT) + PositionGetDouble(POSITION_SWAP);
+            if(trade.PositionClose(ticket))
+               closedProfit += legProfit;
+            else
+               Print("EA-DCA: failed to close ticket ", ticket, " during Partial Close — retcode ", trade.ResultRetcode());
            }
         }
-      SyncSequenceFromLivePositions(isBuy, idx);   // re-sync tickets/count/avgPrice to the survivor
+      SyncSequenceFromLivePositions(isBuy, idx);   // re-sync tickets/count/avgPrice to the survivor(s)
 
       int survivorCount = isBuy ? g_buySequences[idx].count : g_sellSequences[idx].count;
       if(InpPartialClosePercent == PARTIAL_CLOSE_50 && survivorCount > 0)
@@ -2157,8 +2218,10 @@ bool ExecutePartialCloseIfDue(bool isBuy, int idx)
            {
             //--- approximate: the realized share is proportional to the fraction of volume reduced
             double survivorProfit = PositionGetDouble(POSITION_PROFIT) + PositionGetDouble(POSITION_SWAP);
-            closedProfit += survivorProfit * (reduceBy / remainingVol);
-            trade.PositionClosePartial(remainingTicket, reduceBy);
+            if(trade.PositionClosePartial(remainingTicket, reduceBy))
+               closedProfit += survivorProfit * (reduceBy / remainingVol);
+            else
+               Print("EA-DCA: failed to partially close ticket ", remainingTicket, " during Partial Close — retcode ", trade.ResultRetcode());
            }
          SyncSequenceFromLivePositions(isBuy, idx);
         }
@@ -2185,18 +2248,29 @@ bool ExecutePartialCloseIfDue(bool isBuy, int idx)
 //| Recovery Mode applies only when Dynamic Stop is OFF — see §24 of     |
 //| DCA_EA_Analysis_Report.md.                                           |
 //|                                                                      |
-//| FIX (FORENSIC_COMPARISON_REPORT.md §13/§14): both conditionMet and   |
-//| the breakeven+buffer check are now bar-close driven, not live/       |
-//| intrabar. A targeted diagnostic against a representative sequence    |
-//| showed the reference's actual exit price is EXACTLY the prior H4     |
-//| bar's close, confirmed at the next bar's open — for both the base    |
-//| condition and the Recovery Mode buffer check. The previous touch-    |
-//| based InpBBExitOnBreach=true path (BBCentreExitConditionTick, now    |
-//| unused/removed) and the live-price breakeven check were both firing  |
-//| roughly a full bar earlier than the reference, at a less favorable   |
-//| price. This is only evidenced for InpBBExitOnBreach=true (the        |
-//| default.set value, the only one tested against the benchmark) — the  |
-//| =false case is untested and may need its own look later.             |
+//| FIX (FORENSIC_COMPARISON_REPORT.md §13/§14): a targeted diagnostic   |
+//| against a representative sequence showed the reference's actual      |
+//| exit price is EXACTLY the prior H4 bar's close, confirmed at the     |
+//| next bar's open — evidenced for InpBBExitOnBreach=true (default.     |
+//| set's value, the only one tested against the benchmark). At the time |
+//| this was fixed by hardcoding both the base condition and the         |
+//| Recovery Mode buffer check to bar-close and removing the touch/live   |
+//| variant (BBCentreExitConditionTick) entirely.                        |
+//|                                                                      |
+//| RESTORED (audit report §A1, per explicit stakeholder direction): the |
+//| toggle is back — InpBBExitOnBreach now genuinely selects between the |
+//| two variants for BB Centre Band specifically (isBBMode true), for    |
+//| BOTH the exit condition AND the breakeven+buffer check together:     |
+//| =true (the default, unchanged) uses the touch/live variant for both  |
+//| — this is the ORIGINAL pre-§14 behavior, which is NOT what the §13/  |
+//| §14 evidence above showed matches the benchmark (that evidence       |
+//| favors =false/bar-close). Restoring =true as a selectable option,    |
+//| and leaving it as the default, is a deliberate product decision, not |
+//| a benchmark-matching claim — flagged here so the trade-off is never  |
+//| lost. QQE 50 + Recovery (isBBMode false) is untouched by this input  |
+//| — it has no live/touch concept (see QQE50ExitConditionBar's own      |
+//| comment) and stays bar-close for both condition and breakeven,       |
+//| exactly as before.                                                   |
 //|                                                                      |
 //| FIX (§24): per the EA's actual design description, Dynamic Stop      |
 //| activates as soon as the exit condition is met — full stop, no       |
@@ -2218,14 +2292,17 @@ void HandleBBCentreOrQQE50(bool isBuy, int idx, bool isBBMode)
   {
    if(ManageActiveTrailStop(isBuy, idx)) return;
 
-   bool conditionMet = isBBMode ? BBCentreExitConditionBar(isBuy) : QQE50ExitConditionBar(isBuy);
+   bool useTouch = isBBMode && InpBBExitOnBreach;   // BB Centre Band only; QQE50+Recovery always bar-close
+   bool conditionMet = isBBMode ? (useTouch ? BBCentreExitConditionTick(isBuy) : BBCentreExitConditionBar(isBuy))
+                                 : QQE50ExitConditionBar(isBuy);
 
    bool recoveryActive = isBuy ? g_buySequences[idx].recoveryModeActive : g_sellSequences[idx].recoveryModeActive;
    if(!conditionMet && !recoveryActive) return;
 
    if(!InpUseDynamicStop)
      {
-      bool atBreakeven = GetSequenceProfitPipsFromClose(isBuy, idx) >= InpBreakevenBufferPips;
+      bool atBreakeven = useTouch ? GetSequenceProfitPips(isBuy, idx) >= InpBreakevenBufferPips
+                                   : GetSequenceProfitPipsFromClose(isBuy, idx) >= InpBreakevenBufferPips;
       if(!atBreakeven)
         {
          if(isBuy) g_buySequences[idx].recoveryModeActive = true;
@@ -2506,6 +2583,11 @@ void LoadState()
          g_nextSequenceId              = StringToInteger(parts[14]);
          g_centreCrossReadyBuy         = (StringToInteger(parts[15]) != 0);
          g_centreCrossReadySell        = (StringToInteger(parts[16]) != 0);
+         //--- §A5: new field, appended after this line existed — n>=17 (not
+         //--- bumped to 18) so an older-format state file still loads every
+         //--- field it has instead of failing this whole block outright;
+         //--- g_prevCentreSide just falls back to its already-safe default.
+         g_prevCentreSide              = (n >= 18) ? (int)StringToInteger(parts[17]) : 0;
         }
       else if(parts[0] == "SEQ" && n >= 15)
         {
