@@ -41,7 +41,7 @@ input bool   ZeroLag            = true;
 input int    SF                 = 1;         
 input int    RSI_Period         = 8; 
 input int    WP                 = 3; 
-input bool   PopUp_Alert        = true;
+input bool   PopUp_Alert        = false;
 input bool   PushNotifications  = false;    
 //+------------------------------------------------------------------+
 //| Global variabels                                                 |

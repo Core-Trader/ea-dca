@@ -4,6 +4,7 @@
 
 # Logs
 *.log
+/diagnostics/backtests/*
 
 # Local, machine-specific Claude instructions (never shared/committed)
 CLAUDE.local.md
