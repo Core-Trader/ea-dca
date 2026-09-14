@@ -495,4 +495,17 @@ Investigated Dynamic Stop (§5.5) separately from the ongoing benchmark-forensic
 
 **Candidate protection mechanisms tested (offline simulation, not yet implemented):** peak-giveback trailing and earlier/tighter arming were simulated against the same reconstructed price data to see whether anything would reduce the 68% giveback without materially hurting profit. Every variant tested came out **dramatically worse** ($117–$395 vs. the actual $1,194), because the dominant basket's eventual $758 payoff depended on surviving a 3-month, -$474 drawdown — any tighter mechanism exits it near breakeven long before the reversal. No equity-protection idea tested so far improves both profit and drawdown simultaneously; this remains an open question, not a solved one, and is a strong signal that this backtest's profitability is concentrated in one large recovery event rather than broad-based.
 
-**Not yet backtest-verified** — compiles clean (0 errors/warnings); a Strategy Tester run against the arming-timing change itself is the natural next step before treating the fix as validated.
+### Verification
+
+Same `InpUseDynamicStop=true`, `InpDynamicStopDistancePips=10` config, EURUSD H4, 2026.01.01–2026.09.13, before vs. after this fix:
+
+| Metric | Before (gated arm) | After (immediate arm) |
+|---|---|---|
+| Total Net Profit | $1,180.12 | $979.30 |
+| Profit Factor | 5.62 | 4.46 |
+| Balance Drawdown Max | $74.60 (0.07%) | $76.18 (0.08%) |
+| **Equity Drawdown Max** | **$1,216.99 (1.19%)** | **$859.60 (0.85%)** |
+| Recovery Factor | 0.97 | **1.14** |
+| Total Trades / Deals | 83 / 166 | 75 / 150 |
+
+Net profit gave up ~17%, but max equity drawdown dropped ~30% and Recovery Factor crossed above 1.0 (net profit now exceeds max drawdown, not smaller than it) — a materially healthier risk-adjusted result, and a much gentler trade-off than the earlier-simulated "immediate arm + tight/percentage trail" candidates, which gutted profit by exiting winners almost immediately. This fix only widens *when* protection starts; it doesn't touch the trail's width or philosophy, which is consistent with the smaller, more favorable trade-off observed here. Confirms the literal-spec fix is a real improvement, not just a cosmetic one.
