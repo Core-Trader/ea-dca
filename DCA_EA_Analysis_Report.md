@@ -509,3 +509,23 @@ Same `InpUseDynamicStop=true`, `InpDynamicStopDistancePips=10` config, EURUSD H4
 | Total Trades / Deals | 83 / 166 | 75 / 150 |
 
 Net profit gave up ~17%, but max equity drawdown dropped ~30% and Recovery Factor crossed above 1.0 (net profit now exceeds max drawdown, not smaller than it) — a materially healthier risk-adjusted result, and a much gentler trade-off than the earlier-simulated "immediate arm + tight/percentage trail" candidates, which gutted profit by exiting winners almost immediately. This fix only widens *when* protection starts; it doesn't touch the trail's width or philosophy, which is consistent with the smaller, more favorable trade-off observed here. Confirms the literal-spec fix is a real improvement, not just a cosmetic one.
+
+---
+
+## 25. New Feature — Equity Protection (aggregate Close-All), offline-simulated then implemented
+
+Stakeholder proposal: an EA-scoped (symbol + Magic Number) circuit breaker distinct from Dynamic Stop — close every sequence this EA manages, in both directions, once their *combined* floating profit reaches a threshold (percent of account Balance, or a fixed currency amount) — deliberately not touching other EAs' or manual positions on the account.
+
+**Offline simulation first, before writing any code.** Reused the same per-bar sequence trace from §24's investigation (no new backtest needed) to reconstruct the EA's own aggregate floating P/L at every bar, then swept threshold values from $100 to $3,000 (0.1%–3.0% of the $100k test balance), comparing "close everything at the first crossing" against what those same sequences actually, eventually realized on their own:
+
+| Threshold | First trigger | Close-now | Actual eventual | Delta |
+|---|---|---|---|---|
+| $100 (0.10%) | 2026-01-21 | $103 | $350 | -$247 |
+| $350 (0.35%) | 2026-01-26 | $377 | $350 | breakeven |
+| $1,000 (1.00%) | 2026-08-17 | $1,088 | $748 | **+$340** |
+| $1,750 (1.75%) | 2026-08-20 | $1,905 | $753 | **+$1,152** |
+| ≥ $1,950 (1.95%+) | — | never fires | — | inert (all-time peak was $1,936) |
+
+Below ~0.35% of balance the mechanism behaves like the tight per-sequence trailing already shown to hurt (catches sequences too early); above it, and increasingly so up to ~1.75%, it consistently captured *more* than the same sequences went on to realize by running to their own natural close — because a percent-of-balance threshold only fires once several sequences have already grown large in combination, typically past the point where further riding gives back more than it gains. Not perfectly monotonic (a small dip around $700–780 where the trigger point transitions between two different basket combinations), and every number here compares against the *same, real, unmodified* continuation — it can't show what new trades would replace the closed ones, which only a real backtest can. **Recommendation from the sweep: 1.0–1.5% of balance**, not a tight threshold, despite this looking superficially like a simple "lock in profit early" feature.
+
+**Implementation.** New input group "Advanced - Equity Protection": `InpUseEquityProtection` (bool, default false), `InpEquityProtectionMode` (`ENUM_EQUITY_PROTECTION_MODE`: percent-of-balance or fixed amount), `InpEquityProtectionPercent` (default 1.2), `InpEquityProtectionAmount` (default 500.0). `GetTotalFloatingProfit()` sums `GetSequenceProfitMoney()` across every `g_buySequences`/`g_sellSequences` entry — already scoped to this EA's own symbol/Magic Number by construction, since `Sequence.tickets[]` only ever holds tickets this EA itself opened, so no extra filtering was needed to satisfy the "don't touch other EAs' or manual positions" requirement. `CheckEquityProtection()`, called from `OnTick()` right after `CheckExitsPerTick()`, closes every open sequence (both directions) the instant the aggregate crosses the threshold. The display panel's pre-existing inline floating-profit sum was refactored to call the same new helper rather than duplicating it. Compiles clean (0 errors/warnings).

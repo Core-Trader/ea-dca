@@ -80,6 +80,12 @@ enum ENUM_FIXED_TARGET_TYPE
    TARGET_ATR              // ATR Multiple
   };
 
+enum ENUM_EQUITY_PROTECTION_MODE
+  {
+   EQUITY_PROTECT_PERCENT = 0,  // Percent of Account Balance
+   EQUITY_PROTECT_AMOUNT        // Fixed Currency Amount
+  };
+
 enum ENUM_TIME_REFERENCE
   {
    TIME_BROKER = 0,        // Broker Time (Server)
@@ -237,6 +243,12 @@ input string                 SIGNAL_DISTANCE_ATR_INFO    = "Info only: ATR Perio
 
 input group "Advanced - Session Profit Limit"
 input double                  InpStopAfterProfitPerSession = 0.0; // Stop New Sequences After Profit per Session ($, 0 = off)
+
+input group "Advanced - Equity Protection"
+input bool                        InpUseEquityProtection     = false;                 // Enable Equity Protection (Close All)
+input ENUM_EQUITY_PROTECTION_MODE InpEquityProtectionMode    = EQUITY_PROTECT_PERCENT; // Threshold Type
+input double                      InpEquityProtectionPercent = 1.2;                   // Threshold (% of Account Balance)
+input double                      InpEquityProtectionAmount  = 500.0;                 // Threshold (Account Currency)
 
 input group "Advanced - Entry Options"
 input string                  InpAllDCA_SignalsMatchEntry_Info = "Info only: if enabled, only one sequence per direction runs, and every add-on trade must match the same entry rules (not just a QMP dot).";
@@ -2387,6 +2399,58 @@ void CheckExitsPerTick()
       CheckSequenceExitPerTick(false, i);
   }
 
+//+------------------------------------------------------------------+
+//| Aggregate floating profit across every sequence this EA manages,    |
+//| both directions. Already scoped to this EA's own symbol/magic       |
+//| number by construction — Sequence.tickets[] only ever holds tickets |
+//| this EA itself opened via SendMarketOrder() — so no extra filtering |
+//| is needed to exclude other EAs' or manual positions. Shared by the  |
+//| display panel and Equity Protection.                                |
+//+------------------------------------------------------------------+
+double GetTotalFloatingProfit()
+  {
+   double total = 0.0;
+   for(int i = 0; i < ArraySize(g_buySequences);  i++) total += GetSequenceProfitMoney(true,  i);
+   for(int i = 0; i < ArraySize(g_sellSequences); i++) total += GetSequenceProfitMoney(false, i);
+   return(total);
+  }
+
+//+------------------------------------------------------------------+
+//| Equity Protection (DCA_EA_Analysis_Report.md §25): an aggregate,     |
+//| account-scale circuit breaker layered on top of — and independent    |
+//| from — Dynamic Stop / Partial Close / Risk Reduction, all of which   |
+//| only ever act on one sequence's own floating profit. This closes     |
+//| EVERY sequence this EA manages, in both directions, the instant      |
+//| their COMBINED floating profit reaches the configured threshold —    |
+//| a percentage of real account Balance, or a fixed currency amount.    |
+//| Deliberately a one-shot "close everything," not a per-sequence       |
+//| trailing stop: offline simulation (§25) against this EA's own        |
+//| reconstructed floating-profit history showed a LOW threshold behaves |
+//| like the tight per-sequence trailing already shown to cut winners    |
+//| short, while a threshold in roughly the 1-1.5% of balance range      |
+//| consistently captured more than those same sequences went on to      |
+//| realize on their own — evidence for a materially sized threshold,    |
+//| not a tight one, despite this looking superficially like a simple    |
+//| "lock in profit early" feature.                                      |
+//+------------------------------------------------------------------+
+void CheckEquityProtection()
+  {
+   if(!InpUseEquityProtection) return;
+   if(ArraySize(g_buySequences) == 0 && ArraySize(g_sellSequences) == 0) return;
+
+   double threshold = (InpEquityProtectionMode == EQUITY_PROTECT_PERCENT)
+                       ? AccountInfoDouble(ACCOUNT_BALANCE) * InpEquityProtectionPercent / 100.0
+                       : InpEquityProtectionAmount;
+   if(threshold <= 0.0) return;
+   if(GetTotalFloatingProfit() < threshold) return;
+
+   Print("EA-DCA: Equity Protection triggered — closing all managed sequences (combined floating profit reached threshold).");
+   for(int i = ArraySize(g_buySequences) - 1; i >= 0; i--)
+      CloseSequenceAndCleanup(true, i, "Equity Protection — combined floating profit reached threshold");
+   for(int i = ArraySize(g_sellSequences) - 1; i >= 0; i--)
+      CloseSequenceAndCleanup(false, i, "Equity Protection — combined floating profit reached threshold");
+  }
+
 //+====================================================================+
 //| PHASE 4 (continued): state persistence — load side, session/EOD/    |
 //| EOW gating, and the on-screen display. All three are called only    |
@@ -2722,9 +2786,7 @@ void UpdateInfoPanel()
       return;
      }
 
-   double totalFloating = 0.0;
-   for(int i = 0; i < ArraySize(g_buySequences); i++)  totalFloating += GetSequenceProfitMoney(true, i);
-   for(int i = 0; i < ArraySize(g_sellSequences); i++) totalFloating += GetSequenceProfitMoney(false, i);
+   double totalFloating = GetTotalFloatingProfit();
 
    string header = StringFormat("EA-DCA - %s", _Symbol);
    string line1  = StringFormat("Buy seq: %d   Sell seq: %d", ArraySize(g_buySequences), ArraySize(g_sellSequences));
@@ -2845,6 +2907,7 @@ void OnTick()
    UpdateSessionProfitTracking();
    CheckEndOfDayAndWeek();
    CheckExitsPerTick();
+   CheckEquityProtection();
    if(IsNewBar())
       ProcessNewBar();
    UpdateChartDisplay();
