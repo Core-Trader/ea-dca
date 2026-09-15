@@ -429,17 +429,6 @@ datetime g_lastEOWActionDate     = 0;
 //--- State persistence (Phase 4): wall-clock throttle for routine per-tick saves.
 ulong g_lastSaveTickMs = 0;
 
-//--- Max Daily Drawdown tracker: reporting/OnTester()-criterion only, not
-//--- wired into any trading decision. Reuses CurrentReferenceDate() (below)
-//--- for the day boundary so it respects the same InpTimeReference/
-//--- InpGMTOffset the rest of the EA's day-based logic (Session Profit
-//--- Limit, EOD/EOW) already uses, instead of a raw UTC midnight split.
-double   g_ddStartBalanceToday = 0.0;
-double   g_ddLowestEquityToday = 0.0;
-datetime g_ddCurrentDay        = 0;
-double   g_ddMaxToday          = 0.0;
-double   g_ddWorstOverall      = 0.0;
-
 //+------------------------------------------------------------------+
 //| Pip conversion. A "pip" is defined as 10x point on a 3/5-digit    |
 //| broker (fractional-pip quoting) and 1x point otherwise, matching  |
@@ -2643,39 +2632,6 @@ void CheckEquityProtection()
       CloseSequenceAndCleanup(false, i, "Equity Protection — combined floating profit reached threshold");
   }
 
-//+------------------------------------------------------------------+
-//| Max Daily Drawdown tracker (plug-and-play, user-supplied). Purely   |
-//| observational — feeds OnTester() below for use as a custom          |
-//| optimization criterion (Strategy Tester's "Custom max" setting);    |
-//| it never closes or resizes a position itself. Day boundary uses     |
-//| CurrentReferenceDate() rather than a raw UTC split so it lines up   |
-//| with this EA's own InpTimeReference/InpGMTOffset-aware day, EOD and |
-//| Session Profit Limit accounting elsewhere in the file.              |
-//+------------------------------------------------------------------+
-void UpdateMaxDailyDrawdown()
-  {
-   datetime today  = CurrentReferenceDate();
-   double   equity = AccountInfoDouble(ACCOUNT_EQUITY);
-
-   if(today != g_ddCurrentDay)
-     {
-      //--- roll yesterday's result into the running worst-day figure before resetting.
-      if(g_ddMaxToday > g_ddWorstOverall) g_ddWorstOverall = g_ddMaxToday;
-
-      g_ddCurrentDay        = today;
-      g_ddStartBalanceToday = AccountInfoDouble(ACCOUNT_BALANCE);
-      g_ddLowestEquityToday = equity;
-      g_ddMaxToday          = 0.0;
-     }
-
-   if(equity < g_ddLowestEquityToday)
-      g_ddLowestEquityToday = equity;
-
-   double ddToday = g_ddStartBalanceToday - g_ddLowestEquityToday;
-   if(ddToday > g_ddMaxToday)
-      g_ddMaxToday = ddToday;
-  }
-
 //+====================================================================+
 //| PHASE 4 (continued): state persistence — load side, session/EOD/    |
 //| EOW gating, and the on-screen display. All three are called only    |
@@ -3141,28 +3097,9 @@ void OnTick()
    CheckEndOfDayAndWeek();
    CheckExitsPerTick();
    CheckEquityProtection();
-   UpdateMaxDailyDrawdown();
    if(IsNewBar())
       ProcessNewBar();
    UpdateChartDisplay();
    SaveStateThrottled();
-  }
-
-//+------------------------------------------------------------------+
-//| Strategy Tester custom optimization criterion: worst single-day     |
-//| drawdown (start-of-day Balance minus that day's lowest Equity)      |
-//| observed anywhere in the test, in account currency. Rolls in the    |
-//| still-open final day's figure, which UpdateMaxDailyDrawdown() above |
-//| only folds into g_ddWorstOverall on the NEXT day's rollover — without|
-//| this, the last calendar day of any test would be silently excluded. |
-//| Select "Custom max" as the Tester's optimization criterion to use   |
-//| this (lower is better, so combine with a suitable Tester setting).  |
-//+------------------------------------------------------------------+
-double OnTester()
-  {
-   if(g_ddMaxToday > g_ddWorstOverall)
-      g_ddWorstOverall = g_ddMaxToday;
-
-   return(g_ddWorstOverall);
   }
 //+------------------------------------------------------------------+
