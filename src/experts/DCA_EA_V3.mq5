@@ -1,24 +1,25 @@
 //+------------------------------------------------------------------+
-//|                                                    DCA_EA_V1.mq5 |
+//|                                                    DCA_EA_V3.mq5 |
 //|                          Dollar-Cost-Averaging Expert Advisor    |
 //|                                                                    |
 //| ARCHIVED SNAPSHOT — HISTORICAL REFERENCE ONLY, not the live file.  |
-//| Taken right after Phase 4 build completion, BEFORE the forensic-   |
-//| comparison investigation against the reference EA began — i.e.     |
-//| before essentially every fix this project has made since. Missing |
-//| relative to the current live DCA_EA.mq5, in rough chronological    |
-//| order: §5.1 (BB Centre Band exit — bar close, not live), §5.2      |
-//| (concurrent sequences were structurally impossible), §5.3 (zone    |
-//| latches started blanket-false, no historical warm-up), §13/§14     |
-//| (Recovery Mode's breakeven check was live, not bar-close — the     |
-//| single largest forensic fix), §15 (CentreCrossReady was a          |
-//| positional latch, not a true crossing detector), §24 (Dynamic Stop |
-//| arming), the Equity Protection feature (didn't exist yet), this    |
-//| session's source-code audit fixes (A1–A5: dead InpBBExitOnBreach   |
-//| input, orphaned-position risk on a failed close, unpersisted       |
-//| crossing-detector state), and the docs-audit fixes C1/H1. Kept     |
-//| purely as a rollback/comparison point, per an explicit request     |
-//| made just before §5.1/§5.2 were implemented.                       |
+//| Taken from DCA_EA.mq5 with ONE deliberate difference: §H1 (the     |
+//| entry zone-breach relaxation — "touch alone, no close-beyond       |
+//| requirement", added per a literal EA_User_Guide.docx reading) is   |
+//| REVERTED here. BBBuyBreach()/BBSellBreach() and the OnInit()        |
+//| historical-lookback scan both require touch AND close-beyond-the-  |
+//| band again, as they did before §H1.                                |
+//|                                                                    |
+//| Why this snapshot exists: a direct entry/exit comparison against   |
+//| the reference EA (bar-close mode) showed §H1 adds ~7 spurious new  |
+//| sequence-opens the reference doesn't have (22→29 vs. reference's   |
+//| 21), worsening the entry-side fragmentation pattern already known  |
+//| from §15 — while §C1 (the breakeven-vs-buffer fix, kept in both    |
+//| this snapshot and the live file) independently verified as         |
+//| matching the reference's exit timing/pricing closely. This         |
+//| snapshot is the "C1 without H1" configuration, kept for future      |
+//| testing/comparison rather than re-litigated immediately — the live |
+//| file currently still has H1 applied pending that follow-up.        |
 //|                                                                    |
 //| Entries: QMP Filter (MACD_Platinum + QQE Adv) dots, gated by a    |
 //| Bollinger Band and/or QQE zone breach. Adds to a losing position  |
@@ -98,6 +99,12 @@ enum ENUM_FIXED_TARGET_TYPE
    TARGET_ATR              // ATR Multiple
   };
 
+enum ENUM_EQUITY_PROTECTION_MODE
+  {
+   EQUITY_PROTECT_PERCENT = 0,  // Percent of Account Balance
+   EQUITY_PROTECT_AMOUNT        // Fixed Currency Amount
+  };
+
 enum ENUM_TIME_REFERENCE
   {
    TIME_BROKER = 0,        // Broker Time (Server)
@@ -150,7 +157,7 @@ input int                    InpMaxTradesPerSequence     = 0;                  /
 input int                    InpMaxSequencesPerDirection = 3;                  // Max Concurrent Sequences per Direction
 input ENUM_TRADE_DIRECTION   InpTradeDirection           = DIRECTION_BOTH;     // Allowed Trade Direction
 input bool                   InpAllowBuySellAtSameTime   = true;               // Allow Buy & Sell at the Same Time (needs a hedging account)
-input string                 InpUserComment              = "DCA-EA-V21.0";     // Trade Comment
+input string                 InpUserComment              = "DCA-EA-V1.0";     // Trade Comment
 
 input group "Indicator Mode"
 input ENUM_INDICATOR_MODE    InpIndicatorMode          = INDICATOR_BB_ONLY;  // Entry Indicator Mode
@@ -256,6 +263,12 @@ input string                 SIGNAL_DISTANCE_ATR_INFO    = "Info only: ATR Perio
 input group "Advanced - Session Profit Limit"
 input double                  InpStopAfterProfitPerSession = 0.0; // Stop New Sequences After Profit per Session ($, 0 = off)
 
+input group "Advanced - Equity Protection"
+input bool                        InpUseEquityProtection     = false;                 // Enable Equity Protection (Close All)
+input ENUM_EQUITY_PROTECTION_MODE InpEquityProtectionMode    = EQUITY_PROTECT_PERCENT; // Threshold Type
+input double                      InpEquityProtectionPercent = 0.6;                   // Threshold (% of Account Balance)
+input double                      InpEquityProtectionAmount  = 500.0;                 // Threshold (Account Currency)
+
 input group "Advanced - Entry Options"
 input string                  InpAllDCA_SignalsMatchEntry_Info = "Info only: if enabled, only one sequence per direction runs, and every add-on trade must match the same entry rules (not just a QMP dot).";
 input bool                    InpAllSignalsMatchEntryCriteria  = false; // All DCA Signals Must Match Entry Criteria
@@ -272,7 +285,7 @@ input ENUM_MA_METHOD          InpMAMethod           = MODE_EMA;                 
 input ENUM_APPLIED_PRICE      InpMAAppliedPrice     = PRICE_CLOSE;               // MA Applied Price
 
 input group "On Screen Displays"
-input bool                    InpShowTrailingStops         = true;              // Show Trailing Stop Lines
+input bool                    InpShowTrailingStops         = false;              // Show Trailing Stop Lines
 input color                   InpBuyTrailingColor          = (color)65280;      // Buy Trailing Stop Colour (Lime)
 input color                   InpSellTrailingColor         = (color)255;        // Sell Trailing Stop Colour (Red)
 input ENUM_LINE_STYLE         InpTrailingLineStyle         = STYLE_DASH;        // Trailing Stop Line Style
@@ -337,6 +350,9 @@ struct Sequence
    bool     trailStopActive;    // shared by Dynamic Stop and the Partial-Close remainder stop (mutually exclusive by Exit Strategy/input)
    double   trailStopPrice;     // current stop level for whichever trailing mechanism is active
    bool     partialCloseDone;   // true once Partial Close has executed; also blocks further add-ons to this sequence
+   bool     touchBreached;      // BB Centre Band touch mode (InpBBExitOnBreach=true): sticky latch, see UpdateTouchBreach() —
+                                 // per EA_User_Guide.docx: "at any time there has been a breach of the BB centre band" (bar
+                                 // High/Low, not close), independent of where the candle's own close ends up
   };
 
 Sequence g_buySequences[];
@@ -354,6 +370,15 @@ double g_multiplierSequence[];
 //--- confirms, with no time limit — so once a breach arms a latch, it stays armed
 //--- until consumed by a brand-new sequence's first trade (add-on trades never
 //--- consume it — see the design note above).
+//---
+//--- FIX (FORENSIC_COMPARISON_REPORT.md §5.3, refined in §11): a blanket
+//--- "start all four pre-armed" was tried first and was wrong — it fixed the
+//--- BUY side but incorrectly also pre-armed SELL, producing a spurious extra
+//--- SELL sequence the reference doesn't open. These now start false, as
+//--- before; InitializeZoneLatchesFromHistory() (called once from OnInit(),
+//--- before LoadState()) computes each latch's real starting value from a
+//--- small bounded window of actual historical bars immediately preceding
+//--- the EA's first bar, instead of assuming a fixed default either way.
 bool g_bbBuyArmed = false, g_bbSellArmed = false, g_qqeBuyArmed = false, g_qqeSellArmed = false;
 
 //--- Re-entry-after-close gates (InpRequireBBBandTouchForReentry / InpRequireQQEScenarioBForReentry).
@@ -361,6 +386,37 @@ bool g_bbBuyArmed = false, g_bbSellArmed = false, g_qqeBuyArmed = false, g_qqeSe
 //--- a later build phase (exit logic) sets these false when a sequence closes, and
 //--- the zone-breach detection re-arms them on a fresh qualifying touch/extreme.
 bool g_reentryReadyBuy = true, g_reentryReadySell = true;
+
+//--- Require Centre Band Cross Before New Sequence (InpRequireCenterBandCross).
+//--- A STATEFUL latch, not a positional snapshot: starts ready (so the very
+//--- first sequence isn't blocked), is consumed when a new sequence opens in
+//--- that direction, and only re-arms once price closes on the OPPOSITE side
+//--- of the centre band at least once afterward. A plain "is price currently
+//--- below/above centre right now" check (tried first, see
+//--- FORENSIC_COMPARISON_REPORT.md §9) is nearly always true throughout a
+//--- single sustained excursion, letting new sequences open far more often
+//--- than the reference does — the whole point of this gate is to require a
+//--- genuine recovery-then-reversal, not just "still on the same side."
+//---
+//--- FIX (FORENSIC_COMPARISON_REPORT.md §15): the "positional latch" model
+//--- described above (arm on which side price is CURRENTLY on) turned out to
+//--- be flawed in exactly the way its own comment warns against — during any
+//--- sustained one-directional move, price sits on the SAME side every bar,
+//--- so whichever latch matches the trend direction stays continuously true
+//--- for the entire move. It can never function as a "requires a genuine
+//--- cross" gate; it just tracks current side with a one-bar lag. This is
+//--- confirmed as the mechanism behind repeated spurious extra sequences
+//--- during a trend (e.g. 2026.01.05, 2026.01.12) even after §5.1-§5.3 and
+//--- §14 fixed everything else in this area. g_prevCentreSide tracks the
+//--- previous bar's side so UpdateCentreCrossReadiness() can detect an
+//--- actual TRANSITION instead of a static position.
+bool g_centreCrossReadyBuy = true, g_centreCrossReadySell = true;
+//--- FIX (audit report §A5): seeded from history in InitializeZoneLatchesFromHistory()
+//--- (shift=1 only) and persisted in Save/LoadState() alongside everything else this
+//--- latch depends on — previously started at 0 with no warm-up and wasn't saved, so a
+//--- live restart would silently forget which side price was last on and need two bars
+//--- to "re-learn" it before any cross could be detected again.
+int  g_prevCentreSide = 0;   // -1 = last closed bar was below centre, +1 = above, 0 = unknown yet
 
 //--- Higher Timeframe Direction Filter bias, recomputed once per new bar.
 int g_htfDirection = 0;   // -1 bearish, 0 unknown/neutral (both directions blocked), +1 bullish
@@ -706,6 +762,72 @@ bool CreateIndicatorHandles()
   }
 
 //+------------------------------------------------------------------+
+//| §5.3 fix (see FORENSIC_COMPARISON_REPORT.md §11). Computes each    |
+//| zone-armed latch's real starting value from actual historical bars |
+//| immediately preceding the EA's first bar, instead of assuming a    |
+//| fixed true/false default either way (the same "no time limit"      |
+//| carry-forward rule already confirmed correct for in-test breaches, |
+//| applied retroactively to the small window right before startup).   |
+//|                                                                     |
+//| ASSUMPTION (evidence-based, but the exact window size is inferred  |
+//| beyond the one confirmed data point): the reference's own first    |
+//| BUY entry is explained by a breach exactly 2 bars before its first  |
+//| live bar; its first SELL entry shows no equivalent pre-arming, so   |
+//| whatever sell-side breach existed earlier must lie outside whatever |
+//| window it uses. A 10-bar lookback is used here as a clearly-        |
+//| flagged, generous-but-bounded margin — not a reverse-engineered     |
+//| exact constant. Only meaningful for a genuinely fresh start (Strategy|
+//| Tester always, or a live chart's very first run) — LoadState(),     |
+//| called right after this in OnInit(), overwrites these with the real |
+//| persisted values whenever a state file exists.                      |
+//+------------------------------------------------------------------+
+#define ZONE_STARTUP_LOOKBACK_BARS 10
+
+void InitializeZoneLatchesFromHistory()
+  {
+   for(int shift = 1; shift <= ZONE_STARTUP_LOOKBACK_BARS; shift++)
+     {
+      double high  = iHigh(_Symbol, PERIOD_CURRENT, shift);
+      double low   = iLow(_Symbol, PERIOD_CURRENT, shift);
+      double close = iClose(_Symbol, PERIOD_CURRENT, shift);
+      if(high <= 0.0 || low <= 0.0) break;   // ran out of available history
+
+      if(g_bbHandle != INVALID_HANDLE)
+        {
+         double mid[1], up[1], lo[1];
+         if(CopyBuffer(g_bbHandle, 0, shift, 1, mid) > 0 &&
+            CopyBuffer(g_bbHandle, 1, shift, 1, up)  > 0 &&
+            CopyBuffer(g_bbHandle, 2, shift, 1, lo)  > 0)
+           {
+            //--- H1 REVERTED IN THIS SNAPSHOT: touch AND close-beyond, matching the reverted
+            //--- BBBuyBreach()/BBSellBreach() above.
+            if(!g_bbBuyArmed  && low  <= lo[0] && close <= lo[0]) g_bbBuyArmed  = true;
+            if(!g_bbSellArmed && high >= up[0] && close >= up[0]) g_bbSellArmed = true;
+
+            //--- audit report §A5: seed the crossing-detector's "previous bar"
+            //--- memory from the single most recent historical bar (shift=1
+            //--- only — this is a point-in-time state, not a "did it happen
+            //--- anywhere in the window" latch like the zone-breach flags
+            //--- above), so a genuine cross can be detected on the very first
+            //--- live bar instead of needing two bars to "re-learn" it.
+            if(shift == 1)
+               g_prevCentreSide = (close > mid[0]) ? 1 : (close < mid[0] ? -1 : 0);
+           }
+        }
+
+      if(g_qqeHandle != INVALID_HANDLE)
+        {
+         double q[1];
+         if(CopyBuffer(g_qqeHandle, 0, shift, 1, q) > 0)
+           {
+            if(!g_qqeBuyArmed  && q[0] <= InpQQEOversold)   g_qqeBuyArmed  = true;
+            if(!g_qqeSellArmed && q[0] >= InpQQEOverbought) g_qqeSellArmed = true;
+           }
+        }
+     }
+  }
+
+//+------------------------------------------------------------------+
 //| Releases every indicator handle this EA created. Safe to call     |
 //| even if some handles were never created (INVALID_HANDLE guard).   |
 //+------------------------------------------------------------------+
@@ -893,9 +1015,9 @@ void RefreshBarSnapshot()
   }
 
 //+------------------------------------------------------------------+
-//| "Breach" = the closed bar touched the band/level AND closed beyond |
-//| it — a mid-candle touch that closes back on the wrong side does    |
-//| not count (per the guide).                                         |
+//| H1 REVERTED IN THIS SNAPSHOT — see file header for why. Back to    |
+//| requiring BOTH the touch AND the close beyond the band, matching   |
+//| the live file's behavior before §H1 was tried.                     |
 //+------------------------------------------------------------------+
 bool BBBuyBreach()   { return(g_bbSnapshotValid && g_bar1Low  <= g_bbLower1 && g_bar1Close <= g_bbLower1); }
 bool BBSellBreach()  { return(g_bbSnapshotValid && g_bar1High >= g_bbUpper1 && g_bar1Close >= g_bbUpper1); }
@@ -999,27 +1121,6 @@ bool OppositeDirectionBlocked(bool isBuy)
   }
 
 //+------------------------------------------------------------------+
-//| Finds an open sequence in the given direction that still has room  |
-//| for another trade (InpMaxTradesPerSequence, 0 = unlimited).        |
-//| Returns -1 if none — i.e. a fresh dot must start a NEW sequence.   |
-//| A sequence past Partial Close is never a valid add-on target — its |
-//| remaining trade is being managed toward closure, not grown.        |
-//+------------------------------------------------------------------+
-int FindOpenSequenceWithRoom(bool isBuy)
-  {
-   int total = isBuy ? ArraySize(g_buySequences) : ArraySize(g_sellSequences);
-   for(int i = 0; i < total; i++)
-     {
-      int  count       = isBuy ? g_buySequences[i].count          : g_sellSequences[i].count;
-      bool partialDone  = isBuy ? g_buySequences[i].partialCloseDone : g_sellSequences[i].partialCloseDone;
-      if(partialDone) continue;
-      if(InpMaxTradesPerSequence <= 0 || count < InpMaxTradesPerSequence)
-         return(i);
-     }
-   return(-1);
-  }
-
-//+------------------------------------------------------------------+
 //| New-sequence-only entry gates (report §5.3 / §14 step 5 category). |
 //| Each is a no-op (returns true) when its governing input is off or  |
 //| when it doesn't apply to the active Indicator Mode.                |
@@ -1028,8 +1129,42 @@ bool CentreCrossReady(bool isBuy)
   {
    if(!InpRequireCenterBandCross) return(true);
    if(InpIndicatorMode == INDICATOR_QQE_ONLY) return(true);   // no centre band in QQE-only mode
-   if(!g_bbSnapshotValid) return(false);
-   return(isBuy ? (g_bar1Close < g_bbMiddle1) : (g_bar1Close > g_bbMiddle1));
+   return(isBuy ? g_centreCrossReadyBuy : g_centreCrossReadySell);
+  }
+
+//+------------------------------------------------------------------+
+//| Updates the centre-cross-ready latches from this bar's close       |
+//| relative to the middle band — a close on one side re-arms new-      |
+//| sequence readiness for the OPPOSITE direction (a close below centre |
+//| means price has recovered away from any open SELL sequence's        |
+//| territory, so a fresh SELL sequence can only be justified after a   |
+//| genuine reversal back above centre, and vice versa).                |
+//+------------------------------------------------------------------+
+void UpdateCentreCrossReadiness()
+  {
+   if(!g_bbSnapshotValid) return;
+   //--- FIX (FORENSIC_COMPARISON_REPORT.md §15): the previous positional-latch
+   //--- version (see git history / §12) armed readiness based on which side of
+   //--- the centre band price CURRENTLY sat on, re-arming every single bar of
+   //--- a sustained trend. That defeats the gate's documented purpose (require
+   //--- a genuine recovery-then-reversal) and was root-caused as the source of
+   //--- spurious extra sequences opening mid-trend (e.g. 2026.01.05, .01.12)
+   //--- even after §5.1-§5.3 and §14 were all fixed. This version only arms
+   //--- readiness on an actual TRANSITION across the centre band — the side
+   //--- must first be observed on one side, then observed on the other — so
+   //--- it fires once per genuine cross instead of continuously during a
+   //--- trend. Buy/sell mapping is unchanged from the empirically-validated
+   //--- orientation (cross UP arms SELL, cross DOWN arms BUY).
+   int side = (g_bar1Close > g_bbMiddle1) ? 1 : (g_bar1Close < g_bbMiddle1 ? -1 : 0);
+   if(side != 0)
+     {
+      if(g_prevCentreSide != 0 && side != g_prevCentreSide)
+        {
+         if(side > 0) g_centreCrossReadySell = true;   // just crossed UP through centre
+         else         g_centreCrossReadyBuy  = true;   // just crossed DOWN through centre
+        }
+      g_prevCentreSide = side;
+     }
   }
 
 bool NoTriggerOnCentreBreachOk()
@@ -1118,7 +1253,7 @@ bool HtfDirectionOk(bool isBuy)
 //+====================================================================+
 //| Front-loaded PHASE 4 helpers (chart-object primitives, session/     |
 //| time-of-day helpers). MQL5 requires define-before-use in the same   |
-//| file, and CreateNewSequence()/TryEnterSequence() below need these — |
+//| file, and CreateNewSequence()/TryOpenNewSequence() below need these — |
 //| so, like the chart-object helpers and Sequence-array plumbing in    |
 //| Phase 2, they're defined here rather than down with the rest of     |
 //| the Phase 4 code (session/EOD/EOW handling, state persistence, the  |
@@ -1307,9 +1442,10 @@ bool SessionProfitLimitReached()
 //| Magic Number), rewritten in full on every save. Front-loaded here,  |
 //| ahead of LoadState() (later in the file, once its own dependencies  |
 //| RemoveSequenceAt()/SyncSequenceFromLivePositions() exist), because   |
-//| TryEnterSequence() below calls SaveState() directly on a successful |
-//| entry (a structural event that must survive a crash without         |
-//| waiting for the next throttled tick — see §15).                     |
+//| AddOnToAllOpenSequences()/TryOpenNewSequence() below call SaveState()|
+//| directly on a successful entry (a structural event that must         |
+//| survive a crash without waiting for the next throttled tick — see    |
+//| §15).                                                                 |
 //|                                                                      |
 //| CRITICAL: never runs inside the Strategy Tester. A saved file        |
 //| persists between SEPARATE backtest runs on the same symbol/magic —  |
@@ -1338,12 +1474,15 @@ void WriteSequencesToFile(int handle, bool isBuy)
 
       //--- field order: SEQ|dir|count|avgPrice|totalVolume|lockedBaseLot|sequenceId|
       //--- startTime|recoveryModeActive|trailStopActive|trailStopPrice|partialCloseDone|
-      //--- lastEntryTime|lastEntryPrice|tickets — LoadState() below must match exactly.
-      string line = StringFormat("SEQ|%s|%d|%.5f|%.2f|%.5f|%I64d|%I64d|%d|%d|%.5f|%d|%I64d|%.5f|%s",
+      //--- lastEntryTime|lastEntryPrice|tickets|touchBreached (appended, not inserted,
+      //--- so tickets' index stays stable for older files) — LoadState() below must
+      //--- match exactly.
+      string line = StringFormat("SEQ|%s|%d|%.5f|%.2f|%.5f|%I64d|%I64d|%d|%d|%.5f|%d|%I64d|%.5f|%s|%d",
                                   isBuy ? "BUY" : "SELL", s.count, s.avgPrice, s.totalVolume, s.lockedBaseLot,
                                   s.sequenceId, (long)s.startTime,
                                   (int)s.recoveryModeActive, (int)s.trailStopActive, s.trailStopPrice,
-                                  (int)s.partialCloseDone, (long)s.lastEntryTime, s.lastEntryPrice, ticketsStr);
+                                  (int)s.partialCloseDone, (long)s.lastEntryTime, s.lastEntryPrice, ticketsStr,
+                                  (int)s.touchBreached);
       FileWriteString(handle, line + "\n");
      }
   }
@@ -1362,13 +1501,15 @@ void SaveState()
    //--- field order: GLOBAL|bbBuyArmed|bbSellArmed|qqeBuyArmed|qqeSellArmed|
    //--- reentryReadyBuy|reentryReadySell|pendingSignal|pendingSignalIsBuy|
    //--- pendingSignalCentreBreached|sessionRealizedProfit|sessionDate|
-   //--- lastEODActionDate|lastEOWActionDate|nextSequenceId
-   string globalLine = StringFormat("GLOBAL|%d|%d|%d|%d|%d|%d|%d|%d|%d|%.2f|%I64d|%I64d|%I64d|%I64d",
+   //--- lastEODActionDate|lastEOWActionDate|nextSequenceId|
+   //--- centreCrossReadyBuy|centreCrossReadySell|prevCentreSide (§A5)
+   string globalLine = StringFormat("GLOBAL|%d|%d|%d|%d|%d|%d|%d|%d|%d|%.2f|%I64d|%I64d|%I64d|%I64d|%d|%d|%d",
                                      (int)g_bbBuyArmed, (int)g_bbSellArmed, (int)g_qqeBuyArmed, (int)g_qqeSellArmed,
                                      (int)g_reentryReadyBuy, (int)g_reentryReadySell,
                                      (int)g_pendingSignal, (int)g_pendingSignalIsBuy, (int)g_pendingSignalCentreBreached,
                                      g_sessionRealizedProfit, (long)g_sessionDate,
-                                     (long)g_lastEODActionDate, (long)g_lastEOWActionDate, g_nextSequenceId);
+                                     (long)g_lastEODActionDate, (long)g_lastEOWActionDate, g_nextSequenceId,
+                                     (int)g_centreCrossReadyBuy, (int)g_centreCrossReadySell, g_prevCentreSide);
    FileWriteString(handle, globalLine + "\n");
 
    WriteSequencesToFile(handle, true);
@@ -1520,6 +1661,7 @@ void CreateNewSequence(bool isBuy, ulong ticket, double baseLot, double price)
    s.trailStopActive    = false;
    s.trailStopPrice     = 0.0;
    s.partialCloseDone   = false;
+   s.touchBreached      = false;
 
    DrawSequenceStartLine(isBuy, s.sequenceId, s.startTime);
 
@@ -1649,55 +1791,85 @@ void PruneClosedSequences()
   }
 
 //+------------------------------------------------------------------+
-//| Attempts to act on a qualifying signal in the given direction —    |
-//| either as an add-on to an already-open sequence (no zone check     |
-//| needed, unless InpAllSignalsMatchEntryCriteria is on), or as the    |
-//| first trade of a brand-new sequence (full new-sequence gate set,   |
-//| including the zone-armed check). Returns true only if a trade was  |
-//| actually opened.                                                    |
+//| §5.2 fix (see FORENSIC_COMPARISON_REPORT.md): a dot's "add to an     |
+//| existing sequence" and "open a brand-new parallel sequence" are      |
+//| INDEPENDENT triggers, not a mutually-exclusive either/or — both can  |
+//| fire from the same dot, confirmed directly by the reference EA's own |
+//| deal log (e.g. 2026.06.12: one dot adds to TWO different already-    |
+//| open sequences simultaneously; 2026.01.16 and 2026.06.09: one dot    |
+//| both adds to an existing sequence AND opens a new parallel one).     |
+//|                                                                       |
+//| Adds a trade to EVERY currently open, non-full, non-partial-closed   |
+//| sequence in the given direction — not just the first one found.     |
+//| The general trading-permission gates (session/direction/spread/      |
+//| opposite-direction) are checked once, since they don't vary per      |
+//| sequence within the same bar.                                        |
 //+------------------------------------------------------------------+
-bool TryEnterSequence(bool isBuy)
+void AddOnToAllOpenSequences(bool isBuy)
+  {
+   if(!IsWithinTradingSession())       return;
+   if(!DirectionAllowed(isBuy))        return;
+   if(!SpreadOk())                     return;
+   if(OppositeDirectionBlocked(isBuy)) return;
+
+   int total = isBuy ? ArraySize(g_buySequences) : ArraySize(g_sellSequences);
+   for(int i = 0; i < total; i++)
+     {
+      int  count      = isBuy ? g_buySequences[i].count          : g_sellSequences[i].count;
+      bool partialDone = isBuy ? g_buySequences[i].partialCloseDone : g_sellSequences[i].partialCloseDone;
+      if(partialDone) continue;
+      if(!(InpMaxTradesPerSequence <= 0 || count < InpMaxTradesPerSequence)) continue;
+      if(!AddOnGatesPass(isBuy, i)) continue;
+
+      double baseLot    = isBuy ? g_buySequences[i].lockedBaseLot : g_sellSequences[i].lockedBaseLot;
+      int    tradeIndex = isBuy ? g_buySequences[i].count         : g_sellSequences[i].count;
+      double lot        = NormalizeLot(baseLot * GetMultiplierForIndex(tradeIndex));
+
+      if(!MarginOk(isBuy, lot)) continue;
+
+      double filledPrice = 0.0;
+      ulong  ticket = SendMarketOrder(isBuy, lot, filledPrice);
+      if(ticket == 0) continue;
+
+      AppendToSequence(isBuy, i, ticket, lot, filledPrice);
+      SaveState();   // structural event — bypass the per-tick throttle (§15)
+     }
+  }
+
+//+------------------------------------------------------------------+
+//| The new-sequence path — independent of AddOnToAllOpenSequences()    |
+//| above, and of how many sequences are already open (up to the        |
+//| InpMaxSequencesPerDirection cap). Uses the existing sticky zone-     |
+//| armed latch exactly as before; ConsumeZoneLatch() on success is      |
+//| what naturally rations how often a new parallel sequence can open —  |
+//| the latch only re-arms on a genuine fresh breach, which is why new   |
+//| sequences are rare in practice despite being checked every bar.      |
+//| Returns true only if a trade was actually opened.                    |
+//+------------------------------------------------------------------+
+bool TryOpenNewSequence(bool isBuy)
   {
    if(!IsWithinTradingSession())       return(false);
    if(!DirectionAllowed(isBuy))        return(false);
    if(!SpreadOk())                     return(false);
    if(OppositeDirectionBlocked(isBuy)) return(false);
 
-   int  seqIdx       = FindOpenSequenceWithRoom(isBuy);
-   bool isNewSequence = (seqIdx < 0);
+   int maxSeq = InpMaxSequencesPerDirection;
+   if(InpAllSignalsMatchEntryCriteria && (maxSeq <= 0 || maxSeq > 1))
+      maxSeq = 1;
+   if(maxSeq > 0 && CountOpenSequences(isBuy) >= maxSeq) return(false);
+   if(!NewSequenceGatesPass(isBuy)) return(false);
 
-   if(isNewSequence)
-     {
-      int maxSeq = InpMaxSequencesPerDirection;
-      if(InpAllSignalsMatchEntryCriteria && (maxSeq <= 0 || maxSeq > 1))
-         maxSeq = 1;
-      if(maxSeq > 0 && CountOpenSequences(isBuy) >= maxSeq) return(false);
-      if(!NewSequenceGatesPass(isBuy)) return(false);
-     }
-   else
-     {
-      if(!AddOnGatesPass(isBuy, seqIdx)) return(false);
-     }
-
-   double baseLot    = isNewSequence ? ComputeBaseLotForNewSequence(isBuy)
-                                      : (isBuy ? g_buySequences[seqIdx].lockedBaseLot : g_sellSequences[seqIdx].lockedBaseLot);
-   int    tradeIndex = isNewSequence ? 0 : (isBuy ? g_buySequences[seqIdx].count : g_sellSequences[seqIdx].count);
-   double lot        = NormalizeLot(baseLot * GetMultiplierForIndex(tradeIndex));
-
+   double baseLot = ComputeBaseLotForNewSequence(isBuy);
+   double lot     = NormalizeLot(baseLot * GetMultiplierForIndex(0));
    if(!MarginOk(isBuy, lot)) return(false);
 
    double filledPrice = 0.0;
    ulong  ticket = SendMarketOrder(isBuy, lot, filledPrice);
    if(ticket == 0) return(false);
 
-   if(isNewSequence)
-      CreateNewSequence(isBuy, ticket, baseLot, filledPrice);
-   else
-      AppendToSequence(isBuy, seqIdx, ticket, lot, filledPrice);
-
-   if(isNewSequence)
-      ConsumeZoneLatch(isBuy);
-
+   CreateNewSequence(isBuy, ticket, baseLot, filledPrice);
+   ConsumeZoneLatch(isBuy);
+   if(isBuy) g_centreCrossReadyBuy = false; else g_centreCrossReadySell = false;
    SaveState();   // structural event — bypass the per-tick throttle (§15)
    return(true);
   }
@@ -1706,15 +1878,18 @@ bool TryEnterSequence(bool isBuy)
 //| Runs once per closed bar: refreshes the indicator snapshot, updates|
 //| the zone-breach latches and HTF bias, prunes any sequence that has |
 //| gone flat outside the EA's control, then processes this bar's QMP  |
-//| dot — either as an immediate add-on (if a sequence is already open |
-//| in that direction) or as a pending new-sequence signal that keeps  |
-//| retrying on every future bar until the matching zone arms (no time |
-//| limit, per the guide).                                             |
+//| dot. A dot triggers BOTH independent paths — add-ons to every open  |
+//| sequence with room, and (separately) an attempt to open a new       |
+//| parallel sequence if the zone is armed and the concurrent-sequence   |
+//| cap allows it. The new-sequence attempt keeps retrying on every      |
+//| future bar (via the pending-signal latch) until the zone arms — no   |
+//| time limit, per the guide — even across bars with no further dot.   |
 //+------------------------------------------------------------------+
 void ProcessNewBar()
   {
    RefreshBarSnapshot();
    UpdateZoneBreachLatches();
+   UpdateCentreCrossReadiness();
    UpdateHtfDirection();
    PruneClosedSequences();
 
@@ -1722,37 +1897,19 @@ void ProcessNewBar()
    if(dot != 0)
      {
       bool isBuy = (dot > 0);
-      if(FindOpenSequenceWithRoom(isBuy) >= 0)
-        {
-         //--- an open sequence exists in this direction — attempt an immediate add-on
-         TryEnterSequence(isBuy);
-        }
-      else
-        {
-         //--- no open sequence to add to — this dot can only start a NEW sequence,
-         //--- which needs the matching zone armed. A fresh dot always supersedes
-         //--- any older pending one, matching QMP's own trend-flip semantics.
-         g_pendingSignal               = true;
-         g_pendingSignalIsBuy          = isBuy;
-         g_pendingSignalCentreBreached = g_bbSnapshotValid &&
-                                          (g_bar1Low <= g_bbMiddle1 && g_bar1High >= g_bbMiddle1);
-        }
+
+      AddOnToAllOpenSequences(isBuy);
+
+      //--- a fresh dot always supersedes any older pending one, matching
+      //--- QMP's own trend-flip semantics.
+      g_pendingSignal               = true;
+      g_pendingSignalIsBuy          = isBuy;
+      g_pendingSignalCentreBreached = g_bbSnapshotValid &&
+                                       (g_bar1Low <= g_bbMiddle1 && g_bar1High >= g_bbMiddle1);
      }
 
-   if(g_pendingSignal)
-     {
-      if(FindOpenSequenceWithRoom(g_pendingSignalIsBuy) >= 0)
-        {
-         //--- a sequence opened in the meantime (e.g. via the add-on branch above) —
-         //--- the pending new-sequence signal is now moot
-         g_pendingSignal = false;
-        }
-      else if(TryEnterSequence(g_pendingSignalIsBuy))
-        {
-         g_pendingSignal = false;   // consumed
-        }
-      //--- else: keep pending, retry on a future bar once the zone arms
-     }
+   if(g_pendingSignal && TryOpenNewSequence(g_pendingSignalIsBuy))
+      g_pendingSignal = false;   // consumed; else keep pending, retry once the zone arms
   }
 
 bool IsNewBar()
@@ -1806,6 +1963,27 @@ double GetSequenceProfitPips(bool isBuy, int idx)
    return(diff / g_pipSize);
   }
 
+//+------------------------------------------------------------------+
+//| Bar-close variant of the above, used specifically by the BB Centre |
+//| Band / QQE 50 + Recovery exit path (FORENSIC_COMPARISON_REPORT.md  |
+//| §13/§14): a targeted diagnostic showed the reference's exit price   |
+//| for a representative sequence is EXACTLY the prior closed bar's     |
+//| close, confirmed at the next bar's open — i.e. Recovery Mode's own  |
+//| breakeven+buffer check is bar-close driven, not live/intrabar, the  |
+//| same way the base exit condition already is. Every OTHER exit       |
+//| strategy (Fixed Target, Risk Reduction, Trailing) still uses the    |
+//| live GetSequenceProfitPips() above — there is no evidence either    |
+//| way for those, since default.set's InpExitStrategy never exercises  |
+//| them against the benchmark.                                         |
+//+------------------------------------------------------------------+
+double GetSequenceProfitPipsFromClose(bool isBuy, int idx)
+  {
+   double avg  = isBuy ? g_buySequences[idx].avgPrice : g_sellSequences[idx].avgPrice;
+   double diff = isBuy ? (g_bar1Close - avg) : (avg - g_bar1Close);
+   if(g_pipSize <= 0.0) return(0.0);
+   return(diff / g_pipSize);
+  }
+
 double ATRValue()
   {
    double a[1];
@@ -1820,26 +1998,55 @@ double TrailingDistance()
   }
 
 //+------------------------------------------------------------------+
-//| BB Centre Band exit condition. Per InpBBExitOnBreach: "true" reacts |
-//| immediately to a live intrabar touch of the centre band (reads the  |
-//| CURRENT, still-forming bar's middle band); "false" waits for the    |
-//| closed bar to actually close beyond it (reuses Phase 2's per-bar    |
-//| snapshot — see the file-level note above on why no separate         |
-//| per-bar pass is needed).                                            |
+//| BB Centre Band exit condition — bar-close variant, InpBBExitOnBreach |
+//| =false per EA_User_Guide.docx: "the actual candle has to close on    |
+//| the other side of the BB centre band before the sequence will       |
+//| close." See HandleBBCentreOrQQE50() for how InpBBExitOnBreach picks  |
+//| between this and the touch/breach-latch variant below.               |
 //+------------------------------------------------------------------+
-bool BBCentreExitConditionTick(bool isBuy)
-  {
-   if(g_bbHandle == INVALID_HANDLE) return(false);
-   double mid[1];
-   if(CopyBuffer(g_bbHandle, 0, 0, 1, mid) <= 0) return(false);
-   double price = isBuy ? SymbolInfoDouble(_Symbol, SYMBOL_BID) : SymbolInfoDouble(_Symbol, SYMBOL_ASK);
-   return(isBuy ? price >= mid[0] : price <= mid[0]);
-  }
-
 bool BBCentreExitConditionBar(bool isBuy)
   {
    if(!g_bbSnapshotValid) return(false);
    return(isBuy ? g_bar1Close >= g_bbMiddle1 : g_bar1Close <= g_bbMiddle1);
+  }
+
+//+------------------------------------------------------------------+
+//| BB Centre Band touch mode (InpBBExitOnBreach=true) — sticky breach   |
+//| latch. Two prior implementation attempts (a naive live-price-vs-     |
+//| live-mid check, then an arm/stop-on-pullback mechanism reconstructed |
+//| from two hand-verified examples) were both tried and disproved by    |
+//| real backtest comparisons against the reference — see the            |
+//| conversation history / audit report §A1 for that trail. This is the |
+//| actual mechanism, quoted directly from EA_User_Guide.docx:           |
+//|                                                                       |
+//| "If you had selected 'true' for this, then at any time there has     |
+//| been a breach of the BB centre band, and the sequence is in overall  |
+//| profit, the sequence will close on the close of that candle. It      |
+//| does not matter where the actual candle closes in relation to the    |
+//| BB centre band."                                                     |
+//|                                                                       |
+//| So it's still fundamentally bar-close-TIMED (no live/tick reactivity |
+//| at all, no arm/stop, no pullback) — the only difference from the     |
+//| =false variant is WHICH threshold trips it: BBCentreExitConditionBar |
+//| requires the candle's own CLOSE beyond the centre line; this latches |
+//| on sticky once ANY bar's High/Low has ever touched the centre line,  |
+//| independent of where that bar (or any later one) actually closes.    |
+//| Never resets while the sequence is open — matches the entry-side     |
+//| zone-breach latches' own "no time limit" precedent elsewhere in this |
+//| file. The existing breakeven+buffer/Recovery Mode gate downstream in |
+//| HandleBBCentreOrQQE50() is unchanged and still applies afterward.    |
+//+------------------------------------------------------------------+
+void UpdateTouchBreach(bool isBuy, int idx)
+  {
+   bool breached = isBuy ? g_buySequences[idx].touchBreached : g_sellSequences[idx].touchBreached;
+   if(breached) return;
+   if(!g_bbSnapshotValid) return;
+
+   bool touched = isBuy ? (g_bar1High >= g_bbMiddle1) : (g_bar1Low <= g_bbMiddle1);
+   if(!touched) return;
+
+   if(isBuy) g_buySequences[idx].touchBreached = true;
+   else      g_sellSequences[idx].touchBreached = true;
   }
 
 //+------------------------------------------------------------------+
@@ -1880,31 +2087,54 @@ bool QQE50ExitConditionBar(bool isBuy)
 //| InpRequireBBBandTouchForReentry nor InpRequireQQEScenarioBForReentry |
 //| is enabled, since ReentryReady() only ever reads this when at least |
 //| one of them is on.                                                  |
+//|                                                                      |
+//| FIX (audit report §A2): a failed trade.PositionClose() on any leg    |
+//| used to be logged and then ignored — the sequence was dropped from   |
+//| tracking regardless, orphaning that leg permanently (no further exit |
+//| management ever again, and PruneClosedSequences() can't rediscover   |
+//| it since it only iterates sequences still being tracked). Now each   |
+//| leg's profit is only credited to g_sessionRealizedProfit if its      |
+//| close actually succeeded, and SyncSequenceFromLivePositions() (the   |
+//| same safety net ExecutePartialCloseIfDue() already uses) re-reads    |
+//| what's genuinely still open afterward — the sequence is only         |
+//| dropped once it's confirmed empty; otherwise it stays tracked and    |
+//| the same exit condition naturally retries the close on a later tick. |
 //+------------------------------------------------------------------+
 void CloseSequenceAndCleanup(bool isBuy, int idx, string reason)
   {
-   long   sequenceId = isBuy ? g_buySequences[idx].sequenceId : g_sellSequences[idx].sequenceId;
-   double realized   = GetSequenceProfitMoney(isBuy, idx);   // captured before closing — positions vanish after
+   long sequenceId = isBuy ? g_buySequences[idx].sequenceId : g_sellSequences[idx].sequenceId;
 
-   int count = isBuy ? g_buySequences[idx].count : g_sellSequences[idx].count;
+   int    count        = isBuy ? g_buySequences[idx].count : g_sellSequences[idx].count;
+   double closedProfit = 0.0;
    for(int i = 0; i < count; i++)
      {
       ulong ticket = isBuy ? g_buySequences[idx].tickets[i] : g_sellSequences[idx].tickets[i];
       if(PositionSelectByTicket(ticket))
         {
-         if(!trade.PositionClose(ticket))
+         double legProfit = PositionGetDouble(POSITION_PROFIT) + PositionGetDouble(POSITION_SWAP);
+         if(trade.PositionClose(ticket))
+            closedProfit += legProfit;
+         else
             Print("EA-DCA: failed to close ticket ", ticket, " while closing sequence — retcode ", trade.ResultRetcode());
         }
      }
    Print("EA-DCA: ", (isBuy ? "BUY" : "SELL"), " sequence closed (", count, " trade(s)) — ", reason);
 
-   g_sessionRealizedProfit += realized;
+   g_sessionRealizedProfit += closedProfit;
    if(isBuy) g_reentryReadyBuy = false; else g_reentryReadySell = false;
 
-   DrawSequenceEndLine(isBuy, sequenceId);
-   DeleteSequenceChartObjects(isBuy, sequenceId);
+   SyncSequenceFromLivePositions(isBuy, idx);
+   int remaining = isBuy ? g_buySequences[idx].count : g_sellSequences[idx].count;
+   if(remaining == 0)
+     {
+      DrawSequenceEndLine(isBuy, sequenceId);
+      DeleteSequenceChartObjects(isBuy, sequenceId);
+      RemoveSequenceAt(isBuy, idx);
+     }
+   else
+      Print("EA-DCA WARNING: ", (isBuy ? "BUY" : "SELL"), " sequence still has ", remaining,
+            " open trade(s) after a close attempt — kept tracked; will retry.");
 
-   RemoveSequenceAt(isBuy, idx);
    SaveState();   // structural event — bypass the per-tick throttle (§15)
   }
 
@@ -2013,11 +2243,19 @@ bool ExecutePartialCloseIfDue(bool isBuy, int idx)
          ulong ticket = isBuy ? g_buySequences[idx].tickets[i] : g_sellSequences[idx].tickets[i];
          if(PositionSelectByTicket(ticket))
            {
-            closedProfit += PositionGetDouble(POSITION_PROFIT) + PositionGetDouble(POSITION_SWAP);
-            trade.PositionClose(ticket);
+            //--- FIX (audit report §A4): only credit a leg's profit once its
+            //--- close is confirmed to have actually succeeded — previously
+            //--- this was added unconditionally before the close attempt, so
+            //--- a failed PositionClose() double-counted that leg's profit
+            //--- (once here, again later whenever it genuinely closes).
+            double legProfit = PositionGetDouble(POSITION_PROFIT) + PositionGetDouble(POSITION_SWAP);
+            if(trade.PositionClose(ticket))
+               closedProfit += legProfit;
+            else
+               Print("EA-DCA: failed to close ticket ", ticket, " during Partial Close — retcode ", trade.ResultRetcode());
            }
         }
-      SyncSequenceFromLivePositions(isBuy, idx);   // re-sync tickets/count/avgPrice to the survivor
+      SyncSequenceFromLivePositions(isBuy, idx);   // re-sync tickets/count/avgPrice to the survivor(s)
 
       int survivorCount = isBuy ? g_buySequences[idx].count : g_sellSequences[idx].count;
       if(InpPartialClosePercent == PARTIAL_CLOSE_50 && survivorCount > 0)
@@ -2029,8 +2267,10 @@ bool ExecutePartialCloseIfDue(bool isBuy, int idx)
            {
             //--- approximate: the realized share is proportional to the fraction of volume reduced
             double survivorProfit = PositionGetDouble(POSITION_PROFIT) + PositionGetDouble(POSITION_SWAP);
-            closedProfit += survivorProfit * (reduceBy / remainingVol);
-            trade.PositionClosePartial(remainingTicket, reduceBy);
+            if(trade.PositionClosePartial(remainingTicket, reduceBy))
+               closedProfit += survivorProfit * (reduceBy / remainingVol);
+            else
+               Print("EA-DCA: failed to partially close ticket ", remainingTicket, " during Partial Close — retcode ", trade.ResultRetcode());
            }
          SyncSequenceFromLivePositions(isBuy, idx);
         }
@@ -2054,24 +2294,103 @@ bool ExecutePartialCloseIfDue(bool isBuy, int idx)
 //| it stays "active" and is re-checked every tick regardless of the    |
 //| condition's current state, until profit finally reaches the         |
 //| buffer — matching the guide's "no time limit" framing for this.     |
+//| Recovery Mode applies only when Dynamic Stop is OFF — see §24 of     |
+//| DCA_EA_Analysis_Report.md.                                           |
+//|                                                                      |
+//| FIX (FORENSIC_COMPARISON_REPORT.md §13/§14): a targeted diagnostic   |
+//| against a representative sequence showed the reference's actual      |
+//| exit price is EXACTLY the prior H4 bar's close, confirmed at the     |
+//| next bar's open — evidenced for InpBBExitOnBreach=true (default.     |
+//| set's value, the only one tested against the benchmark). At the time |
+//| this was fixed by hardcoding both the base condition and the         |
+//| Recovery Mode buffer check to bar-close and removing the touch/live   |
+//| variant (BBCentreExitConditionTick) entirely.                        |
+//|                                                                      |
+//| RESTORED (audit report §A1, per explicit stakeholder direction): the |
+//| toggle is back — InpBBExitOnBreach genuinely selects between two      |
+//| variants for BB Centre Band specifically (isBBMode true), for BOTH   |
+//| the exit condition AND the breakeven+buffer check together: =true    |
+//| (the default, unchanged) uses the touch/live variant for both.       |
+//| QQE 50 + Recovery (isBBMode false) is untouched by this input — it   |
+//| has no live/touch concept (see QQE50ExitConditionBar's own comment)  |
+//| and stays bar-close for both condition and breakeven, always.        |
+//|                                                                      |
+//| REVISED (EA_User_Guide.docx, found after two disproved reverse-       |
+//| engineering attempts — see UpdateTouchBreach()'s comment for the     |
+//| exact quote and the trail of what was tried first): touch mode's     |
+//| exit condition is UpdateTouchBreach()'s sticky bar High/Low latch,   |
+//| not a live/tick check and not an arm/stop mechanism — it is still    |
+//| fundamentally bar-close-TIMED, exactly like the =false variant, just |
+//| tripped by a different threshold (ever-touched vs. actually-closed-  |
+//| beyond). The breakeven+buffer check still follows GetSequenceProfit- |
+//| Pips() (live) when useTouch, per the original stakeholder direction  |
+//| for that part specifically — the guide quote doesn't address it.     |
+//|                                                                      |
+//| FIX (§24): per the EA's actual design description, Dynamic Stop      |
+//| activates as soon as the exit condition is met — full stop, no       |
+//| separate profit/breakeven precondition. The breakeven+buffer gate    |
+//| below (and the Recovery-Mode fallback it feeds) is the correct       |
+//| behavior only when Dynamic Stop is OFF, where closing outright at a  |
+//| loss has to be avoided some other way. When Dynamic Stop is ON, that |
+//| gate is skipped entirely: ArmDynamicStopIfDue() always succeeds, so  |
+//| CloseSequenceAndCleanup() below is never reached for this strategy —  |
+//| "closes outright" is replaced by "switches to trailing" unconditionally,|
+//| exactly as described. If the condition fires while the sequence is   |
+//| still at a loss, the stop arms right where price is now and          |
+//| ManageActiveTrailStop()'s existing profit<=0 check disarms it again  |
+//| on the very next tick — net effect: no change, sequence keeps adding |
+//| trades, matching "lets the sequence recover instead of being stopped |
+//| out."                                                                 |
+//|                                                                      |
+//| FIX (docs audit report §C1): EA_User_Guide.docx's Recovery Mode      |
+//| section describes TWO different thresholds, not one — "the 1st type  |
+//| of close... is simply a breach of the desired level AND if the       |
+//| sequence is at overall break even OR PROFITABLE, then closed. End of |
+//| story." Only once that FIRST check fails ("the 2nd type... the      |
+//| trade sequence is NOT at overall break even or profitable") does the |
+//| EA "start to look for an overall break even level PLUS" the buffer.  |
+//| So the buffer is specifically Recovery Mode's own fallback target,   |
+//| not the threshold for the very first evaluation. Previously this     |
+//| function used the buffer unconditionally on every evaluation,        |
+//| including the first, silently routing sequences into Recovery Mode   |
+//| (extra add-on trades, longer lifetimes) that the guide says should   |
+//| have simply closed at breakeven. requiredPips below is 0 the first   |
+//| time (recoveryActive was false coming into this tick) and the full   |
+//| buffer on every evaluation after Recovery Mode has already engaged   |
+//| once (recoveryActive was already true) — recoveryActive is read      |
+//| BEFORE it can be set later in this same call, so it correctly        |
+//| reflects "was this sequence already in Recovery Mode before now."    |
 //+------------------------------------------------------------------+
 void HandleBBCentreOrQQE50(bool isBuy, int idx, bool isBBMode)
   {
    if(ManageActiveTrailStop(isBuy, idx)) return;
 
-   bool conditionMet = isBBMode
-                        ? (InpBBExitOnBreach ? BBCentreExitConditionTick(isBuy) : BBCentreExitConditionBar(isBuy))
-                        : QQE50ExitConditionBar(isBuy);
+   bool useTouch = isBBMode && InpBBExitOnBreach;   // BB Centre Band only; QQE50+Recovery always bar-close
+   if(useTouch) UpdateTouchBreach(isBuy, idx);
+
+   bool conditionMet;
+   if(isBBMode)
+     {
+      bool touchBreached = isBuy ? g_buySequences[idx].touchBreached : g_sellSequences[idx].touchBreached;
+      conditionMet = useTouch ? touchBreached : BBCentreExitConditionBar(isBuy);
+     }
+   else
+      conditionMet = QQE50ExitConditionBar(isBuy);
 
    bool recoveryActive = isBuy ? g_buySequences[idx].recoveryModeActive : g_sellSequences[idx].recoveryModeActive;
    if(!conditionMet && !recoveryActive) return;
 
-   bool atBreakeven = GetSequenceProfitPips(isBuy, idx) >= InpBreakevenBufferPips;
-   if(!atBreakeven)
+   if(!InpUseDynamicStop)
      {
-      if(isBuy) g_buySequences[idx].recoveryModeActive = true;
-      else      g_sellSequences[idx].recoveryModeActive = true;
-      return;
+      double requiredPips = recoveryActive ? InpBreakevenBufferPips : 0.0;
+      bool atBreakeven = useTouch ? GetSequenceProfitPips(isBuy, idx) >= requiredPips
+                                   : GetSequenceProfitPipsFromClose(isBuy, idx) >= requiredPips;
+      if(!atBreakeven)
+        {
+         if(isBuy) g_buySequences[idx].recoveryModeActive = true;
+         else      g_sellSequences[idx].recoveryModeActive = true;
+         return;
+        }
      }
 
    if(!ExecutePartialCloseIfDue(isBuy, idx) && !ArmDynamicStopIfDue(isBuy, idx))
@@ -2085,6 +2404,12 @@ void HandleBBCentreOrQQE50(bool isBuy, int idx, bool isBBMode)
 //| at a loss; when false (default), it respects the same breakeven+   |
 //| buffer / Recovery Mode logic as the other gated strategies (§5.7    |
 //| explicitly lists BB Opposite Band as a Recovery-eligible strategy). |
+//|                                                                      |
+//| FIX (docs audit report §C1): same fix as HandleBBCentreOrQQE50() —  |
+//| the buffer only applies once already in Recovery Mode (recoveryActive|
+//| was true coming into this tick); the first-ever evaluation only      |
+//| needs breakeven-or-better, per EA_User_Guide.docx's two-tier         |
+//| "1st type" / "2nd type" close description.                          |
 //+------------------------------------------------------------------+
 void HandleBBOpposite(bool isBuy, int idx)
   {
@@ -2098,7 +2423,8 @@ void HandleBBOpposite(bool isBuy, int idx)
       return;
      }
 
-   if(GetSequenceProfitPips(isBuy, idx) >= InpBreakevenBufferPips)
+   double requiredPips = recoveryActive ? InpBreakevenBufferPips : 0.0;
+   if(GetSequenceProfitPips(isBuy, idx) >= requiredPips)
       CloseSequenceAndCleanup(isBuy, idx, "BB opposite band + breakeven");
    else if(isBuy) g_buySequences[idx].recoveryModeActive = true;
    else            g_sellSequences[idx].recoveryModeActive = true;
@@ -2239,12 +2565,64 @@ void CheckExitsPerTick()
       CheckSequenceExitPerTick(false, i);
   }
 
+//+------------------------------------------------------------------+
+//| Aggregate floating profit across every sequence this EA manages,    |
+//| both directions. Already scoped to this EA's own symbol/magic       |
+//| number by construction — Sequence.tickets[] only ever holds tickets |
+//| this EA itself opened via SendMarketOrder() — so no extra filtering |
+//| is needed to exclude other EAs' or manual positions. Shared by the  |
+//| display panel and Equity Protection.                                |
+//+------------------------------------------------------------------+
+double GetTotalFloatingProfit()
+  {
+   double total = 0.0;
+   for(int i = 0; i < ArraySize(g_buySequences);  i++) total += GetSequenceProfitMoney(true,  i);
+   for(int i = 0; i < ArraySize(g_sellSequences); i++) total += GetSequenceProfitMoney(false, i);
+   return(total);
+  }
+
+//+------------------------------------------------------------------+
+//| Equity Protection (DCA_EA_Analysis_Report.md §25): an aggregate,     |
+//| account-scale circuit breaker layered on top of — and independent    |
+//| from — Dynamic Stop / Partial Close / Risk Reduction, all of which   |
+//| only ever act on one sequence's own floating profit. This closes     |
+//| EVERY sequence this EA manages, in both directions, the instant      |
+//| their COMBINED floating profit reaches the configured threshold —    |
+//| a percentage of real account Balance, or a fixed currency amount.    |
+//| Deliberately a one-shot "close everything," not a per-sequence       |
+//| trailing stop: offline simulation (§25) against this EA's own        |
+//| reconstructed floating-profit history showed a LOW threshold behaves |
+//| like the tight per-sequence trailing already shown to cut winners    |
+//| short, while a threshold in roughly the 1-1.5% of balance range      |
+//| consistently captured more than those same sequences went on to      |
+//| realize on their own — evidence for a materially sized threshold,    |
+//| not a tight one, despite this looking superficially like a simple    |
+//| "lock in profit early" feature.                                      |
+//+------------------------------------------------------------------+
+void CheckEquityProtection()
+  {
+   if(!InpUseEquityProtection) return;
+   if(ArraySize(g_buySequences) == 0 && ArraySize(g_sellSequences) == 0) return;
+
+   double threshold = (InpEquityProtectionMode == EQUITY_PROTECT_PERCENT)
+                       ? AccountInfoDouble(ACCOUNT_BALANCE) * InpEquityProtectionPercent / 100.0
+                       : InpEquityProtectionAmount;
+   if(threshold <= 0.0) return;
+   if(GetTotalFloatingProfit() < threshold) return;
+
+   Print("EA-DCA: Equity Protection triggered — closing all managed sequences (combined floating profit reached threshold).");
+   for(int i = ArraySize(g_buySequences) - 1; i >= 0; i--)
+      CloseSequenceAndCleanup(true, i, "Equity Protection — combined floating profit reached threshold");
+   for(int i = ArraySize(g_sellSequences) - 1; i >= 0; i--)
+      CloseSequenceAndCleanup(false, i, "Equity Protection — combined floating profit reached threshold");
+  }
+
 //+====================================================================+
 //| PHASE 4 (continued): state persistence — load side, session/EOD/    |
 //| EOW gating, and the on-screen display. All three are called only    |
 //| from OnInit()/OnTick() at the very end of the file, so unlike the   |
 //| save-side persistence and session/time helpers front-loaded above   |
-//| (needed by TryEnterSequence()/NewSequenceGatesPass()), these have   |
+//| (needed by TryOpenNewSequence()/NewSequenceGatesPass()), these have |
 //| no define-before-use constraint forcing them earlier.               |
 //+====================================================================+
 
@@ -2276,7 +2654,7 @@ void LoadState()
       int n = StringSplit(line, '|', parts);
       if(n < 1) continue;
 
-      if(parts[0] == "GLOBAL" && n >= 15)
+      if(parts[0] == "GLOBAL" && n >= 17)
         {
          g_bbBuyArmed                  = (StringToInteger(parts[1])  != 0);
          g_bbSellArmed                 = (StringToInteger(parts[2])  != 0);
@@ -2292,6 +2670,13 @@ void LoadState()
          g_lastEODActionDate           = (datetime)StringToInteger(parts[12]);
          g_lastEOWActionDate           = (datetime)StringToInteger(parts[13]);
          g_nextSequenceId              = StringToInteger(parts[14]);
+         g_centreCrossReadyBuy         = (StringToInteger(parts[15]) != 0);
+         g_centreCrossReadySell        = (StringToInteger(parts[16]) != 0);
+         //--- §A5: new field, appended after this line existed — n>=17 (not
+         //--- bumped to 18) so an older-format state file still loads every
+         //--- field it has instead of failing this whole block outright;
+         //--- g_prevCentreSide just falls back to its already-safe default.
+         g_prevCentreSide              = (n >= 18) ? (int)StringToInteger(parts[17]) : 0;
         }
       else if(parts[0] == "SEQ" && n >= 15)
         {
@@ -2318,6 +2703,9 @@ void LoadState()
          ArrayResize(s.tickets, tCount);
          for(int t = 0; t < tCount; t++)
             s.tickets[t] = (ulong)StringToInteger(ticketParts[t]);
+
+         //--- appended fields — an older-format file (n==15) just gets safe defaults
+         s.touchBreached = (n >= 16) ? (StringToInteger(parts[15]) != 0) : false;
 
          if(isBuy)
            {
@@ -2540,34 +2928,52 @@ void UpdateTakeProfitLine(bool isBuy, int idx)
 //+------------------------------------------------------------------+
 //| Info panel: EA name/symbol header, open sequence counts, floating   |
 //| P/L (colour-coded), and the current session's realized profit.      |
+//|                                                                      |
+//| FIX: OBJ_LABEL does not render embedded "\n" as multiple lines — a   |
+//| single label's OBJPROP_TEXT is always shown as one line, so the      |
+//| previous three-line body collapsed/garbled. Each line is now its     |
+//| own label object at its own Y offset. Also wires up InpPanelInfoColor|
+//| (declared since Phase 1, never actually used until now) for the      |
+//| neutral lines, reserving Profit/Loss colour for the P/L line only.  |
 //+------------------------------------------------------------------+
 #define PANEL_BG_NAME     (EA_DCA_OBJ_PREFIX + "PanelBg")
 #define PANEL_HEADER_NAME (EA_DCA_OBJ_PREFIX + "PanelHeader")
-#define PANEL_BODY_NAME   (EA_DCA_OBJ_PREFIX + "PanelBody")
+#define PANEL_LINE1_NAME  (EA_DCA_OBJ_PREFIX + "PanelLine1")
+#define PANEL_LINE2_NAME  (EA_DCA_OBJ_PREFIX + "PanelLine2")
+#define PANEL_LINE3_NAME  (EA_DCA_OBJ_PREFIX + "PanelLine3")
+#define PANEL_LINE_HEIGHT 16
+
+void DeleteInfoPanelObjects()
+  {
+   DeleteObjectIfExists(PANEL_BG_NAME);
+   DeleteObjectIfExists(PANEL_HEADER_NAME);
+   DeleteObjectIfExists(PANEL_LINE1_NAME);
+   DeleteObjectIfExists(PANEL_LINE2_NAME);
+   DeleteObjectIfExists(PANEL_LINE3_NAME);
+  }
 
 void UpdateInfoPanel()
   {
    if(!InpShowDisplayPanel)
      {
-      DeleteObjectIfExists(PANEL_BG_NAME);
-      DeleteObjectIfExists(PANEL_HEADER_NAME);
-      DeleteObjectIfExists(PANEL_BODY_NAME);
+      DeleteInfoPanelObjects();
       return;
      }
 
-   double totalFloating = 0.0;
-   for(int i = 0; i < ArraySize(g_buySequences); i++)  totalFloating += GetSequenceProfitMoney(true, i);
-   for(int i = 0; i < ArraySize(g_sellSequences); i++) totalFloating += GetSequenceProfitMoney(false, i);
+   double totalFloating = GetTotalFloatingProfit();
 
    string header = StringFormat("EA-DCA - %s", _Symbol);
-   string body   = StringFormat("Buy seq: %d   Sell seq: %d\nFloating P/L: %.2f\nSession realized: %.2f",
-                                 ArraySize(g_buySequences), ArraySize(g_sellSequences),
-                                 totalFloating, g_sessionRealizedProfit);
+   string line1  = StringFormat("Buy seq: %d   Sell seq: %d", ArraySize(g_buySequences), ArraySize(g_sellSequences));
+   string line2  = StringFormat("Floating P/L: %.2f", totalFloating);
+   string line3  = StringFormat("Session realized: %.2f", g_sessionRealizedProfit);
+   color  plColor = (totalFloating >= 0.0) ? InpPanelProfitColor : InpPanelLossColor;
 
-   CreateOrUpdateRectangle(PANEL_BG_NAME, InpPanelX - 6, InpPanelY - 4, 220, 60, InpPanelBgColor, InpPanelBorderColor);
-   CreateOrUpdateLabel(PANEL_HEADER_NAME, InpPanelX, InpPanelY, header, InpPanelHeaderColor, 10);
-   CreateOrUpdateLabel(PANEL_BODY_NAME, InpPanelX, InpPanelY + 16, body,
-                        (totalFloating >= 0.0) ? InpPanelProfitColor : InpPanelLossColor, 9);
+   CreateOrUpdateRectangle(PANEL_BG_NAME, InpPanelX - 6, InpPanelY - 4, 220, PANEL_LINE_HEIGHT * 4 + 8,
+                            InpPanelBgColor, InpPanelBorderColor);
+   CreateOrUpdateLabel(PANEL_HEADER_NAME, InpPanelX, InpPanelY,                          header, InpPanelHeaderColor, 10);
+   CreateOrUpdateLabel(PANEL_LINE1_NAME,  InpPanelX, InpPanelY + PANEL_LINE_HEIGHT,       line1,  InpPanelInfoColor,   9);
+   CreateOrUpdateLabel(PANEL_LINE2_NAME,  InpPanelX, InpPanelY + PANEL_LINE_HEIGHT * 2,   line2,  plColor,             9);
+   CreateOrUpdateLabel(PANEL_LINE3_NAME,  InpPanelX, InpPanelY + PANEL_LINE_HEIGHT * 3,   line3,  InpPanelInfoColor,   9);
   }
 
 void UpdateChartDisplay()
@@ -2630,6 +3036,7 @@ int OnInit()
 
    g_sessionDate = CurrentReferenceDate();   // seed today's date so the first tick doesn't
                                               // spuriously look like a day rollover
+   InitializeZoneLatchesFromHistory();       // §5.3 — overwritten below if a state file exists
    LoadState();
 
    Print("EA-DCA: initialized on ", _Symbol, " (Magic ", InpMagicNumber, "). "
@@ -2654,9 +3061,7 @@ void OnDeinit(const int reason)
       DeleteSequenceChartObjects(true, g_buySequences[i].sequenceId);
    for(int i = 0; i < ArraySize(g_sellSequences); i++)
       DeleteSequenceChartObjects(false, g_sellSequences[i].sequenceId);
-   DeleteObjectIfExists(PANEL_BG_NAME);
-   DeleteObjectIfExists(PANEL_HEADER_NAME);
-   DeleteObjectIfExists(PANEL_BODY_NAME);
+   DeleteInfoPanelObjects();
 
    ReleaseIndicatorHandles();
    ReleaseMagicNumberLock();
@@ -2676,6 +3081,7 @@ void OnTick()
    UpdateSessionProfitTracking();
    CheckEndOfDayAndWeek();
    CheckExitsPerTick();
+   CheckEquityProtection();
    if(IsNewBar())
       ProcessNewBar();
    UpdateChartDisplay();
