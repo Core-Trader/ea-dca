@@ -28,7 +28,7 @@ InpQMPWP=3
 ; Bollinger Band Settings ---
 InpBBPeriod=35
 InpBBDeviation=2.25
-InpBBAppliedPrice=3
+InpBBAppliedPrice=1
 InpUseBBWidthFilter=false
 InpBBMinWidthPercent=0.5
 InpRequireCenterBandCross=true
