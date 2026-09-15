@@ -2386,21 +2386,6 @@ bool ExecutePartialCloseIfDue(bool isBuy, int idx)
 //| once (recoveryActive was already true) — recoveryActive is read      |
 //| BEFORE it can be set later in this same call, so it correctly        |
 //| reflects "was this sequence already in Recovery Mode before now."    |
-//|                                                                      |
-//| REVISED (entry/exit divergence report finding #2): atBreakeven now   |
-//| always uses the bar-close variant, even in touch mode. Previously,   |
-//| touch mode read the breakeven threshold from LIVE bid/ask via        |
-//| CheckExitsPerTick() (every tick) once touchBreached latched true, so |
-//| a sequence could close the instant an intrabar tick crossed the      |
-//| threshold — before the bar it was in even closed. This is what §14   |
-//| (commit 07c05a2) already found and fixed once, with a validated      |
-//| result (Profit Factor 2.63->4.02, short trades 12->17 exact match)   |
-//| — that fix predates touchBreached/UpdateTouchBreach() and was        |
-//| partly undone when touch mode (A1) was reintroduced afterward. This  |
-//| keeps touchBreached itself live/per-bar-close-sticky (conditionMet   |
-//| above still gates on it) — only the PROFIT check downstream is now   |
-//| bar-close, matching §14's precedent and the guide's own "closes on   |
-//| the close of that candle" wording for the touch variant.             |
 //+------------------------------------------------------------------+
 void HandleBBCentreOrQQE50(bool isBuy, int idx, bool isBBMode)
   {
@@ -2424,7 +2409,8 @@ void HandleBBCentreOrQQE50(bool isBuy, int idx, bool isBBMode)
    if(!InpUseDynamicStop)
      {
       double requiredPips = recoveryActive ? InpBreakevenBufferPips : 0.0;
-      bool atBreakeven = GetSequenceProfitPipsFromClose(isBuy, idx) >= requiredPips;
+      bool atBreakeven = useTouch ? GetSequenceProfitPips(isBuy, idx) >= requiredPips
+                                   : GetSequenceProfitPipsFromClose(isBuy, idx) >= requiredPips;
       if(!atBreakeven)
         {
          if(isBuy) g_buySequences[idx].recoveryModeActive = true;
