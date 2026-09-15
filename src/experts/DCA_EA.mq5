@@ -122,7 +122,7 @@ enum ENUM_MA_FILTER_BEHAVIOUR
 
 input group "Position Sizing"
 input ENUM_MULTIPLIER_SYSTEM InpMultiplierSystem      = MULT_LINEAR;      // Multiplier System
-input string                 InpFibSequence           = "1,3,5,8,13";     // Custom Multiplier String (used only if System = Custom)
+input string                 InpFibSequence           = "1,3,5,8,13,21,34"; // Custom Multiplier String (used only if System = Custom)
 input double                 InpInitialLot            = 0.01;             // Initial (Base) Lot Size
 input ENUM_LOT_SIZING_MODE   InpLotSizeMode           = LOT_FIXED;        // Lot Sizing Mode
 input double                 InpLotPercent            = 15.0;             // % of Balance/Equity per Trade
@@ -135,7 +135,7 @@ input long                   InpMagicNumber              = 123456;             /
 input int                    InpSlippage                 = 3;                  // Slippage (points)
 input int                    InpMaxSpread                = 40;                 // Max Spread (points)
 input int                    InpMaxTradesPerSequence     = 0;                  // Max Trades per Sequence (0 = unlimited)
-input int                    InpMaxSequencesPerDirection = 3;                  // Max Concurrent Sequences per Direction
+input int                    InpMaxSequencesPerDirection = 100;                // Max Concurrent Sequences per Direction
 input ENUM_TRADE_DIRECTION   InpTradeDirection           = DIRECTION_BOTH;     // Allowed Trade Direction
 input bool                   InpAllowBuySellAtSameTime   = true;               // Allow Buy & Sell at the Same Time (needs a hedging account)
 input string                 InpUserComment              = "DCA-EA-V1.0";     // Trade Comment
@@ -154,7 +154,7 @@ input int                    InpQMPWP                  = 3;     // QMP: QQE Wild
 input group "Bollinger Band Settings"
 input int                    InpBBPeriod                     = 35;           // BB Period
 input double                 InpBBDeviation                  = 2.25;         // BB Deviation
-input ENUM_APPLIED_PRICE     InpBBAppliedPrice               = PRICE_HIGH;   // BB Applied Price
+input ENUM_APPLIED_PRICE     InpBBAppliedPrice               = PRICE_LOW;    // BB Applied Price
 input bool                   InpUseBBWidthFilter             = false;        // Use BB Width Filter
 input double                 InpBBMinWidthPercent            = 0.5;          // BB Min Width % (of middle band price)
 input bool                   InpRequireCenterBandCross       = true;         // Require Centre Band Cross Before New Sequence
@@ -264,10 +264,10 @@ input bool                    InpUseMAFilter        = false;                    
 input ENUM_MA_FILTER_BEHAVIOUR InpMAFilterBehaviour = MA_BUY_ABOVE_SELL_BELOW;   // MA Filter Behaviour
 input int                     InpMAPeriod           = 50;                        // MA Period
 input ENUM_MA_METHOD          InpMAMethod           = MODE_EMA;                  // MA Method
-input ENUM_APPLIED_PRICE      InpMAAppliedPrice     = PRICE_CLOSE;               // MA Applied Price
+input ENUM_APPLIED_PRICE      InpMAAppliedPrice     = PRICE_OPEN;                // MA Applied Price
 
 input group "On Screen Displays"
-input bool                    InpShowTrailingStops         = false;              // Show Trailing Stop Lines
+input bool                    InpShowTrailingStops         = true;               // Show Trailing Stop Lines
 input color                   InpBuyTrailingColor          = (color)65280;      // Buy Trailing Stop Colour (Lime)
 input color                   InpSellTrailingColor         = (color)255;        // Sell Trailing Stop Colour (Red)
 input ENUM_LINE_STYLE         InpTrailingLineStyle         = STYLE_DASH;        // Trailing Stop Line Style
