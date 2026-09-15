@@ -331,6 +331,9 @@ struct Sequence
    bool     trailStopActive;    // shared by Dynamic Stop and the Partial-Close remainder stop (mutually exclusive by Exit Strategy/input)
    double   trailStopPrice;     // current stop level for whichever trailing mechanism is active
    bool     partialCloseDone;   // true once Partial Close has executed; also blocks further add-ons to this sequence
+   bool     touchBreached;      // BB Centre Band touch mode (InpBBExitOnBreach=true): sticky latch, see UpdateTouchBreach() —
+                                 // per EA_User_Guide.docx: "at any time there has been a breach of the BB centre band" (bar
+                                 // High/Low, not close), independent of where the candle's own close ends up
   };
 
 Sequence g_buySequences[];
@@ -777,8 +780,12 @@ void InitializeZoneLatchesFromHistory()
             CopyBuffer(g_bbHandle, 1, shift, 1, up)  > 0 &&
             CopyBuffer(g_bbHandle, 2, shift, 1, lo)  > 0)
            {
-            if(!g_bbBuyArmed  && low  <= lo[0] && close <= lo[0]) g_bbBuyArmed  = true;
-            if(!g_bbSellArmed && high >= up[0] && close >= up[0]) g_bbSellArmed = true;
+            //--- FIX (§H1 consistency): touch alone, matching BBBuyBreach()/BBSellBreach() —
+            //--- this scan used to require close-beyond too, independently of those functions,
+            //--- so it silently kept the OLD, stricter definition even after H1 relaxed the
+            //--- live per-bar path.
+            if(!g_bbBuyArmed  && low  <= lo[0]) g_bbBuyArmed  = true;
+            if(!g_bbSellArmed && high >= up[0]) g_bbSellArmed = true;
 
             //--- audit report §A5: seed the crossing-detector's "previous bar"
             //--- memory from the single most recent historical bar (shift=1
@@ -991,12 +998,24 @@ void RefreshBarSnapshot()
   }
 
 //+------------------------------------------------------------------+
-//| "Breach" = the closed bar touched the band/level AND closed beyond |
-//| it — a mid-candle touch that closes back on the wrong side does    |
-//| not count (per the guide).                                         |
+//| FIX (docs audit report §H1): "breach" = the closed bar's High/Low  |
+//| touched the band at any point — it does NOT also require the       |
+//| close to stay beyond it. Quoted directly from EA_User_Guide.docx    |
+//| (QQE Settings section, explicitly extended to BB in the same        |
+//| paragraph): "It doesn't have to close at 65 or higher, just as      |
+//| long as it hits that level at some point. And when I say            |
+//| 'confirmed', that means at the close of the current price candle... |
+//| The same applies to the BB, but instead it is the upper and lower   |
+//| bands." "Confirmed at the close" describes using the finalized bar  |
+//| (not a still-forming one) to know the touch was real — not a        |
+//| requirement that the close price itself also be past the band.      |
+//| Previously required BOTH the touch AND the close beyond the band,   |
+//| a strictly narrower condition than the guide describes; untested    |
+//| against the reference until now (see docs audit report's D1 test    |
+//| plan item).                                                          |
 //+------------------------------------------------------------------+
-bool BBBuyBreach()   { return(g_bbSnapshotValid && g_bar1Low  <= g_bbLower1 && g_bar1Close <= g_bbLower1); }
-bool BBSellBreach()  { return(g_bbSnapshotValid && g_bar1High >= g_bbUpper1 && g_bar1Close >= g_bbUpper1); }
+bool BBBuyBreach()   { return(g_bbSnapshotValid && g_bar1Low  <= g_bbLower1); }
+bool BBSellBreach()  { return(g_bbSnapshotValid && g_bar1High >= g_bbUpper1); }
 bool QQEBuyBreach()  { return(g_qqeSnapshotValid && g_qqeLine1 <= InpQQEOversold); }
 bool QQESellBreach() { return(g_qqeSnapshotValid && g_qqeLine1 >= InpQQEOverbought); }
 
@@ -1450,12 +1469,15 @@ void WriteSequencesToFile(int handle, bool isBuy)
 
       //--- field order: SEQ|dir|count|avgPrice|totalVolume|lockedBaseLot|sequenceId|
       //--- startTime|recoveryModeActive|trailStopActive|trailStopPrice|partialCloseDone|
-      //--- lastEntryTime|lastEntryPrice|tickets — LoadState() below must match exactly.
-      string line = StringFormat("SEQ|%s|%d|%.5f|%.2f|%.5f|%I64d|%I64d|%d|%d|%.5f|%d|%I64d|%.5f|%s",
+      //--- lastEntryTime|lastEntryPrice|tickets|touchBreached (appended, not inserted,
+      //--- so tickets' index stays stable for older files) — LoadState() below must
+      //--- match exactly.
+      string line = StringFormat("SEQ|%s|%d|%.5f|%.2f|%.5f|%I64d|%I64d|%d|%d|%.5f|%d|%I64d|%.5f|%s|%d",
                                   isBuy ? "BUY" : "SELL", s.count, s.avgPrice, s.totalVolume, s.lockedBaseLot,
                                   s.sequenceId, (long)s.startTime,
                                   (int)s.recoveryModeActive, (int)s.trailStopActive, s.trailStopPrice,
-                                  (int)s.partialCloseDone, (long)s.lastEntryTime, s.lastEntryPrice, ticketsStr);
+                                  (int)s.partialCloseDone, (long)s.lastEntryTime, s.lastEntryPrice, ticketsStr,
+                                  (int)s.touchBreached);
       FileWriteString(handle, line + "\n");
      }
   }
@@ -1634,6 +1656,7 @@ void CreateNewSequence(bool isBuy, ulong ticket, double baseLot, double price)
    s.trailStopActive    = false;
    s.trailStopPrice     = 0.0;
    s.partialCloseDone   = false;
+   s.touchBreached      = false;
 
    DrawSequenceStartLine(isBuy, s.sequenceId, s.startTime);
 
@@ -1970,16 +1993,11 @@ double TrailingDistance()
   }
 
 //+------------------------------------------------------------------+
-//| BB Centre Band exit condition — bar-close variant. A targeted        |
-//| diagnostic (FORENSIC_COMPARISON_REPORT.md §13/§14) showed the        |
-//| reference's exit price for InpBBExitOnBreach=true was exactly a      |
-//| closed bar's close, confirmed at the next bar's open — the ONLY      |
-//| value of this input ever tested against the benchmark. The touch     |
-//| variant below was removed at that time and restored per the audit    |
-//| report (§A1): a real toggle, both options selectable, default        |
-//| unchanged (still =true/touch) — see HandleBBCentreOrQQE50() for how  |
-//| InpBBExitOnBreach picks between the two, for both the exit condition |
-//| and the breakeven+buffer check together.                             |
+//| BB Centre Band exit condition — bar-close variant, InpBBExitOnBreach |
+//| =false per EA_User_Guide.docx: "the actual candle has to close on    |
+//| the other side of the BB centre band before the sequence will       |
+//| close." See HandleBBCentreOrQQE50() for how InpBBExitOnBreach picks  |
+//| between this and the touch/breach-latch variant below.               |
 //+------------------------------------------------------------------+
 bool BBCentreExitConditionBar(bool isBuy)
   {
@@ -1988,16 +2006,42 @@ bool BBCentreExitConditionBar(bool isBuy)
   }
 
 //+------------------------------------------------------------------+
-//| BB Centre Band exit condition — touch/live variant. Restored from    |
-//| git history (commit 9f6fbe0, before the §13/§14 removal) verbatim.   |
+//| BB Centre Band touch mode (InpBBExitOnBreach=true) — sticky breach   |
+//| latch. Two prior implementation attempts (a naive live-price-vs-     |
+//| live-mid check, then an arm/stop-on-pullback mechanism reconstructed |
+//| from two hand-verified examples) were both tried and disproved by    |
+//| real backtest comparisons against the reference — see the            |
+//| conversation history / audit report §A1 for that trail. This is the |
+//| actual mechanism, quoted directly from EA_User_Guide.docx:           |
+//|                                                                       |
+//| "If you had selected 'true' for this, then at any time there has     |
+//| been a breach of the BB centre band, and the sequence is in overall  |
+//| profit, the sequence will close on the close of that candle. It      |
+//| does not matter where the actual candle closes in relation to the    |
+//| BB centre band."                                                     |
+//|                                                                       |
+//| So it's still fundamentally bar-close-TIMED (no live/tick reactivity |
+//| at all, no arm/stop, no pullback) — the only difference from the     |
+//| =false variant is WHICH threshold trips it: BBCentreExitConditionBar |
+//| requires the candle's own CLOSE beyond the centre line; this latches |
+//| on sticky once ANY bar's High/Low has ever touched the centre line,  |
+//| independent of where that bar (or any later one) actually closes.    |
+//| Never resets while the sequence is open — matches the entry-side     |
+//| zone-breach latches' own "no time limit" precedent elsewhere in this |
+//| file. The existing breakeven+buffer/Recovery Mode gate downstream in |
+//| HandleBBCentreOrQQE50() is unchanged and still applies afterward.    |
 //+------------------------------------------------------------------+
-bool BBCentreExitConditionTick(bool isBuy)
+void UpdateTouchBreach(bool isBuy, int idx)
   {
-   if(g_bbHandle == INVALID_HANDLE) return(false);
-   double mid[1];
-   if(CopyBuffer(g_bbHandle, 0, 0, 1, mid) <= 0) return(false);
-   double price = isBuy ? SymbolInfoDouble(_Symbol, SYMBOL_BID) : SymbolInfoDouble(_Symbol, SYMBOL_ASK);
-   return(isBuy ? price >= mid[0] : price <= mid[0]);
+   bool breached = isBuy ? g_buySequences[idx].touchBreached : g_sellSequences[idx].touchBreached;
+   if(breached) return;
+   if(!g_bbSnapshotValid) return;
+
+   bool touched = isBuy ? (g_bar1High >= g_bbMiddle1) : (g_bar1Low <= g_bbMiddle1);
+   if(!touched) return;
+
+   if(isBuy) g_buySequences[idx].touchBreached = true;
+   else      g_sellSequences[idx].touchBreached = true;
   }
 
 //+------------------------------------------------------------------+
@@ -2258,19 +2302,24 @@ bool ExecutePartialCloseIfDue(bool isBuy, int idx)
 //| variant (BBCentreExitConditionTick) entirely.                        |
 //|                                                                      |
 //| RESTORED (audit report §A1, per explicit stakeholder direction): the |
-//| toggle is back — InpBBExitOnBreach now genuinely selects between the |
-//| two variants for BB Centre Band specifically (isBBMode true), for    |
-//| BOTH the exit condition AND the breakeven+buffer check together:     |
-//| =true (the default, unchanged) uses the touch/live variant for both  |
-//| — this is the ORIGINAL pre-§14 behavior, which is NOT what the §13/  |
-//| §14 evidence above showed matches the benchmark (that evidence       |
-//| favors =false/bar-close). Restoring =true as a selectable option,    |
-//| and leaving it as the default, is a deliberate product decision, not |
-//| a benchmark-matching claim — flagged here so the trade-off is never  |
-//| lost. QQE 50 + Recovery (isBBMode false) is untouched by this input  |
-//| — it has no live/touch concept (see QQE50ExitConditionBar's own      |
-//| comment) and stays bar-close for both condition and breakeven,       |
-//| exactly as before.                                                   |
+//| toggle is back — InpBBExitOnBreach genuinely selects between two      |
+//| variants for BB Centre Band specifically (isBBMode true), for BOTH   |
+//| the exit condition AND the breakeven+buffer check together: =true    |
+//| (the default, unchanged) uses the touch/live variant for both.       |
+//| QQE 50 + Recovery (isBBMode false) is untouched by this input — it   |
+//| has no live/touch concept (see QQE50ExitConditionBar's own comment)  |
+//| and stays bar-close for both condition and breakeven, always.        |
+//|                                                                      |
+//| REVISED (EA_User_Guide.docx, found after two disproved reverse-       |
+//| engineering attempts — see UpdateTouchBreach()'s comment for the     |
+//| exact quote and the trail of what was tried first): touch mode's     |
+//| exit condition is UpdateTouchBreach()'s sticky bar High/Low latch,   |
+//| not a live/tick check and not an arm/stop mechanism — it is still    |
+//| fundamentally bar-close-TIMED, exactly like the =false variant, just |
+//| tripped by a different threshold (ever-touched vs. actually-closed-  |
+//| beyond). The breakeven+buffer check still follows GetSequenceProfit- |
+//| Pips() (live) when useTouch, per the original stakeholder direction  |
+//| for that part specifically — the guide quote doesn't address it.     |
 //|                                                                      |
 //| FIX (§24): per the EA's actual design description, Dynamic Stop      |
 //| activates as soon as the exit condition is met — full stop, no       |
@@ -2287,22 +2336,50 @@ bool ExecutePartialCloseIfDue(bool isBuy, int idx)
 //| on the very next tick — net effect: no change, sequence keeps adding |
 //| trades, matching "lets the sequence recover instead of being stopped |
 //| out."                                                                 |
+//|                                                                      |
+//| FIX (docs audit report §C1): EA_User_Guide.docx's Recovery Mode      |
+//| section describes TWO different thresholds, not one — "the 1st type  |
+//| of close... is simply a breach of the desired level AND if the       |
+//| sequence is at overall break even OR PROFITABLE, then closed. End of |
+//| story." Only once that FIRST check fails ("the 2nd type... the      |
+//| trade sequence is NOT at overall break even or profitable") does the |
+//| EA "start to look for an overall break even level PLUS" the buffer.  |
+//| So the buffer is specifically Recovery Mode's own fallback target,   |
+//| not the threshold for the very first evaluation. Previously this     |
+//| function used the buffer unconditionally on every evaluation,        |
+//| including the first, silently routing sequences into Recovery Mode   |
+//| (extra add-on trades, longer lifetimes) that the guide says should   |
+//| have simply closed at breakeven. requiredPips below is 0 the first   |
+//| time (recoveryActive was false coming into this tick) and the full   |
+//| buffer on every evaluation after Recovery Mode has already engaged   |
+//| once (recoveryActive was already true) — recoveryActive is read      |
+//| BEFORE it can be set later in this same call, so it correctly        |
+//| reflects "was this sequence already in Recovery Mode before now."    |
 //+------------------------------------------------------------------+
 void HandleBBCentreOrQQE50(bool isBuy, int idx, bool isBBMode)
   {
    if(ManageActiveTrailStop(isBuy, idx)) return;
 
    bool useTouch = isBBMode && InpBBExitOnBreach;   // BB Centre Band only; QQE50+Recovery always bar-close
-   bool conditionMet = isBBMode ? (useTouch ? BBCentreExitConditionTick(isBuy) : BBCentreExitConditionBar(isBuy))
-                                 : QQE50ExitConditionBar(isBuy);
+   if(useTouch) UpdateTouchBreach(isBuy, idx);
+
+   bool conditionMet;
+   if(isBBMode)
+     {
+      bool touchBreached = isBuy ? g_buySequences[idx].touchBreached : g_sellSequences[idx].touchBreached;
+      conditionMet = useTouch ? touchBreached : BBCentreExitConditionBar(isBuy);
+     }
+   else
+      conditionMet = QQE50ExitConditionBar(isBuy);
 
    bool recoveryActive = isBuy ? g_buySequences[idx].recoveryModeActive : g_sellSequences[idx].recoveryModeActive;
    if(!conditionMet && !recoveryActive) return;
 
    if(!InpUseDynamicStop)
      {
-      bool atBreakeven = useTouch ? GetSequenceProfitPips(isBuy, idx) >= InpBreakevenBufferPips
-                                   : GetSequenceProfitPipsFromClose(isBuy, idx) >= InpBreakevenBufferPips;
+      double requiredPips = recoveryActive ? InpBreakevenBufferPips : 0.0;
+      bool atBreakeven = useTouch ? GetSequenceProfitPips(isBuy, idx) >= requiredPips
+                                   : GetSequenceProfitPipsFromClose(isBuy, idx) >= requiredPips;
       if(!atBreakeven)
         {
          if(isBuy) g_buySequences[idx].recoveryModeActive = true;
@@ -2322,6 +2399,12 @@ void HandleBBCentreOrQQE50(bool isBuy, int idx, bool isBBMode)
 //| at a loss; when false (default), it respects the same breakeven+   |
 //| buffer / Recovery Mode logic as the other gated strategies (§5.7    |
 //| explicitly lists BB Opposite Band as a Recovery-eligible strategy). |
+//|                                                                      |
+//| FIX (docs audit report §C1): same fix as HandleBBCentreOrQQE50() —  |
+//| the buffer only applies once already in Recovery Mode (recoveryActive|
+//| was true coming into this tick); the first-ever evaluation only      |
+//| needs breakeven-or-better, per EA_User_Guide.docx's two-tier         |
+//| "1st type" / "2nd type" close description.                          |
 //+------------------------------------------------------------------+
 void HandleBBOpposite(bool isBuy, int idx)
   {
@@ -2335,7 +2418,8 @@ void HandleBBOpposite(bool isBuy, int idx)
       return;
      }
 
-   if(GetSequenceProfitPips(isBuy, idx) >= InpBreakevenBufferPips)
+   double requiredPips = recoveryActive ? InpBreakevenBufferPips : 0.0;
+   if(GetSequenceProfitPips(isBuy, idx) >= requiredPips)
       CloseSequenceAndCleanup(isBuy, idx, "BB opposite band + breakeven");
    else if(isBuy) g_buySequences[idx].recoveryModeActive = true;
    else            g_sellSequences[idx].recoveryModeActive = true;
@@ -2614,6 +2698,9 @@ void LoadState()
          ArrayResize(s.tickets, tCount);
          for(int t = 0; t < tCount; t++)
             s.tickets[t] = (ulong)StringToInteger(ticketParts[t]);
+
+         //--- appended fields — an older-format file (n==15) just gets safe defaults
+         s.touchBreached = (n >= 16) ? (StringToInteger(parts[15]) != 0) : false;
 
          if(isBuy)
            {
