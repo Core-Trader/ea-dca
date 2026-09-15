@@ -154,7 +154,7 @@ input int                    InpQMPWP                  = 3;     // QMP: QQE Wild
 input group "Bollinger Band Settings"
 input int                    InpBBPeriod                     = 35;           // BB Period
 input double                 InpBBDeviation                  = 2.25;         // BB Deviation
-input ENUM_APPLIED_PRICE     InpBBAppliedPrice               = PRICE_OPEN;   // BB Applied Price
+input ENUM_APPLIED_PRICE     InpBBAppliedPrice               = PRICE_CLOSE;  // BB Applied Price
 input bool                   InpUseBBWidthFilter             = false;        // Use BB Width Filter
 input double                 InpBBMinWidthPercent            = 0.5;          // BB Min Width % (of middle band price)
 input bool                   InpRequireCenterBandCross       = true;         // Require Centre Band Cross Before New Sequence
@@ -264,7 +264,7 @@ input bool                    InpUseMAFilter        = false;                    
 input ENUM_MA_FILTER_BEHAVIOUR InpMAFilterBehaviour = MA_BUY_ABOVE_SELL_BELOW;   // MA Filter Behaviour
 input int                     InpMAPeriod           = 50;                        // MA Period
 input ENUM_MA_METHOD          InpMAMethod           = MODE_EMA;                  // MA Method
-input ENUM_APPLIED_PRICE      InpMAAppliedPrice     = PRICE_OPEN;                // MA Applied Price
+input ENUM_APPLIED_PRICE      InpMAAppliedPrice     = PRICE_CLOSE;               // MA Applied Price
 
 input group "On Screen Displays"
 input bool                    InpShowTrailingStops         = true;               // Show Trailing Stop Lines

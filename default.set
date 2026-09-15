@@ -28,7 +28,7 @@ InpQMPWP=3
 ; Bollinger Band Settings ---
 InpBBPeriod=35
 InpBBDeviation=2.25
-InpBBAppliedPrice=1
+InpBBAppliedPrice=0
 InpUseBBWidthFilter=false
 InpBBMinWidthPercent=0.5
 InpRequireCenterBandCross=true
@@ -123,7 +123,7 @@ InpUseMAFilter=false
 InpMAFilterBehaviour=0
 InpMAPeriod=50
 InpMAMethod=1
-InpMAAppliedPrice=1
+InpMAAppliedPrice=0
 ; === On Screen Displays ===
 InpShowTrailingStops=true
 InpBuyTrailingColor=65280
