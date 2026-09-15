@@ -159,6 +159,7 @@ input bool                   InpUseBBWidthFilter             = false;        // 
 input double                 InpBBMinWidthPercent            = 0.5;          // BB Min Width % (of middle band price)
 input bool                   InpRequireCenterBandCross       = true;         // Require Centre Band Cross Before New Sequence
 input bool                   InpNoTriggerOnCentralBandBreach = true;         // Don't Open 1st Trade if Signal Candle Already Breached Centre Band
+input bool                   InpBBEntryOnBreach              = true;         // Entry on Breach, Not Just Close (New Sequence Outer-Band Arm)
 input bool                   InpRequireBBBandTouchForReentry = false;        // Require Band Touch Before Re-Entry (after a sequence closes)
 input bool                   InpBBExitOnBreach               = true;         // Exit on Breach, Not Just Close (BB Centre Band Exit)
 input bool                   InpAlwaysCloseOnOppositeBand    = false;        // Always Close on Opposite Band (BB Opposite Band Exit)
@@ -780,12 +781,13 @@ void InitializeZoneLatchesFromHistory()
             CopyBuffer(g_bbHandle, 1, shift, 1, up)  > 0 &&
             CopyBuffer(g_bbHandle, 2, shift, 1, lo)  > 0)
            {
-            //--- FIX (§H1 consistency): touch alone, matching BBBuyBreach()/BBSellBreach() —
-            //--- this scan used to require close-beyond too, independently of those functions,
-            //--- so it silently kept the OLD, stricter definition even after H1 relaxed the
-            //--- live per-bar path.
-            if(!g_bbBuyArmed  && low  <= lo[0]) g_bbBuyArmed  = true;
-            if(!g_bbSellArmed && high >= up[0]) g_bbSellArmed = true;
+            //--- FIX (§H1 consistency, now InpBBEntryOnBreach-aware): mirrors
+            //--- BBBuyBreach()/BBSellBreach() exactly, so this startup scan never
+            //--- silently drifts from the live per-bar path's touch-vs-close choice.
+            bool buyBreach  = InpBBEntryOnBreach ? (low <= lo[0])  : (low  <= lo[0] && close <= lo[0]);
+            bool sellBreach = InpBBEntryOnBreach ? (high >= up[0]) : (high >= up[0] && close >= up[0]);
+            if(!g_bbBuyArmed  && buyBreach)  g_bbBuyArmed  = true;
+            if(!g_bbSellArmed && sellBreach) g_bbSellArmed = true;
 
             //--- audit report §A5: seed the crossing-detector's "previous bar"
             //--- memory from the single most recent historical bar (shift=1
@@ -1009,13 +1011,31 @@ void RefreshBarSnapshot()
 //| bands." "Confirmed at the close" describes using the finalized bar  |
 //| (not a still-forming one) to know the touch was real — not a        |
 //| requirement that the close price itself also be past the band.      |
-//| Previously required BOTH the touch AND the close beyond the band,   |
-//| a strictly narrower condition than the guide describes; untested    |
-//| against the reference until now (see docs audit report's D1 test    |
-//| plan item).                                                          |
+//|                                                                       |
+//| REVISED (entry/exit divergence report): empirically, this touch-    |
+//| only definition arms the new-sequence zone latch earlier than the   |
+//| reference EA's own behavior, producing extra spurious sequences     |
+//| (see DCA_EA_ENTRY_EXIT_DIVERGENCE_REPORT.md finding #1). Rather than |
+//| pick a side, InpBBEntryOnBreach (default true, unchanged from the    |
+//| H1 fix) exposes both readings: true = touch-only as above; false =   |
+//| the original touch-AND-close-beyond-the-band requirement (also what  |
+//| DCA_EA_V2.mq5/V3.mq5's archived pre-H1 BBBuyBreach()/BBSellBreach()  |
+//| use), matching the reference EA's observed behavior in that report.  |
 //+------------------------------------------------------------------+
-bool BBBuyBreach()   { return(g_bbSnapshotValid && g_bar1Low  <= g_bbLower1); }
-bool BBSellBreach()  { return(g_bbSnapshotValid && g_bar1High >= g_bbUpper1); }
+bool BBBuyBreach()
+  {
+   if(!g_bbSnapshotValid) return(false);
+   if(InpBBEntryOnBreach) return(g_bar1Low <= g_bbLower1);
+   return(g_bar1Low <= g_bbLower1 && g_bar1Close <= g_bbLower1);
+  }
+
+bool BBSellBreach()
+  {
+   if(!g_bbSnapshotValid) return(false);
+   if(InpBBEntryOnBreach) return(g_bar1High >= g_bbUpper1);
+   return(g_bar1High >= g_bbUpper1 && g_bar1Close >= g_bbUpper1);
+  }
+
 bool QQEBuyBreach()  { return(g_qqeSnapshotValid && g_qqeLine1 <= InpQQEOversold); }
 bool QQESellBreach() { return(g_qqeSnapshotValid && g_qqeLine1 >= InpQQEOverbought); }
 

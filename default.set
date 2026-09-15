@@ -33,6 +33,7 @@ InpUseBBWidthFilter=false
 InpBBMinWidthPercent=0.5
 InpRequireCenterBandCross=true
 InpNoTriggerOnCentralBandBreach=true
+InpBBEntryOnBreach=true
 InpRequireBBBandTouchForReentry=false
 InpBBExitOnBreach=true
 InpAlwaysCloseOnOppositeBand=false
