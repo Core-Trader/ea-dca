@@ -1,6 +1,6 @@
 ; === Position Sizing ===
 InpMultiplierSystem=1
-InpFibSequence=1
+InpFibSequence=1,3,5,8,13,21,34
 InpInitialLot=0.01
 InpLotSizeMode=0
 InpLotPercent=15.0
@@ -12,10 +12,10 @@ InpMagicNumber=123456
 InpSlippage=3
 InpMaxSpread=40
 InpMaxTradesPerSequence=0
-InpMaxSequencesPerDirection=3
+InpMaxSequencesPerDirection=100
 InpTradeDirection=0
 InpAllowBuySellAtSameTime=true
-InpUserComment=DCA-EA-V21.0
+InpUserComment=DCA-EA-V1.0
 ; === Indicator Mode ===
 InpIndicatorMode=0
 ; QMP Filter Settings ===
@@ -141,7 +141,7 @@ InpSequenceEndColor=16711935
 InpSequenceLineStyle=2
 InpSequenceLineWidth=1
 ; === Display Panel ===
-InpShowDisplayPanel=true
+InpShowDisplayPanel=false
 InpPanelX=12
 InpPanelY=24
 InpPanelHeaderColor=55295
