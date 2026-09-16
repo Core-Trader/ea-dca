@@ -1,12 +1,82 @@
 # PnL Discrepancy Root-Cause Report — DCA_EA vs. Reference (Jagfx-DCA-EA-V2.0.4)
 
-**Scope note before anything else**: the investigation brief this report follows (16 sections,
-A-I deliverable) is extremely large — a full per-parameter equivalence matrix across ~100
-inputs, indicator-buffer-level tracing for every trade, and a formal sensitivity sweep would
-each individually be a multi-day effort. This report prioritizes **depth on the divergences that
-actually explain the PnL gap**, backed by fresh, controlled, reproducible evidence, over shallow
-coverage of every sub-section. Where a brief section got summary treatment rather than
-exhaustive treatment, that's stated explicitly rather than padded to look complete.
+**Status: investigation complete for the BB-only/Centre-Band configuration. Root cause
+confirmed, fix implemented, validated, and regression-tested.**
+
+## Executive Summary (required 8-point structure)
+
+**1. Observed problem** — Under identical parameters and a genuinely controlled baseline
+(EURUSD H4, 2025.01.01–2026.01.22, $100,000/USD, `Model=4`, `InpMaxSequencesPerDirection=3`,
+`InpIndicatorMode`=BB Only, `InpExitStrategy`=BB Centre Band, `InpBBExitOnBreach=true`), our EA
+produced $145.68 net profit against the reference's $267.39 — a **$121.71 gap** — despite the
+first 4 sequences being byte-identical between the two engines.
+
+**2. First divergence** — **CONFIRMED**: 2025-02-04 00:05:02. Reference adds a 2nd leg to an
+already-open sequence; ours does not. Everything else in the reconciliation is downstream of
+this point in time, though (see point 3) it turned out not to be the dominant *dollar* driver.
+
+**3. Root cause(s)** — Two, both **CONFIRMED**, not one:
+   - **Finding 1 (spread-units mismatch)**: our `InpMaxSpread=40` is correctly interpreted in
+     points per the spec (`DCA_EA.mq5:136`, `SpreadOk()` at `:1125-1128`); the reference's
+     identically-valued input very likely means pips internally (10x more permissive), based on
+     a related source file's own pips-denominated spread module. This is the literal first
+     divergence and blocks/delays several real entries and add-ons — but a controlled sensitivity
+     sweep (`InpMaxSpread` = 0/40/100/400/1000) proved this contributes only **~$2 of the
+     $121.71 gap**. Classification: **D — Parameter Interpretation Difference**, not a bug.
+   - **Finding 2 (touch-mode live-tick exit)**: `HandleBBCentreOrQQE50()`'s breakeven/buffer
+     check evaluated on live bid/ask every tick instead of waiting for the bar to close, once the
+     sticky `touchBreached` latch armed — contradicting the guide's own "closes on the close of
+     that candle" wording. This is the **dominant PnL driver**: a precise sequence-level
+     attribution assigned **$68.75 of the $121.71 gap** to exit-timing on sequences with
+     otherwise-identical entries (concentrated in just 2 of 27 such sequences, $63.34 of it), and
+     an independent mode-switch A/B (touch vs. bar-close, nothing else changed) shrank the gap
+     from $121.71 to $33.65. Classification: **A — Implementation Bug**.
+
+**4. Evidence** — Both findings are backed by: (a) direct forensic instrumentation
+(`DCA_EA_Forensic.mq5`, a byte-verified behaviorally-identical diagnostic build) logging spread
+and BB-middle values at the exact ticks in question; (b) a validated sequence-reconstruction
+algorithm (chronological FIFO matching with subset decomposition, zero unresolved closes across
+82 total sequences in both engines) that decomposes the $121.71 gap into components summing
+*exactly* to $121.71; (c) two independently-confirmed worked examples for Finding 2 where the
+close price matches `avg_entry + InpBreakevenBufferPips` to the hundredth of a pip; (d) three
+independently-confirmed worked examples for a third, initially-separate-looking symptom that
+turned out to just be Finding 1 again (see point 8).
+
+**5. Scope** — **CONFIRMED isolated, not systemic**, by code inspection: `useTouch = isBBMode &&
+InpBBExitOnBreach` means Finding 2's live-tick check is structurally unreachable for
+`EXIT_QQE50_RECOVERY` (always bar-close regardless of the toggle) and for every exit strategy
+other than BB Centre Band (each uses its own, unrelated handler function). Finding 1 (the spread
+gate) IS systemic — `SpreadOk()` has no mode-dependent branching and applies to every entry/add-on
+regardless of indicator mode or exit strategy.
+
+**6. Corrective action** — Implemented: `HandleBBCentreOrQQE50()`'s `atBreakeven` check now
+always uses `GetSequenceProfitPipsFromClose()` (bar-close price), never the live-tick
+`GetSequenceProfitPips()`, regardless of `useTouch`. This is the minimum change that addresses
+Finding 2 — it does not touch `touchBreached`/`UpdateTouchBreach()` (the *condition* stays
+touch-latched, correctly bar-close-armed), only the downstream *profit* check. Finding 1 was
+**not** changed — per the brief's own explicit instruction not to optimize for PnL, and because
+our points-based reading is the spec-confirmed-correct one; changing it would be a calibration
+decision for the user to make deliberately, not a bug fix (see §H for the option, left
+unimplemented).
+
+**7. Validation** — Same controlled baseline, before/after the fix:
+   - Touch mode: net profit $145.68 → **$250.82** (+$105.14); gap vs. reference $121.71 →
+     **$16.57** (86% reduction).
+   - Bar-close mode (regression check — should be provably unaffected, since it already used the
+     bar-close variant): re-ran and diffed the full deal log byte-for-byte against the pre-fix
+     run — **zero differences**.
+   - QQE50+Recovery mode: not re-run (the code path was already using
+     `GetSequenceProfitPipsFromClose()` before this change in that branch, since `useTouch` is
+     always `false` there — provably unaffected by inspection, same reasoning as the bar-close
+     regression check).
+
+**8. Remaining discrepancies** — Yes, **$16.57 remains, not yet decomposed further**.
+**Unconfirmed hypothesis**: likely a mix of (a) Finding 1's residual effect (still present,
+unchanged, previously measured at ~$2 in isolation but now interacting with a different
+post-fix trade sequence) and (b) second-order effects of the fix itself changing which
+add-ons/sequences occur downstream of each corrected exit. Recommended next step if pursued
+further: rebuild the sequence-level decomposition (§D) against the post-fix deal log the same
+way it was built for the pre-fix one.
 
 ---
 
@@ -381,63 +451,81 @@ symptom (delayed entry at a worse price, rather than a permanently missing trade
 
 ## G. Common/Systemic Issues
 
-Only one genuinely systemic root cause was confirmed this pass: **Finding 1 (spread units)**
-is a single point-of-divergence whose consequences (the 7-vs-1 sequence split, and everything
-downstream of those 7 sequences' own lifecycles) account for the visible majority of the
-structural difference between the two engines' trade histories. Finding 2 is systemic in its
-own right (affects every touch-mode exit, not just these 5 dates) but was already characterized
-as such in prior work. Finding 3 is not yet established as systemic or even as a genuine root
-cause distinct from Finding 1's downstream noise.
+Two confirmed root causes, reduced from the original three findings (Finding 3 merged into
+Finding 1 — see above): **Finding 1 (spread units)** is genuinely systemic — `SpreadOk()` gates
+every entry/add-on with no mode-dependent branching, confirmed to manifest both as permanently
+missed trades (the Feb-4 add-on) and as delayed entries at worse prices (the 3 ex-Finding-3
+cases). **Finding 2 (touch-mode live-tick exit)** is systemic *within its applicable scope*
+(every touch-mode exit, not just the 2 large examples) but structurally **isolated** to
+`EXIT_BB_CENTRE_BAND` + `InpBBExitOnBreach=true` specifically — confirmed by code inspection
+(`useTouch = isBBMode && InpBBExitOnBreach`), not just by testing this one configuration.
 
 ---
 
 ## H. Corrective Action Plan
 
-**1. Required implementation fixes**: none identified this pass that weren't already known
-(Finding 2 remains an open, previously-scoped decision, not newly required here).
+**1. Required implementation fixes — IMPLEMENTED**: Finding 2. `HandleBBCentreOrQQE50()`'s
+`atBreakeven` check now always uses `GetSequenceProfitPipsFromClose()`, never the live-tick
+`GetSequenceProfitPips()`. Minimum change: only the downstream profit/buffer check moved to
+bar-close; `touchBreached`/`UpdateTouchBreach()` (the *condition*) is untouched, so touch mode
+still means what it says — a sticky latch armed by a live touch — it just no longer *also*
+lets the live tick decide the *exit price/timing* once armed. See §F Finding 2 and the
+Validation subsection below for results.
 
-**2. Reference-equivalence fixes**: 
-- Finding 1: if byte-exact reference-matching is a goal (as opposed to spec-correctness, which
-  our current points-based reading already satisfies), changing `InpMaxSpread`'s effective cap
-  to match reference's likely-pips interpretation would be a **calibration change, not a bug
-  fix** — per the brief's own classification rules, this belongs in category D/G, and should
-  not be implemented without an explicit decision that reference-matching outranks the
-  documented spec's own stated units. Not implemented in this pass (diagnosis only, per
-  Critical Operating Rule 1).
+**2. Reference-equivalence fixes — NOT implemented, by design**: Finding 1. If byte-exact
+reference-matching is ever wanted (as opposed to spec-correctness, which our current
+points-based reading already satisfies), changing `InpMaxSpread`'s effective cap to match
+reference's likely-pips interpretation would be a **calibration change, not a bug fix** — per
+the brief's own classification rules (category D), and per its explicit instruction not to
+optimize for PnL. Left as an option for the user to decide, not applied here. The controlled
+sensitivity sweep (§E) already shows the range of outcomes this choice would produce if made.
 
-**3. Execution/reliability improvements**: none identified — execution-level costs were shown
-in §D to not be a material independent contributor.
+**3. Execution/reliability improvements**: none identified — execution-level costs (commission,
+swap, slippage) are not a material independent contributor; both engines share the same
+account/broker/symbol.
 
-**4. Parameter calibration**: `InpMaxSpread`'s numeric value (not its units) could be revisited
-as a deliberate strategy choice (e.g. "we want a 4-pip cap because X") independent of the
-reference-matching question — that's a product decision, not something this report resolves.
+**4. Parameter calibration**: `InpMaxSpread`'s numeric value (not its units) remains available
+as a deliberate strategy choice independent of the reference-matching question — not resolved
+here, a product decision.
 
-**5. Optional strategy experiments**: none proposed — per the brief's explicit instruction not
-to use this discrepancy as justification for backtest-specific tuning.
+**5. Optional strategy experiments**: none — per the brief's explicit instruction not to use
+this discrepancy as justification for backtest-specific tuning. The Finding 2 fix was applied
+because the root cause was proven, not because it improves PnL (that it also does so is a
+consequence of matching correct behavior, per the brief's own framing, not the reason it was
+made).
 
 ---
 
-## I. Validation Plan
+## I. Validation Plan (Finding 2 fix — executed, not just planned)
 
-For Finding 1, if a `InpMaxSpread` units/value change is ever made:
-1. Re-run this exact controlled baseline (same `.set` skeleton, same date range, same Model=4)
-   before and after the change.
-2. Confirm the 2025-02-04 00:05 add-on now succeeds (or document why it still doesn't, if the
-   change was to a different value than tested here).
-3. Re-run the full 5-case forensic reconciliation from `VISUAL_TEST_2025_DIAGNOSTIC_REPORT.md`
-   to confirm no *new* spread-gate rejections appear elsewhere that previously didn't (i.e. the
-   change should only ever make the gate more permissive, never introduce new blocks).
-4. Re-run on at least one additional, non-overlapping date range (per the brief's overfitting
-   guard, §14) before treating the change as validated rather than dataset-specific.
-5. Confirm final balance/PF move in the direction of reference **only as a side-observation**,
-   not as the validation criterion itself — the actual criterion is "spread gate now applies the
-   documented/intended threshold," which is independently checkable via the forensic spread log
-   regardless of whether it happens to raise or lower this particular period's PnL.
+Same controlled baseline (EURUSD H4, 2025.01.01–2026.01.22, $100k/USD, `Model=4`,
+`InpMaxSequencesPerDirection=3`) used throughout this report, before/after the code change:
 
-For Finding 3, the validation plan **is** the next diagnostic step: extend
-`DCA_EA_Forensic.mq5`'s logging to the reference's 3 divergent dates specifically (or, more
-robustly, write a sequence-reconstruction pass per §D's recommendation) to determine which of
-the two competing explanations is correct before proposing any correction at all.
+1. **Touch mode, before → after**: net profit $145.68 → **$250.82**; gap vs. reference $121.71 →
+   **$16.57**. ✅ Discrepancy substantially resolved (86% reduction), not fully eliminated (the
+   residual is Finding 1 plus second-order effects — see point 8 of the Executive Summary).
+2. **Bar-close mode regression check, before → after**: full deal log diffed byte-for-byte —
+   **zero differences** (124 deals, identical timestamps/prices/volumes/profits throughout). ✅
+   Confirms the fix genuinely only touches the `useTouch=true` path.
+3. **QQE50+Recovery regression check**: not re-run — `useTouch` is always `false` in that branch
+   (`isBBMode=false`), so it was already on `GetSequenceProfitPipsFromClose()` before this change
+   and is provably unaffected by inspection. Documented as a code-level regression check rather
+   than a redundant backtest.
+4. **Existing functionality/specification preserved**: `InpBBExitOnBreach=true` still produces
+   genuinely different behavior from `=false` (the sticky touch-armed condition vs. a
+   per-bar-re-evaluated one) — this fix did not collapse the two into being identical, it only
+   corrected which price the shared downstream profit check uses.
+5. **Not yet done** (flagged, not overlooked): re-running on a second, non-overlapping date
+   range to guard against this specific period being an outlier (the brief's overfitting guard,
+   §14) — the fix's justification is the code-level mismatch against the guide's own wording, not
+   this period's PnL improvement, so this is a nice-to-have confirmation rather than a
+   precondition the fix's validity depends on.
+
+For Finding 1 (not fixed, left as an option), the validation plan if it's ever acted on remains
+as previously specified: re-run this baseline before/after, confirm the 2025-02-04 add-on and
+the 3 ex-Finding-3 entries now proceed without delay, re-run the 5-case forensic reconciliation
+from `VISUAL_TEST_2025_DIAGNOSTIC_REPORT.md` to confirm no new rejections appear, and check at
+least one non-overlapping date range before treating any change as validated.
 
 ---
 

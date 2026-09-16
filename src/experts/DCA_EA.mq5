@@ -2397,6 +2397,28 @@ bool ExecutePartialCloseIfDue(bool isBuy, int idx)
 //| once (recoveryActive was already true) — recoveryActive is read      |
 //| BEFORE it can be set later in this same call, so it correctly        |
 //| reflects "was this sequence already in Recovery Mode before now."    |
+//|                                                                      |
+//| FIX (PNL_DISCREPANCY_ROOT_CAUSE_REPORT.md Finding 2, CONFIRMED):     |
+//| atBreakeven now always uses the bar-close variant, even in touch     |
+//| mode. Root cause: once touchBreached latches (itself correctly      |
+//| bar-close-gated via UpdateTouchBreach()), this downstream profit/    |
+//| buffer check used to evaluate on LIVE bid/ask every tick (via        |
+//| CheckExitsPerTick(), not gated to IsNewBar()) instead of waiting for |
+//| the bar to close — contradicting the guide's own quoted "closes on   |
+//| the close of that candle" wording, and reference's own observed      |
+//| behavior (matched sequences close at exact bar boundaries). Traced   |
+//| to two independent, code-and-data-confirmed cases (2026-01-02 and    |
+//| 2025-07-08 sequences): both closed intrabar at a live price sitting  |
+//| almost exactly avg_entry + InpBreakevenBufferPips (not coincidence — |
+//| matched to the hundredth of a pip), well before the bar reference    |
+//| waited for actually closed — $63.34 lost across just those 2         |
+//| sequences. A controlled A/B (bar-close mode vs touch mode, identical |
+//| baseline otherwise) shrank the total PnL gap vs. reference from      |
+//| $121.71 to $33.65 — this single change accounts for the majority of  |
+//| the discrepancy this EA has vs. the reference implementation. This   |
+//| was implemented and tested once before this exact investigation      |
+//| (then reverted pending further evidence); it is now re-implemented   |
+//| on the strength of that completed investigation.                     |
 //+------------------------------------------------------------------+
 void HandleBBCentreOrQQE50(bool isBuy, int idx, bool isBBMode)
   {
@@ -2420,8 +2442,7 @@ void HandleBBCentreOrQQE50(bool isBuy, int idx, bool isBBMode)
    if(!InpUseDynamicStop)
      {
       double requiredPips = recoveryActive ? InpBreakevenBufferPips : 0.0;
-      bool atBreakeven = useTouch ? GetSequenceProfitPips(isBuy, idx) >= requiredPips
-                                   : GetSequenceProfitPipsFromClose(isBuy, idx) >= requiredPips;
+      bool atBreakeven = GetSequenceProfitPipsFromClose(isBuy, idx) >= requiredPips;
       if(!atBreakeven)
         {
          if(isBuy) g_buySequences[idx].recoveryModeActive = true;
