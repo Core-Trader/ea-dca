@@ -256,15 +256,87 @@ gate.
   doing for behavioral/structural fidelity to the reference (trade count, sequence composition),
   just not as a PnL fix.
 
-### Finding 2 — Touch-mode same-bar/early-close exit pattern (pre-existing, re-confirmed)
+### Finding 2 — Touch-mode same-bar/early-close exit pattern — NOW PRECISELY QUANTIFIED AND CONFIRMED
 
-- Already fully documented in `DCA_EA_ENTRY_EXIT_DIVERGENCE_REPORT.md` finding #2 and
-  `VISUAL_TEST_2025_DIAGNOSTIC_REPORT.md` §C4 — not re-derived here. Systematically caps profit
-  on sequences that otherwise match reference's entries.
-- **Classification**: **A — Implementation Bug** (per the earlier investigation's own framing:
-  the spec's literal wording describes a bar-close-timed mechanism; the code is tick-reactive
-  once armed). A proposed fix was implemented, tested, and reverted pending further decision —
-  that decision remains open and is not re-litigated here.
+Previously qualitative (`DCA_EA_ENTRY_EXIT_DIVERGENCE_REPORT.md` finding #2,
+`VISUAL_TEST_2025_DIAGNOSTIC_REPORT.md` §C4). This pass built a full sequence-by-sequence
+attribution to quantify it precisely, using a rewritten, validated sequence-reconstruction
+methodology (see note below) that resolves every deal in both engines' logs to a specific
+sequence with zero unresolved closes and zero orphans (41/41 our sequences, 35/35 reference's).
+
+**Methodology note**: the first reconstruction attempt (matching a close event to the first
+open sequence with the same volume-multiset, without removing matched sequences from the
+candidate pool) produced nonsensical pairings (e.g. a January sequence "closing" a year later)
+because many sequences share identical leg-volume patterns (0.01/0.02/0.03...) under the Linear
+multiplier, and a weak total-volume fallback heuristic mismatched across the whole timeline once
+an exact match wasn't found nearby. Fixed by processing both engines' deals in strict
+chronological order with an explicit per-direction FIFO stack, removing each sequence from the
+candidate pool the instant it's matched, and — after discovering one reference close event
+`[0.01, 0.01, 0.02]` that was actually **two independent sequences closing at the identical
+tick** (both satisfying their own exit condition on the same signal) — adding subset
+decomposition that only activates when no single sequence explains the full close batch.
+
+**Full PnL decomposition** (validated: components sum to exactly $121.71, the observed gap):
+
+| Component | n | Amount (ref − ours) |
+|---|---:|---:|
+| Matched sequences, **same leg count** (pure exit-timing/price difference) | 27 | **+$68.75** |
+| Matched sequences, **different leg count** (add-on/composition discrepancy — Finding 1 territory) | 7 | +$55.99 |
+| Sequences only in reference | 1 | +$2.14 |
+| Sequences only in ours | 7 | −$5.17 |
+| **Total** | | **+$121.71** ✓ |
+
+(Note: this decomposes the report's "Net PnL" column, i.e. the raw `Profit` field summed across
+deals — both engines' `Profit` columns exclude commission/swap, which are reported separately;
+summing all three for either engine correctly reproduces that engine's final balance, e.g. ours:
+$145.68 profit − $4.24 commission − $15.73 swap = $125.71 = final balance − $100,000. This is a
+labeling-clarity point, not a computational error — both sides are treated identically, so the
+$121.71 gap is valid either way.)
+
+**The same-leg-count category is dominated by 2 of its 27 sequences**: $52.90 (2026-01-02 entry,
+4 legs) and $10.44 (2025-07-08 entry, 3 legs) together account for $63.34 of the $68.75 subtotal
+— the remaining 25 sequences contribute a combined **+$5.41**, almost all of it sub-$0.05
+commission/swap-scale noise, not a systematic per-trade tax. This matters: Finding 2 is not
+"shaves a little off every trade" — it's concentrated in specific sequences where price
+oscillates near breakeven for an extended period before a strong move.
+
+**Both dominant cases were traced to the exact mechanism using `DCA_EA_Forensic.mq5`'s per-bar
+BB-middle log against `baseline_ourEA.set`** (fresh run, final balance $100,125.71, confirmed
+identical to the original baseline):
+
+- **2026-01-02 sequence** (avg entry 1.166349): the first bar where `High >= bb_middle` (the
+  touch condition) is **2026-01-20 04:00** (high 1.16725 ≥ bb_middle 1.16474) — so
+  `touchBreached` latches at exactly **08:00:00** when that bar closes. Our actual close fires
+  at **09:22:15**, 1h22m later, **intrabar** within the 08:00–12:00 bar, at 1.16735 — almost
+  exactly **10.0 pips** above the average entry, matching `InpBreakevenBufferPips=10.0` to the
+  hundredth, meaning this sequence was in Recovery Mode requiring the full buffer, not flat
+  breakeven. Reference closes at the clean **12:00:00** bar boundary instead, capturing the
+  additional favorable move between 09:22 and 12:00 (this is the sequence documented extensively
+  earlier in this project's history).
+- **2025-07-08 sequence** (avg entry 1.167258): first touch bar is **2025-07-16 16:00** (high
+  1.17218 ≥ bb_middle 1.16947); `touchBreached` latches at **20:00:00**. Our close fires **5 days
+  later**, 2025-07-21 **17:07:50**, intrabar within the 16:00–20:00 bar, at 1.16826 — again
+  **10.02 pips** above average entry, the same buffer signature. Reference closes at the clean
+  **20:00:00** bar boundary.
+- Both cases independently reproduce the identical signature (close price ≈ avg entry + exactly
+  `InpBreakevenBufferPips`, fired intrabar, versus reference's bar-boundary close) — ruling out
+  coincidence.
+
+- **Code location**: `HandleBBCentreOrQQE50()` (`DCA_EA.mq5`), `atBreakeven` check uses
+  `GetSequenceProfitPips()` (live `SymbolInfoDouble(_Symbol, SYMBOL_BID/ASK)`), reached via
+  `CheckExitsPerTick()` called from `OnTick()` on **every tick**, not gated to `IsNewBar()`. The
+  bar-close variant `GetSequenceProfitPipsFromClose()` already exists and is used by the
+  `InpBBExitOnBreach=false` path, but not by the touch path.
+- **Root cause**: once `touchBreached` latches (itself correctly bar-close-gated), the downstream
+  profit/buffer check evaluates continuously on live ticks rather than waiting for a bar to
+  close — contradicting the guide's own quoted wording ("closes on the close of that candle")
+  and reference's own observed behavior (both matched cases here close at exact bar boundaries).
+- **Classification**: **A — Implementation Bug. CONFIRMED** (upgraded from the earlier
+  investigation's classification — that determination stands, and is now backed by precise,
+  quantified, two-independent-case evidence rather than a single worked example). A fix
+  (routing this check through `GetSequenceProfitPipsFromClose()`) was previously implemented,
+  tested, and reverted mid-session pending further investigation — that investigation is now
+  complete; see §H for the decision.
 
 ### Finding 3 — Possible intrabar entry timing on the reference side (NEW, UNCONFIRMED)
 
