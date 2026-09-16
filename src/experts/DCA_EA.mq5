@@ -2125,6 +2125,17 @@ bool QQE50ExitConditionBar(bool isBuy)
 //| what's genuinely still open afterward — the sequence is only         |
 //| dropped once it's confirmed empty; otherwise it stays tracked and    |
 //| the same exit condition naturally retries the close on a later tick. |
+//|                                                                      |
+//| FIX (leg-closing order, cosmetic): closes newest/largest leg first   |
+//| (i = count-1 down to 0) instead of oldest/smallest first. Purely a   |
+//| deal-log/Balance-curve display order — total realized profit for the |
+//| sequence is unchanged either way — but closing smallest-first used   |
+//| to guarantee a visible Balance dip-then-recover on every multi-leg   |
+//| close (the oldest/smallest legs are usually the worst-priced ones    |
+//| pre-averaging, so they post their losses before the newest/largest,  |
+//| best-priced leg posts its profit). The reference EA's own deal log   |
+//| closes newest-first, so Balance jumps up immediately and never dips  |
+//| below its pre-close level. Matches that ordering.                    |
 //+------------------------------------------------------------------+
 void CloseSequenceAndCleanup(bool isBuy, int idx, string reason)
   {
@@ -2132,7 +2143,7 @@ void CloseSequenceAndCleanup(bool isBuy, int idx, string reason)
 
    int    count        = isBuy ? g_buySequences[idx].count : g_sellSequences[idx].count;
    double closedProfit = 0.0;
-   for(int i = 0; i < count; i++)
+   for(int i = count - 1; i >= 0; i--)
      {
       ulong ticket = isBuy ? g_buySequences[idx].tickets[i] : g_sellSequences[idx].tickets[i];
       if(PositionSelectByTicket(ticket))
