@@ -154,7 +154,7 @@ input int                    InpQMPWP                  = 3;     // QMP: QQE Wild
 input group "Bollinger Band Settings"
 input int                    InpBBPeriod                     = 35;           // BB Period
 input double                 InpBBDeviation                  = 2.25;         // BB Deviation
-input ENUM_APPLIED_PRICE     InpBBAppliedPrice               = PRICE_CLOSE;  // BB Applied Price
+input ENUM_APPLIED_PRICE     InpBBAppliedPrice               = PRICE_HIGH;   // BB Applied Price
 input bool                   InpUseBBWidthFilter             = false;        // Use BB Width Filter
 input double                 InpBBMinWidthPercent            = 0.5;          // BB Min Width % (of middle band price)
 input bool                   InpRequireCenterBandCross       = true;         // Require Centre Band Cross Before New Sequence
