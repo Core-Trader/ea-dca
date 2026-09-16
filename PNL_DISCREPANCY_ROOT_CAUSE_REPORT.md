@@ -338,22 +338,44 @@ identical to the original baseline):
   tested, and reverted mid-session pending further investigation — that investigation is now
   complete; see §H for the decision.
 
-### Finding 3 — Possible intrabar entry timing on the reference side (NEW, UNCONFIRMED)
+### Finding 3 — RESOLVED: not an independent mechanism, it's Finding 1 again (entry-delay form)
 
-- **Symptom**: 3 matched sequences show reference entering 3.3-4h earlier than us, intrabar
-  (non-bar-boundary timestamps), 4-27 pips away from our bar-close fill.
-- **Evidence**: §C table, directly from the controlled baseline's deal logs.
-- **Root cause**: **not isolated**. Two competing explanations, both plausible, not
-  distinguished in this pass:
-  1. Reference's entry mechanism reacts intrabar to some condition (possibly analogous to our
-     own touch-mode's live-tick reactivity, but on the *entry* side rather than exit) — a
-     genuine, distinct behavioral difference from our strictly bar-close-driven entry pipeline.
-  2. An artifact of the 3-day greedy matcher re-pairing sequences whose true correspondence was
-     already broken by Finding 1's cascade — i.e., not a fresh divergence at all, just matching
-     noise on top of an already-diverged state.
-- **Classification**: **Unclassified — insufficient evidence.** Explicitly not asserted as
-  either A/B/C/D/E/F per the brief's own instruction not to mix categories or overstate
-  certainty. Recommended as the top item for follow-up (see §H).
+**Hypothesis tested**: (H3a) reference's entry mechanism reacts intrabar to some condition,
+a genuine behavioral difference from our bar-close-driven entry pipeline; vs. (H3b) this is
+the spread-gate mechanism (Finding 1) manifesting as a delay rather than a permanent block.
+
+**Test**: pulled `DCA_EA_Forensic.mq5`'s per-bar log for all 3 divergent dates. Evidence that
+would distinguish them: if H3a, our own gate state should show nothing unusual at the moment the
+dot fires — the delay would have to come from somewhere else. If H3b, our EA's own gates should
+already show `buy/sell_ALLGATESPASS=true` at the earlier time, blocked specifically by
+`spreadOk=false` at that instant, retrying successfully once spread normalizes.
+
+**Result — H3b confirmed, identically, in all 3 cases**:
+
+| Date | Dot fires at (real time) | Gate state at that instant | Spread at that instant | Actual entry (next bar) |
+|---|---|---|---|---|
+| 2025-04-22 | 00:00:00 | `sell_ALLGATESPASS=true` | **103 points, spreadOk=false** | 04:00:00, spread=2 |
+| 2025-06-20 | 00:00:00 | `buy_ALLGATESPASS=true` | **101 points, spreadOk=false** | 04:00:00, spread=2 |
+| 2025-10-07 | 00:00:00 | `buy_ALLGATESPASS=true` | **121 points, spreadOk=false** | 04:00:00, spread=0 |
+
+All three dots fire at the identical time-of-day (00:00:00 GMT — the daily-rollover window,
+already identified elsewhere in this project as a routine spread-widening period, not a data
+anomaly), all three are blocked by the exact same `SpreadOk()` gate at `DCA_EA.mq5:1125-1128`
+that caused Finding 1's first divergence, and all three succeed on the very next bar once
+spread normalizes — by which point price has moved against us for the full 4-hour gap. This
+is not new evidence of a second mechanism; it's the same mechanism producing a different visible
+symptom (delayed entry at a worse price, rather than a permanently missing trade).
+
+- **Root cause**: **CONFIRMED, same as Finding 1** — the spread-units mismatch causes our
+  (spec-correct, points-based) gate to reject entries during routine daily-rollover spread
+  spikes that a more permissive (hypothesized pips-based) reference cap would not reject.
+- **Code location**: same as Finding 1 — `DCA_EA.mq5:136`, `:1125-1128`.
+- **Classification**: **D — Parameter Interpretation Difference** (merged into Finding 1, not
+  a separate finding). The original "possible independent intrabar entry mechanism" hypothesis
+  (H3a) is **disproven** — no evidence of it survived once H3b was tested directly.
+- **PnL contribution**: this is part of the $55.99 "different-leg-count" bucket in §D — these 3
+  specific sequences matched with different leg counts precisely because the delayed entry also
+  delayed/altered which add-on legs the sequence went on to receive.
 
 ---
 
