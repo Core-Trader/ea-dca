@@ -63,11 +63,67 @@ conversation carries forward to the next run.
   does nothing (exits fast, no report, no error). Check
   `Get-Process -Name terminal64` before launching, and ask the user before
   closing anything they have open.
-- **Always pass `ExpertParameters=<path to a .set file>` explicitly.** With
-  no `ExpertParameters`, the Tester silently reuses whatever `.set` was last
-  associated with an Expert of that exact name — and this project's
-  `MQL5\Profiles\Tester\` folder has many stale presets from prior test
-  iterations (this project's own history and other AI-assisted variants
-  sharing the same environment). It will NOT fall back to the `.mq5`'s
-  compiled-in defaults. Verify the report's Settings section actually shows
-  the intended parameter values before trusting any result.
+- **Always pass `ExpertParameters=<bare filename>.set` explicitly**, with the
+  `.set` file copied into `MQL5\Profiles\Tester\` first — not an absolute
+  path. With no `ExpertParameters`, or with an absolute path (confirmed to
+  silently fail too, not just an omitted value), the Tester silently reuses
+  whatever `.set` was last associated with an Expert of that exact name — and
+  this project's `MQL5\Profiles\Tester\` folder has many stale presets from
+  prior test iterations (this project's own history and other AI-assisted
+  variants sharing the same environment). It will NOT fall back to the
+  `.mq5`'s compiled-in defaults. Verify the report's Settings section
+  actually shows the intended parameter values before trusting any result.
+- **Use `Model=4` ("Every tick based on real ticks"), not `Model=1`.**
+  Confirmed this session: this EA's touch-mode exits read live bid/ask every
+  tick, so `Model=1`'s synthetic intrabar tick path produces a materially
+  different trade history than the reference reports (and than manual GUI
+  runs) from the same `.set`. `Model=4` was confirmed to exactly reproduce a
+  manual GUI run's deal log down to the second across 113 deals. `Model=4`
+  headless runs work fine in this environment (no hang) — the historical
+  "Cloud servers switched off" hang was NOT a `Model=4`-specific issue (see
+  below).
+- **Pass the `/config:"<ini>"` path as a literal Windows backslash path**
+  (`C:\Users\...\file.ini`), not a bash-style forward-slash path (even via a
+  shell variable like `$SCRATCH/file.ini`, which itself contains
+  forward-slash segments once expanded). Confirmed this session: a
+  forward-slash path embedded in the combined `/config:"..."` flag does not
+  get translated the way a standalone argument would, so `terminal64.exe`
+  silently ignores it — no error, but it also doesn't run your intended
+  config. Symptom is confusing: the terminal can still complete some
+  *leftover/stale* simulation (a real "Test passed" + final balance appears
+  in the log) without ever loading your `.set`/`Report=` name, so a report
+  file under your intended name never appears, even though the log looks
+  superficially like a successful run. **Always verify the report file was
+  actually created under the name you passed** (`Report=` in the `.ini`)
+  before trusting any result — don't infer success from the log alone.
+- **"Cloud servers switched off" in the log is benign, not a failure.** It's
+  followed immediately by "cloud network mode is off" and the run proceeding
+  normally on local agents — this appears on essentially every headless run
+  in this environment (even ones that complete and write their report
+  correctly) and is not diagnostic of anything going wrong.
+- Working reference `.ini` (adjust `Expert`/`ExpertParameters`/`Report`/dates
+  per run):
+  ```
+  [Tester]
+  Login=540291482
+  Expert=EA-DCA-V1.0\DCA_EA
+  ExpertParameters=<bare filename>.set
+  Symbol=EURUSD
+  Period=H4
+  Model=4
+  Optimization=0
+  FromDate=2025.01.01
+  ToDate=2026.01.22
+  ForwardMode=0
+  Deposit=100000
+  Currency=USD
+  Leverage=30
+  ExecutionMode=0
+  Report=<report name>
+  ReplaceReport=1
+  ShutdownTerminal=1
+  Visual=0
+  ```
+  Launch with: `"C:\FTMO Global Markets MT5 Terminal\terminal64.exe" /portable /config:"C:\<windows-style path>\<name>.ini"` — run in the foreground (no `&`, no
+  `run_in_background`) so the tool call actually waits for completion instead
+  of returning as soon as the process is merely launched.

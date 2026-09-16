@@ -197,6 +197,36 @@ constraint — decompiling a third-party commercial `.ex5` was explicitly declin
 session as a licensing/legality issue, and is not attempted here either). Classified as
 Reference-Equivalence Issue (Category B/D — see §F), high confidence, not certainty.
 
+### §13 Controlled Parameter Sensitivity Analysis — `InpMaxSpread`, now done
+
+The user directly challenged the "meaningful share of the PnL gap" framing below by testing
+extreme values themselves; this section verifies that with a proper controlled sweep rather than
+spot checks. Same baseline (our EA, EURUSD H4, 2025.01.01–2026.01.22, $100k/USD, `Model=4`,
+`InpMaxSequencesPerDirection=3`), only `InpMaxSpread` varied:
+
+| `InpMaxSpread` | Net Profit | Closing deals | Wins | Losses | PF |
+|---:|---:|---:|---:|---:|---:|
+| 40 (documented default/baseline) | $145.68 | 56 | — | — | 3.63 |
+| 0 (disabled entirely) | $145.70 | 59 | 44 | 13 | 3.55 |
+| 100 (10 pips) | $143.54 | 59 | 44 | 13 | 3.89 |
+| 400 (40 pips — the reference-pips hypothesis's implied equivalent) | $145.70 | 59 | 44 | 13 | 3.55 |
+| 1000 (100 pips) | $145.70 | 59 | 44 | 13 | 3.55 |
+
+**Result: raising the cap does unlock 3 more closing deals (56→59), confirming `SpreadOk()`
+genuinely blocks real trades as Finding 1 describes — but the net PnL barely moves ($143.54–
+$145.70 across the entire 0–1000 range, a ~$2 spread).** Reference's $267.39 remains a ~$122 gap
+regardless of where `InpMaxSpread` is set, including fully disabled. The extra trades a
+permissive cap unlocks are close to breakeven in aggregate, not a source of outperformance.
+
+**Correction to Finding 1's impact assessment below**: the spread-units mechanism is confirmed
+as the literal first point of divergence (still true — the Feb-4 event is real and dated
+correctly) and a genuine driver of *trade-count* divergence (7-vs-1 extra sequences), but this
+sweep disproves that it's a meaningful driver of the *PnL* gap specifically. Those are separable
+claims, and the original report conflated them. The dominant PnL driver must be elsewhere —
+Finding 2 (touch-mode early-close) and/or Finding 3 (unconfirmed intrabar entry timing) are the
+remaining candidates and should be the priority for any further quantification, not the spread
+gate.
+
 ---
 
 ## F. Root-Cause Analysis
@@ -213,11 +243,18 @@ Reference-Equivalence Issue (Category B/D — see §F), high confidence, not cer
   interpretation and the reference's (circumstantially-evidenced) pips-based one, not a defect
   in either individual implementation considered alone.
 - **Code location**: `DCA_EA.mq5:136` (input declaration), `:1125-1128` (`SpreadOk()`).
-- **Impact**: HIGH — this is the seed event for the entire subsequent 7-vs-1 sequence-count
-  divergence and a meaningful share of the PnL gap.
+- **Impact**: HIGH for trade-count/sequence-structure divergence (confirmed seed event for the
+  7-vs-1 cascade in §C) — but **LOW for the PnL gap specifically**. A controlled sensitivity
+  sweep (§E's §13 subsection, added after the user directly challenged this) shows net profit
+  moves by ~$2 across the full `InpMaxSpread` range 0–1000, versus a ~$122 gap to reference. The
+  extra trades a permissive cap unlocks are close to breakeven in aggregate. Do not conflate
+  "confirmed first divergence" with "confirmed PnL driver" — this finding is the former, not
+  the latter.
 - **Classification**: **D — Parameter Interpretation Difference** (identical declared value,
   likely different internal units/meaning). Not an implementation bug in our EA — our reading
-  is the spec-confirmed one.
+  is the spec-confirmed one. Correcting a parameter-interpretation difference is still worth
+  doing for behavioral/structural fidelity to the reference (trade count, sequence composition),
+  just not as a PnL fix.
 
 ### Finding 2 — Touch-mode same-bar/early-close exit pattern (pre-existing, re-confirmed)
 
