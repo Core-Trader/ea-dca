@@ -318,3 +318,31 @@ separate stretches of time it was never fitted to. This is a real constraint (a
 strategy this data-limited cannot support an aggressive multi-fold walk-forward the
 way a 10+-year, fully-real-tick dataset could) and is stated as such rather than
 glossed over — flagged for Phase 4's overfitting-risk assessment specifically.
+
+### 3.5 Out-of-sample validation results (unmodified baseline, no optimization applied yet)
+
+Ran `EA_DCA_CENT_V1_baseline.set` — completely unchanged, nothing tuned — against both
+untouched windows:
+
+| | In-sample (2025.01.01-2026.01.22, ~12.7 mo) | OOS-A (2024.09-2024.12, ~4.0 mo) | OOS-B (2026.01.23-2026.09.17, ~7.8 mo) |
+|---|---|---|---|
+| Net Profit | $225.70 | $37.13 | $172.56 |
+| **Net Profit / month** | **~$17.80** | ~$9.28 | **~$22.04** |
+| Profit Factor | 5.52 | 1.61 | 5.65 |
+| Sharpe Ratio | 2.79 | 0.51 | 3.26 |
+| Recovery Factor | 2.32 | 0.36 | 2.16 |
+| Trades / Deals | 58 / 116 | 19 / 38 | 45 / 90 |
+| Equity DD Maximal | $97.33 (0.10%) | $102.91 (0.10%) | $79.71 (0.08%) |
+
+**Reading this honestly**: OOS-A is the weak result — profit factor drops to 1.61 and
+Sharpe to 0.51, though still net positive with no drawdown blowout. With only 19 trades
+in a 4-month window, this is too small a sample to draw a strong conclusion either way
+(a handful of trades going the other way would flip the sign) — it's a data point, not
+a verdict. OOS-B is markedly stronger, in fact matching or slightly exceeding in-sample
+performance. **Combining both OOS windows and normalizing by time** (since they're
+different lengths): $209.69 over ~11.8 months ≈ **$17.73/month**, essentially identical
+to in-sample's ~$17.80/month. That closeness, across two disjoint periods the
+parameters were never fitted to, is a genuine (if modest, given the small combined
+trade count of 64) piece of evidence against gross overfitting — not proof of
+robustness, but the opposite of a red flag. No parameter has been changed to produce
+this result; it is what the already-developed baseline does on data it has never seen.
