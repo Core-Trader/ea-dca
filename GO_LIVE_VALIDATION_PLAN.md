@@ -1,9 +1,11 @@
 # DCA_EA — Go-Live Validation Plan
 
-**Status**: Phase 1 (environment & EA assessment) complete. Phases 2-11 not yet started —
-each requires either a decision or an action (backtest/optimization run) gated on user
-input, per this document's open questions and CLAUDE.md's Strategy Tester rule ("always
-ask before running a backtest, every time").
+**Status**: Phase 1 (environment & EA assessment) and Phase 2 (baseline) complete.
+Phase 1 answers confirmed by the user (2026-09-17): the live cent account will be a
+**different** broker/account than `default.set`'s `Login=540291482` — this terminal's
+current account/data is fine for all testing up to the cent-account-specific phase — and
+the cent symbols will use a **`c` suffix** (`EURUSDc`, `GBPUSDc`). Phases 3-11 not yet
+started.
 
 This document is the audit trail for the go-live process: every phase, test run,
 parameter decision and conclusion gets recorded here as it happens. Nothing in this
@@ -128,6 +130,84 @@ Every monetary/risk-relevant input, categorized:
    **run it now** (I'll confirm the exact `.ini`/`.set` before launching, per the
    standing rule), or would you rather run it yourself and share the report?
 
-Everything else in this plan (Phases 2-11, deliverables A-K) will be filled in here as
+Everything else in this plan (Phases 3-11, deliverables A-K) will be filled in here as
 each phase executes — this file will grow into the complete audit trail rather than
 being rewritten from scratch.
+
+---
+
+## Phase 2 — Baseline (2026-09-17)
+
+### 2.1 `EA_DCA_CENT_V1.mq5` created
+
+`src/experts/EA_DCA_CENT_V1.mq5` — a frozen snapshot of `DCA_EA.mq5` as of commit
+`dccf97b` (post Finding-2 touch-mode fix, post `InpAlwaysCloseOnOppositeBand` notice).
+Diffed byte-for-byte identical from the `#include <Trade\Trade.mqh>` line onward — only
+the header comment block differs (documents it as the cent-account go-live baseline,
+with an explicit "don't hand-edit, re-baseline from `DCA_EA.mq5` instead" rule). Compiled
+clean: 0 errors, 0 warnings.
+
+This is the file that will actually go live on the cent account. `DCA_EA.mq5` keeps
+being the active development/reference-comparison file; changes only flow from
+`DCA_EA.mq5` into a re-baselined `EA_DCA_CENT_V1.mq5` deliberately, never the other way.
+
+### 2.2 Baseline backtest
+
+Run headlessly (`Model=4`, 100% real ticks confirmed in the report), settings verified
+against the report's own Settings section before trusting the result (per CLAUDE.md):
+
+| | |
+|---|---|
+| Expert | `EA_DCA_CENT_V1` (confirmed in report) |
+| Symbol / Period | EURUSD / H4 |
+| Range | 2025.01.01 - 2026.01.22 |
+| Deposit / Currency / Leverage | 100,000 / USD / 1:30 (current dev account — **not** the cent account; see note below) |
+| `.set` | `EA_DCA_CENT_V1_baseline.set` = `default.set`'s values, byte-identical (`InpBBAppliedPrice=3`/PRICE_HIGH, `InpAlwaysCloseOnOppositeBand=false`, etc. all confirmed present in the report) |
+| Artifacts | `diagnostics/backtests/cent_v1_baseline/` (report `.htm`, 4 chart `.png`s, the `.set` used) |
+
+**Note on scope**: per your answer to open question 1, this baseline intentionally still
+runs on the current (non-cent) account/symbol — establishing a reproducible, correctly-
+configured baseline is the goal of this phase, not cent-account economics yet (that's
+Phase 5, blocked on getting real `EURUSDc`/`GBPUSDc` symbol specifications).
+
+### 2.3 Baseline results
+
+| Metric | Value |
+|---|---|
+| Total Net Profit | **$225.70** |
+| Gross Profit / Gross Loss | $275.62 / -$49.92 |
+| Profit Factor | 5.52 |
+| Expected Payoff | $3.89/trade |
+| Recovery Factor | 2.32 |
+| Sharpe Ratio | 2.79 |
+| Balance Drawdown (abs / max) | $0.03 / $7.87 (0.01%) |
+| Equity Drawdown (abs / max) | $11.52 / $97.33 (0.10%) |
+| Total Trades / Total Deals | 58 / 116 |
+| Win rate | 74.14% (43 profit / 15 loss trades) |
+| Long / Short split | 37 long (72.97% won) / 21 short (76.19% won) |
+| Largest win / loss | $41.90 / -$7.84 |
+| Average win / loss | $6.41 / -$3.18 |
+| Max consecutive wins | 8 trades ($36.72) |
+| Max consecutive losses | 2 trades (-$6.24); single largest losing streak -$7.84 |
+| Min / Max / Avg position holding time | 1 sec / 316h05m / 60h38m |
+| **Total commission** (derived, summed across all 116 deals) | **-$4.44** |
+| **Total swap** (derived, summed across all 116 deals) | **-$20.68** |
+
+**Finding worth flagging**: the sum of the deal log's own per-deal `Profit` column
+(pure trading P&L, excluding commission/swap) is **$250.82** — commission (-$4.44) and
+swap (-$20.68) together account for the ~$25.12 gap down to the reported $225.70 net.
+Swap alone is ~8% of gross profit over this period, driven by this strategy's multi-day
+average hold time (60h38m) — **this cost was not part of any prior investigation in this
+project** (those used a different comparison methodology) and needs to be re-verified
+against the actual cent-account's swap rates in Phase 5, since cent accounts sometimes
+have different (occasionally zero) swap terms than standard accounts on the same broker.
+
+Trade sequence was inspected directly (not just aggregate stats) via the deal log —
+entries/exits, lot progression per sequence (e.g. 0.01 → 0.02 add-on pattern), and
+commission/swap per deal all read individually, consistent with the settings shown.
+
+This baseline number ($225.70 net / $250.82 gross-of-costs) is a fresh, independent
+measurement for this go-live track — it's close to, but not required to exactly match,
+numbers from the earlier `PNL_DISCREPANCY_ROOT_CAUSE_REPORT.md` investigation, since
+that used a different reporting/comparison methodology. Both are valid; this one is now
+the baseline of record for go-live purposes.
