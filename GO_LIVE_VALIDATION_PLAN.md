@@ -409,3 +409,51 @@ back once this session (`PNL_DISCREPANCY_ROOT_CAUSE_REPORT.md`'s own methodology
 section) and is not being repeated here.
 
 Sweep execution and results for §4.2's four candidates follow below as they're run.
+
+### 4.5 `InpBreakevenBufferPips` sweep — result: REJECT any increase, keep default (10)
+
+In-sample (2025.01.01-2026.01.22):
+
+| Buffer | Net Profit | Profit Factor | Recovery Factor | Sharpe | Trades |
+|---|---|---|---|---|---|
+| 5 | $207.73 | 4.99 | 2.13 | 2.61 | 58 |
+| **10 (current)** | **$225.70** | **5.52** | **2.32** | **2.79** | **58** |
+| 15 | $225.78 | 5.52 | — | — | 58 |
+| 20 | $276.57 | 7.38 | 2.84 | 2.93 | 60 |
+| 25 | $297.15 | 8.47 | 3.05 | 3.13 | 60 |
+
+Read naively, this looks like "higher is better, monotonically" — exactly the seductive
+pattern §4.1 warned about. Per the evaluation criteria in §4.4, the top in-sample
+candidate (25) was tested against **both** out-of-sample windows before drawing any
+conclusion:
+
+| | OOS-A baseline (buf=10) | OOS-A buf=25 | OOS-B baseline (buf=10) | OOS-B buf=25 |
+|---|---|---|---|---|
+| Net Profit | $37.13 | $115.78 | $172.56 | $419.60 |
+| Profit Factor | 1.61 | 1.86 | **5.65** | **3.81** |
+| Recovery Factor | 0.36 | **0.31** | **2.16** | **0.69** |
+| Sharpe Ratio | 0.51 | 0.52 | **3.26** | **1.10** |
+| Equity DD Maximal | $102.91 (0.10%) | **$378.45 (0.38%)** | $79.71 (0.08%) | **$606.11 (0.61%)** |
+
+**This is a clean, concrete demonstration of exactly the overfitting mechanism this
+methodology exists to catch.** A higher breakeven buffer makes the EA hold
+recovering/losing sequences open longer before it will close them — in-sample, that
+shows up as purely "bigger wins, better everything," because it's measuring a period
+that already happened to resolve favorably eventually. Out-of-sample, the same behavior
+shows its real cost: raw net profit went up on both OOS windows (more time in the market
+before closing = bigger swings both ways, and these two windows both happened to end up
+positive), but every risk-adjusted metric got worse — Sharpe collapsed from 3.26 to 1.10
+on OOS-B, Recovery Factor from 2.16 to 0.69, and equity drawdown roughly **8x worse**
+(0.08% to 0.61%) on the very window where it also made the most extra money. That
+combination — more profit, much worse risk-adjusted quality and much deeper drawdown —
+is precisely what "optimizing for robustness, not maximum historical profit" is meant to
+prevent, and precisely why §4.4's criteria require checking OOS before accepting any
+in-sample improvement.
+
+**Decision: `InpBreakevenBufferPips` stays at the current default, 10.** The 10-15
+region is a genuine flat, stable plateau (225.70 vs 225.78, indistinguishable) — a
+reassuring finding in its own right, since it means the current default isn't sitting on
+a knife-edge. 20 and 25 are rejected despite their attractive in-sample numbers, with
+the OOS evidence to show exactly why. This sweep is complete; the remaining §4.2
+candidates (`InpMaxSequencesPerDirection`, `InpMaxTradesPerSequence`, BB period/deviation)
+are still pending.
