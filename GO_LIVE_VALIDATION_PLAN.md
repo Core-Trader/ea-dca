@@ -346,3 +346,66 @@ parameters were never fitted to, is a genuine (if modest, given the small combin
 trade count of 64) piece of evidence against gross overfitting — not proof of
 robustness, but the opposite of a red flag. No parameter has been changed to produce
 this result; it is what the already-developed baseline does on data it has never seen.
+
+---
+
+## Phase 4 — Optimization Methodology
+
+### 4.1 Why this will be a narrow, sensitivity-driven pass, not a broad grid/genetic search
+
+The in-sample window has 58 trades. A multi-parameter grid or genetic optimizer
+routinely evaluates thousands of parameter combinations; with that few trades to score
+against, it is close to guaranteed to find a combination that overfits the specific
+58-trade sequence rather than a genuinely better strategy — the classic failure mode
+this whole go-live process is designed to avoid (brief §4: "optimize for robustness,
+not maximum historical profit"). **Decision: no broad optimization space.** Instead,
+each candidate parameter is swept one at a time, small step count, evaluated against
+both profit-factor stability *and* the two out-of-sample windows already established in
+§3.5 — never against in-sample net profit alone.
+
+### 4.2 Parameters considered for sensitivity testing, and why
+
+| Parameter | Current (`default.set`) | Proposed test range | Step | Why |
+|---|---|---|---|---|
+| `InpBreakevenBufferPips` | 10.0 | 5, 10, 15, 20, 25 | 5 | Recovery Mode's real economic lever — directly trades win-rate against average-win-size; worth confirming 10 isn't a knife-edge. |
+| `InpMaxSequencesPerDirection` | 3 | 1, 2, 3, 4 | 1 | Caps simultaneous exposure — a risk-sizing lever as much as a performance one; relevant to Phase 9's catastrophic-loss containment on a $150 account, not just PnL. |
+| `InpMaxTradesPerSequence` | 0 (unlimited) | 0, 4, 6, 8 | — | Currently uncapped — the single biggest tail-risk lever in a DCA/martingale-style EA (an unbounded losing sequence keeps adding lots). Testing whether a cap costs meaningful profit or is free insurance. |
+| `InpBBPeriod` / `InpBBDeviation` | 35 / 2.25 | 30/40 (period), 2.0/2.5 (deviation) | 5 / 0.25 | Core signal parameters — confirming the spec-derived defaults sit in a stable region, not a sharp local peak. |
+
+### 4.3 Parameters deliberately EXCLUDED from optimization
+
+- **`InpMultiplierSystem`** (Safe/Linear/Fibonacci/Aggressive/Martingale/Custom) — this
+  is a risk-tolerance *choice*, not a tunable knob. A backtest will almost always show
+  a more aggressive multiplier (Aggressive/Martingale) producing a higher historical
+  profit factor, right up until the one losing streak it can't recover from — that is
+  the DCA-strategy overfitting trap by definition. Selecting this by backtest
+  performance would directly contradict the brief's own governing principle. It stays
+  at the already-decided `MULT_LINEAR`.
+- **`InpInitialLot` and all lot-sizing inputs** — these must be *derived* from the
+  account's real risk budget (Phase 5/9), not fitted to historical PnL. Sizing up
+  lots always improves backtest net profit; it says nothing about whether the account
+  can survive the drawdown that comes with it.
+- **`InpExitStrategy`** — already selected (BB Centre Band) after the extensive,
+  evidence-based investigation earlier in this project (`PNL_DISCREPANCY_ROOT_CAUSE_REPORT.md`).
+  Re-opening this as an "optimizable parameter" would discard that validated work for
+  no new evidence.
+- **`InpSlippage`** — should reflect real broker execution characteristics observed
+  live, not be tuned to make backtests look better.
+- **`InpMaxSpread`** — already directly investigated (Finding 1, this project) via a
+  real 0/100/400/1000 sensitivity sweep: <$2 PnL impact across the entire range. Not
+  worth re-testing; already known to be a non-driver.
+- **Magic number, comment, all display/panel/color inputs** — no strategy effect.
+
+### 4.4 Evaluation criteria (robustness over peak profit, per the brief's governing principle)
+
+A parameter value is only preferred over the current default if it improves or holds
+profit factor **and** does not increase max relative drawdown **and** keeps a comparable
+trade count (a large drop in trade count on the same data usually just means "found a
+narrower, luckier subset," not a better strategy) **and** does not regress OOS-A/OOS-B
+performance judged against §3.5's own baseline numbers. A value that only wins on raw
+in-sample net profit is explicitly rejected by this criteria set — that is precisely the
+"change → backtest → compare PnL → repeat" pattern this project has already had to walk
+back once this session (`PNL_DISCREPANCY_ROOT_CAUSE_REPORT.md`'s own methodology
+section) and is not being repeated here.
+
+Sweep execution and results for §4.2's four candidates follow below as they're run.
