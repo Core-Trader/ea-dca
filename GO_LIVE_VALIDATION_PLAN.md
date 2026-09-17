@@ -211,3 +211,110 @@ measurement for this go-live track — it's close to, but not required to exactl
 numbers from the earlier `PNL_DISCREPANCY_ROOT_CAUSE_REPORT.md` investigation, since
 that used a different reporting/comparison methodology. Both are valid; this one is now
 the baseline of record for go-live purposes.
+
+---
+
+## Phase 3 — Backtest Protocol
+
+User instruction for phases 3 onward: proceed autonomously, applying established/
+proven methodology rather than stopping to ask at each step. Decisions below follow
+standard walk-forward practice (optimize on one block, validate on separate untouched
+blocks; never optimize on the full dataset) — deviations from that are called out
+explicitly where the available data forces a compromise.
+
+### 3.1 Critical finding: real broker tick data on this account only goes back to ~mid-2024
+
+Probed `EURUSD` `History Quality` (the % of the tested range backed by actual broker
+tick data vs. MT5's synthetically-generated filler) across several eras, same account
+(`Login=540291482`, FTMO-Server4) used for all testing so far:
+
+| Period tested | History Quality |
+|---|---|
+| 2010.01.01 - 2010.03.31 | **0% real ticks** |
+| 2015.01.01 - 2015.03.31 | **0% real ticks** |
+| 2020.01.01 - 2020.03.31 | **0% real ticks** |
+| 2023.01.01 - 2023.03.31 | **0% real ticks** |
+| 2023.10.01 - 2024.04.01 | 25% real ticks (mixed — transition zone) |
+| 2024.09.01 - 2025.02.01 | **100% real ticks** |
+| 2025.01.01 - 2026.01.22 (Phase 2 baseline) | **100% real ticks** |
+
+**This means every `.hcs` history file back to 2004 that MT5 downloaded for the wide
+probe is misleading — it exists on disk, but the pre-~2024 portion is synthetic filler,
+not real market data.** This matters specifically for this EA because it has
+already-confirmed touch-mode logic (`InpBBExitOnBreach=true`, live-tick sensitive —
+see `PNL_DISCREPANCY_ROOT_CAUSE_REPORT.md` Finding 2) whose behavior depends on the
+actual intrabar tick path, not just OHLC bar values. Backtesting that logic against
+synthetic filler data would produce a number, but not a meaningful one. **Conclusion:
+only ~2024-09 onward is usable for any conclusion this plan relies on.** Multi-decade
+regime coverage (2008 crisis, 2011 EU debt crisis, 2015 CHF unpeg, 2020 COVID crash,
+etc.) is simply not available with real fidelity on this account/broker demo server —
+stated plainly rather than assumed away, per the "do not hide inconclusive results"
+principle. If regime coverage against those historical shocks specifically matters to
+you, it would require a different data source/broker feed than this environment has;
+flagging this now rather than silently settling for synthetic-data theatre.
+
+### 3.2 Second symbol: GBPUSD (needed — the cent account will trade `GBPUSDc` too)
+
+Every test in this project to date, across the entire session, has used EURUSD only.
+The cent account's confirmed instruments are `EURUSDc` and `GBPUSDc`. Ran the same
+`EA_DCA_CENT_V1_baseline.set` unchanged against `GBPUSD`, 2025.01.01-2026.09.17,
+`Model=4`:
+
+| | EURUSD (Phase 2 baseline) | GBPUSD (same params, unmodified) |
+|---|---|---|
+| History Quality | 100% real ticks | 100% real ticks |
+| Total Net Profit | $225.70 (13.5 mo window) | $282.42 (20.5 mo window) |
+| Profit Factor | 5.52 | **2.11** |
+| Total Trades | 58 | 108 |
+| Equity Drawdown Maximal | $97.33 (0.10%) | **$183.09 (0.18%)** |
+
+**Finding**: the EA is not blowing up on GBPUSD, but its risk/reward character is
+materially different under EURUSD-derived parameters — roughly half the profit factor
+and nearly double the relative drawdown. This is expected (nothing about this EA's
+parameters was ever tuned with GBPUSD in mind) but it means **`GBPUSDc` cannot simply
+inherit the EURUSD-validated `.set` file at go-live** — it needs its own baseline/
+optimization/validation pass through this same protocol before being trusted with real
+money, even in cent-account terms. Tracked as a required parallel track, not yet done.
+
+### 3.3 Backtest protocol, as adopted
+
+| Parameter | Value | Rationale |
+|---|---|---|
+| Symbols | EURUSD (primary track), GBPUSD (secondary track, own optimization required — §3.2) | Matches the two confirmed cent-account instruments |
+| Timeframe | H4 | Matches all prior project work and `default.set` |
+| Tick/model quality | `Model=4` ("every tick based on real ticks") only, never `Model=1` | Confirmed elsewhere in this project that `Model=1`'s synthetic intrabar path diverges from real/GUI runs for this EA's touch-mode logic (see `CLAUDE.md`) |
+| Usable historical window | **2024-09-01 to present** only | Real-tick-quality floor established in §3.1; anything earlier is synthetic filler on this account |
+| Spread/commission/slippage | Not separately assumed — real historical spread is embedded in the real-tick simulation; real commission (~$0.03/0.01 lot/side) and swap are broker-modeled and already visible in the Phase 2 deal log; `InpSlippage=3` points is the EA's own execution-slippage allowance, unchanged | Using modeled real costs is more realistic than a hand-picked flat assumption, and is already proven to work (Phase 2) |
+| Initial balance / leverage (dev-track testing) | 100,000 / USD / 1:30 | Matches this account; **not** representative of the $150 cent account — that is Phase 5's concern specifically, not this protocol's |
+| Magic number | `123456` (unchanged from `default.set`) throughout dev-track testing | Consistency across comparable runs; will need a distinct magic number per live symbol/instance at actual go-live to avoid cross-EA position confusion |
+| Trading session restriction | None (`InpUseTimeFilter=false`) | Matches `default.set`; no evidence yet that session-restricting improves anything — not changed without a reason, per the "don't change parameters without documenting why" principle |
+
+### 3.4 In-sample / out-of-sample split
+
+The natural split is **not** an arbitrary 70/30 — it follows from what's already
+happened in this project. Everything from `2025.01.01` to `2026.01.22` has effectively
+already been "seen": the `Visual_test_2025.xlsx` discrepancy investigation, the
+`PNL_DISCREPANCY_ROOT_CAUSE_REPORT.md` PnL-gap investigation, and Phase 2's baseline
+all ran on exactly this window, and Finding 2's fix was derived by inspecting specific
+trades inside it. Calling that window "out-of-sample" now would be self-deception —
+real development decisions were made using knowledge of what happens inside it.
+
+So the split is:
+
+- **In-sample / development window (already used, legitimate for optimization)**:
+  `2025.01.01 - 2026.01.22` (~13 months).
+- **Out-of-sample validation A ("pre-history", never touched by any decision this
+  project made)**: `2024.09.01 - 2024.12.31` (~4 months, the earliest slice with
+  confirmed 100% real-tick quality).
+- **Out-of-sample validation B ("forward", never touched — didn't exist yet when
+  every prior investigation's `ToDate` cutoff was set)**: `2026.01.23 - 2026.09.17`
+  (~8 months, the most recent, most realistic "would this actually have worked"
+  window).
+
+Total genuinely out-of-sample evidence available: ~12 months, split across two
+disjoint windows rather than one contiguous block — arguably better than one block
+for catching regime-dependence, since it forces the parameters to work across two
+separate stretches of time it was never fitted to. This is a real constraint (a
+strategy this data-limited cannot support an aggressive multi-fold walk-forward the
+way a 10+-year, fully-real-tick dataset could) and is stated as such rather than
+glossed over — flagged for Phase 4's overfitting-risk assessment specifically.
