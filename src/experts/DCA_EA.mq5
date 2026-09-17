@@ -559,7 +559,13 @@ void ReleaseMagicNumberLock()
 //| Partial Close compatibility gate — hard fail. An invalid           |
 //| combination means the EA cannot generate correct entries or        |
 //| exits at all (see the Exit Strategy Compatibility Matrix in the    |
-//| analysis report, §5.4).                                            |
+//| analysis report, §5.4). Also emits soft, non-fatal informational   |
+//| notices (ok stays true) for options that are correctly wired but   |
+//| silently have no effect under the chosen Exit Strategy — e.g.      |
+//| InpAlwaysCloseOnOppositeBand only ever gets read inside            |
+//| HandleBBOpposite(), which only runs when Exit Strategy = BB        |
+//| Opposite Band; left set under any other strategy it isn't a bug,   |
+//| just a config value with nothing to do.                            |
 //+------------------------------------------------------------------+
 bool ValidateExitStrategyCompatibility()
   {
@@ -605,6 +611,11 @@ bool ValidateExitStrategyCompatibility()
       Print("EA-DCA: Dynamic Stop and Partial Close cannot both be enabled at the same time.");
       ok = false;
      }
+
+   if(InpAlwaysCloseOnOppositeBand && InpExitStrategy != EXIT_BB_OPPOSITE_BAND)
+      Print("EA-DCA: Note — InpAlwaysCloseOnOppositeBand is set to true but Exit Strategy is '",
+            EnumToString(InpExitStrategy), "', not BB Opposite Band. This option has no effect ",
+            "unless Exit Strategy = BB Opposite Band.");
 
    return(ok);
   }
