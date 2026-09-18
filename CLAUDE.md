@@ -101,6 +101,20 @@ conversation carries forward to the next run.
   normally on local agents — this appears on essentially every headless run
   in this environment (even ones that complete and write their report
   correctly) and is not diagnostic of anything going wrong.
+- **If `Login=` in the `.ini` stops taking effect on a terminal that previously
+  worked reliably** (the run silently authorizes as a *different* account than
+  specified, confirmed in the log's own `authorized on <server>` line — this can
+  happen even with an explicit `Server=` override added to the `[Tester]`
+  section too), the terminal's own locally-stored account list has likely
+  picked up a stray account from a different project/terminal at some point
+  (e.g. a `.ini` accidentally launched against the wrong terminal executable)
+  and that account has become the cached default. Fix: open the terminal's
+  GUI and delete the stray account from its stored account list — this project
+  hit exactly this on 2026-09-18 (a RoboForex account had gotten saved into
+  the FTMO terminal's own profile). **Always verify the report's own log shows
+  the intended account authorized, the same way you verify the Settings
+  section** — a wrong-account run still produces a normal-looking "successfully
+  finished" report with a real (just wrong) dataset behind it.
 - Working reference `.ini` (adjust `Expert`/`ExpertParameters`/`Report`/dates
   per run):
   ```

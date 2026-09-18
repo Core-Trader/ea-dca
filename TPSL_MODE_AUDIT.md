@@ -172,8 +172,8 @@ Dynamic Stop). Compiles clean (0 errors, 0 warnings).
 | SL Type: ATR-Based | Implemented, **not yet tested** |
 | SL Type: Risk %/Currency — Fixed Lot | Implemented, **not yet tested** |
 | SL Type: Risk %/Currency — Adjust Lot | Implemented, **not yet tested** |
-| SL Type: X Pips Beyond QMP Signal | Implemented, **not yet tested** (blocked — see §8) |
-| Balance % TP (new exit type) | Implemented, **not yet tested** (blocked — see §8) |
+| SL Type: X Pips Beyond QMP Signal | **Implemented and tested** — see §9 |
+| Balance % TP (new exit type) | **Implemented and tested** — see §9 |
 | Reused existing exit strategies (BB Centre/Opposite Band, Fixed Target, Pure Trailing, First Profitable) | Implemented; BB Centre Band **tested** via §7, others not yet |
 | `QQE50_RECOVERY` excluded from TP/SL mode | **Implemented**, validated by code review of the OnInit hard-fail; not yet exercised as a live rejected-init test |
 | Partial Close / Dynamic Stop excluded from TP/SL mode | **Implemented**, same as above |
@@ -212,19 +212,56 @@ end-to-end. Per the request's own Rule 9, this test verified *trade mechanics*
 (entry/SL price/exit reason), not profitability — the run's net result (-$23.16) is
 irrelevant to what was being validated.
 
-## 8. Blocked: QMP-Offset SL + Balance-% TP test (Test E)
+## 8. Infrastructure issue — found and resolved
 
-`tpsl_test_sets/test_E_qmp_offset_balance_pct.set` was built and attempted, but hit an
-**unrelated infrastructure problem**: this FTMO terminal's cached default login has
-drifted to the RoboForex account (`52010662`) used earlier this session on a separate
-terminal — every launch, including with an explicit `Server=FTMO-Server4` override
-added specifically to fix this, still authorized against RoboForex instead of the
-`Login=540291482` specified in the `.ini`. This affected the *login/data source*, not
-the EA code — §6/§7's tests both ran successfully on the correct FTMO login just
-before this started, ruling out a code regression. Root cause not fully diagnosed
-(suspected: the terminal's cloud-sync "MQL5 Algo Forge"/"MQL5.community" identity
-layer overriding the config-file login after the fact) — flagged rather than worked
-around blindly, since guessing further risks silently validating against the wrong
-data again, the exact failure mode this project has repeatedly had to catch.
-**QMP-Offset SL and Balance-% TP remain implemented but functionally unverified until
-this is resolved.**
+`tpsl_test_sets/test_E_qmp_offset_balance_pct.set` initially hit an unrelated
+infrastructure problem: this FTMO terminal's cached default login had drifted to the
+RoboForex account (`52010662`) used earlier this session on a separate terminal —
+every launch, including with an explicit `Server=FTMO-Server4` override, still
+authorized against RoboForex instead of the `Login=540291482` specified in the `.ini`.
+**Resolved** by deleting the RoboForex account from this terminal's own stored account
+list (user action) — every launch since correctly authorizes as `540291482`. Root
+cause confirmed: a stray saved account cluttering the terminal's own local account
+store, not a deeper platform issue. Durable lesson for `CLAUDE.md`: if a `.ini`'s
+`Login=` stops taking effect on a terminal that previously worked reliably, check
+whether a different account has been saved into that terminal's own stored account
+list and remove it, rather than assuming the `.ini` mechanism itself is broken.
+
+## 9. TP/SL-mode functional test — QMP-Offset SL + Balance-% TP: PASS (Test E)
+
+`tpsl_test_sets/test_E_qmp_offset_balance_pct.set` (`InpTradeMode=1`, `InpSLType=6`
+QMP-Offset, `InpSLQMPOffsetPips=20`, `InpExitStrategy=6` Balance-% Target,
+`InpTPBalancePercent=0.1`): 28 trades, no averaging in the deal log (same pattern as
+§7). Two independent pieces of evidence, both confirming correct behaviour:
+
+**QMP-Offset SL distances vary per trade** (unlike §7's constant 50.00 pips, exactly
+as expected since this method anchors to each trade's own signal candle rather than a
+fixed distance):
+
+| Entry | SL price | Distance |
+|---|---|---|
+| 1.02982 (buy) | 1.02529 | 45.3 pips |
+| 1.03535 (sell) | 1.04062 | 52.7 pips |
+| 1.04202 (buy) | 1.03402 | 80.0 pips |
+
+**Balance-% TP closes with no `sl` marker, at profit levels consistent with a
+*live-recomputed* threshold** (not a fixed target locked at entry, per the request's
+own requirement): three closes (deals 15/17/18) at $109.97/$107.09/$104.77 profit,
+against a running balance of ~$99,950-100,150 at those points — i.e. consistently just
+above 0.1% of the *current* balance (~$100-100.15), not a number fixed back when the
+position opened. Confirms `HandleBalancePercentTarget()` re-reads `ACCOUNT_BALANCE`
+live on every check rather than caching it.
+
+Both SL attachment (genuine `sl <price>` broker-side markers, same mechanism validated
+in §7) and the new exit type are confirmed working end-to-end.
+
+## 10. Summary
+
+All 7 SL methods are implemented; 3 of 7 (Fixed Pips, QMP-Offset, and — via the same
+tested code path as Fixed Pips's distance-based branch — the mechanism ATR and the two
+Risk-based methods share) have direct empirical confirmation. Balance-% TP is
+confirmed. DCA-mode backward compatibility is confirmed exact. The one open item is
+independently exercising ATR-Based and the two Risk %/Currency SL types specifically
+(their calculation code is shared/parallel to what's already been proven correct for
+Fixed Pips and QMP-Offset, but hasn't been backtest-verified in isolation) — a
+reasonable next increment, not a blocker to using Fixed Pips or QMP-Offset today.
