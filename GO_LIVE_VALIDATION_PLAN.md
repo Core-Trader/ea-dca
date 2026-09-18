@@ -409,6 +409,7 @@ back once this session (`PNL_DISCREPANCY_ROOT_CAUSE_REPORT.md`'s own methodology
 section) and is not being repeated here.
 
 Sweep execution and results for §4.2's four candidates follow below as they're run.
+All four are now complete (§4.5-§4.9).
 
 ### 4.5 `InpBreakevenBufferPips` sweep — result: REJECT any increase, keep default (10)
 
@@ -454,6 +455,109 @@ in-sample improvement.
 region is a genuine flat, stable plateau (225.70 vs 225.78, indistinguishable) — a
 reassuring finding in its own right, since it means the current default isn't sitting on
 a knife-edge. 20 and 25 are rejected despite their attractive in-sample numbers, with
-the OOS evidence to show exactly why. This sweep is complete; the remaining §4.2
-candidates (`InpMaxSequencesPerDirection`, `InpMaxTradesPerSequence`, BB period/deviation)
-are still pending.
+the OOS evidence to show exactly why.
+
+### 4.6 `InpMaxSequencesPerDirection` sweep — result: free risk reduction available, decision deferred to Phase 6/9
+
+In-sample:
+
+| Value | Net Profit | Profit Factor | Trades |
+|---|---|---|---|
+| 1 | $214.93 | 5.57 | 57 |
+| 2 | $225.70 | 5.52 | 58 |
+| **3 (current)** | **$225.70** | **5.52** | **58** |
+| 4 | $225.70 | 5.52 | 58 |
+
+2, 3, and 4 are **byte-identical** — the current in-sample window never actually needed
+more than 2 concurrent sequences per direction; the cap of 3 (or 4) never bound. Value 1
+(never more than one sequence open at a time) costs only ~$10.77 (4.8%) of net profit.
+**This means capping at 2 is free** in this dataset, and capping at 1 is nearly free —
+both directly reduce simultaneous exposure, which matters for a DCA-style EA on a $150
+account (see Phase 9's "runaway position accumulation" failure mode). Not changed in
+`default.set` here — this is flagged as a strong candidate for the live/cent `.set`
+specifically, where capital preservation matters more than the last few dollars of
+in-sample profit, and decided together with Phase 9's hard-limit framework rather than
+in isolation.
+
+### 4.7 `InpMaxTradesPerSequence` sweep — result: free risk reduction available, same deferral
+
+In-sample:
+
+| Value | Net Profit | Profit Factor | Trades |
+|---|---|---|---|
+| **0 = unlimited (current)** | **$225.70** | **5.52** | **58** |
+| 4 | $225.70 | 5.52 | 58 |
+| 6 | $225.70 | 5.52 | 58 |
+| 8 | $225.70 | 5.52 | 58 |
+
+All four values — including capping every sequence's DCA ladder at just 4 trades —
+produce **byte-identical** results. No single sequence in this ~13-month in-sample
+window ever grew beyond 4 trades. §4.2 flagged this input as "the single biggest tail-
+risk lever in a DCA/martingale-style EA (an unbounded losing sequence keeps adding
+lots)" — this result shows a cap of 4 (or even a bit higher, for margin) would have cost
+**zero** historical profit while providing a hard ceiling against runaway lot
+accumulation in a scenario this ~2-year dataset hasn't produced. Same deferral as §4.6:
+flagged as a strong, evidence-backed candidate for the live `.set`'s hard limits, decided
+together in Phase 9 rather than changed here for its own sake.
+
+### 4.8 BB Period sweep — result: REJECT both directions, current default (35) confirmed best risk-adjusted
+
+In-sample:
+
+| Period | Net Profit | Profit Factor | Sharpe | Equity DD Max | Trades |
+|---|---|---|---|---|---|
+| 30 | $283.17 | 3.28 | 1.31 | **0.25%** | 69 |
+| **35 (current)** | $225.70 | **5.52** | **2.79** | **0.10%** | 58 |
+| 40 | $261.61 | 5.48 | 1.95 | 0.20% | 61 |
+
+Both neighbors show *higher raw net profit* than the current default — and *worse*
+profit factor, Sharpe, and roughly 2-2.5x worse drawdown. This is the same pattern as
+§4.5 (raw profit up, risk-adjusted quality down) but even clearer, since it shows up on
+both sides of the current value rather than in one direction. No OOS check needed to
+reject these — they already fail the §4.4 criteria on in-sample risk metrics alone.
+**Decision: keep `InpBBPeriod=35`.** Genuinely reassuring: the current default isn't
+just "not the worst option," it's the best risk-adjusted one among its immediate
+neighbors, on data the value wasn't fitted to using this exact test.
+
+### 4.9 BB Deviation sweep — result: REJECT increase, current default (2.25) confirmed
+
+In-sample:
+
+| Deviation | Net Profit | Profit Factor | Sharpe | Equity DD Max | Trades |
+|---|---|---|---|---|---|
+| 2.0 | $245.35 | 5.71 | 2.81 | 0.10% | 66 |
+| **2.25 (current)** | $225.70 | **5.52** | 2.79 | 0.10% | 58 |
+| 2.5 | $217.94 | **7.02** | **3.04** | 0.10% | 49 |
+
+Unlike §4.5/§4.8, this one didn't show an obvious in-sample red flag — drawdown stayed
+flat across all three values, and 2.5 looked like a genuine improvement (better PF,
+better Sharpe, fewer but presumably higher-quality trades). Per §4.4, checked the top
+candidate (2.5) against both OOS windows before accepting it:
+
+| | OOS-A baseline (2.25) | OOS-A dev=2.5 | OOS-B baseline (2.25) | OOS-B dev=2.5 |
+|---|---|---|---|---|
+| Profit Factor | 1.61 | 1.59 | 5.65 | **5.29** |
+| Sharpe Ratio | 0.51 | 0.37 | 3.26 | **3.08** |
+| Recovery Factor | 0.36 | 0.34 | 2.16 | **1.99** |
+| Trades | 19 | 16 | 45 | 41 |
+
+No drawdown blowup this time (unlike §4.5) — but the apparent in-sample edge simply
+**does not generalize**: every metric on both OOS windows is flat-to-slightly-worse than
+what the current default already achieves on that same data, including profit factor
+falling below the current default's own OOS-B result (5.29 vs 5.65). This is a quieter,
+less dramatic version of the same lesson as §4.5: an in-sample-only improvement that
+evaporates out of sample. **Decision: keep `InpBBDeviation=2.25`.**
+
+### 4.10 Phase 4 summary
+
+No parameter change is being made to `default.set`/`EA_DCA_CENT_V1_baseline.set` as a
+result of this optimization pass. Three of four sweeps (`InpBreakevenBufferPips`,
+`InpBBPeriod`, `InpBBDeviation`) directly confirmed the existing spec-derived defaults
+are already at or near the best risk-adjusted point among their tested neighbors — a
+meaningful result in itself, arrived at by trying to beat the defaults and failing to,
+not by assumption. The other two (`InpMaxSequencesPerDirection`,
+`InpMaxTradesPerSequence`) surfaced genuine, zero-cost risk-reduction opportunities,
+deliberately not applied here in isolation — they're carried forward to Phase 6
+(production `.set` construction) and Phase 9 (catastrophic-loss hard limits), where they
+belong together with the account's real risk budget rather than being bolted on
+mid-optimization for their own sake.
