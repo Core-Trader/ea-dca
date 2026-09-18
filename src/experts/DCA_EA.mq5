@@ -2761,7 +2761,18 @@ void HandleBBCentreOrQQE50(bool isBuy, int idx, bool isBBMode)
    if(!InpUseDynamicStop)
      {
       double requiredPips = recoveryActive ? InpBreakevenBufferPips : 0.0;
-      bool atBreakeven = GetSequenceProfitPipsFromClose(isBuy, idx) >= requiredPips;
+      //--- FIX (TPSL_EQUITY_BALANCE_ROOT_CAUSE.md, Fix 1, CONFIRMED): bar-close
+      //--- profit is deliberately correct for DCA mode (validated against the
+      //--- reference EA's own DCA behavior — see GetSequenceProfitPipsFromClose()'s
+      //--- own header) but was silently inherited by TP/SL mode too, where it made
+      //--- any favorable spike that reversed within a single bar invisible to this
+      //--- check. Forensic MFE/MAE evidence: 29.3% average giveback on BB-Centre-
+      //--- Band-exited TP/SL trades (up to 80.5% on one trade) vs. ~0% on the
+      //--- live-tick-based Balance-% exit in the same backtest run. Mode-gated so
+      //--- DCA mode's already-validated behavior is completely unaffected.
+      bool atBreakeven = (InpTradeMode == MODE_TPSL)
+                          ? (GetSequenceProfitPips(isBuy, idx) >= requiredPips)
+                          : (GetSequenceProfitPipsFromClose(isBuy, idx) >= requiredPips);
       if(!atBreakeven)
         {
          if(isBuy) g_buySequences[idx].recoveryModeActive = true;

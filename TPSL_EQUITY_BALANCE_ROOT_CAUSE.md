@@ -213,6 +213,61 @@ conflating the two changes.
 
 ---
 
+## 8a. Fix 1 — implemented and validated (results, not spin)
+
+Applied exactly as specified in §6 (mode-gated ternary, `DCA_EA.mq5`). DCA-mode
+regression is unaffected by construction — the change sits entirely inside an
+`InpTradeMode == MODE_TPSL` branch that DCA mode's code path never enters, so no
+runtime test can meaningfully "prove" DCA safety beyond confirming the branch exists;
+that's structural, not empirical.
+
+**Controlled same-data comparison** (pre-fix vs. post-fix binaries, run back-to-back
+against the same terminal so both hit identical cached tick data — avoids the
+tick-cache-drift confound documented elsewhere in this project):
+
+| | Pre-fix | Post-fix |
+|---|---|---|
+| Net Profit | -$22.05 | -$32.93 |
+| Profit Factor | 0.78 | 0.67 |
+| Total Trades | 41 | 41 |
+
+**Aggregate P/L got worse, not better.** This needed investigating rather than
+either accepting or dismissing at face value — re-ran the forensic build post-fix to
+separate "did the targeted mechanism actually improve" from "did the aggregate number
+improve," since those are different questions:
+
+| | Pre-fix | Post-fix |
+|---|---|---|
+| BB-exit giveback % | 29.3% | **25.5%** |
+| Total MFE available (21 trades) | 1,112.3 pips | 911.3 pips |
+| Total realized (21 trades) | 786.5 pips | 678.7 pips |
+| Avg BB-exit win | $3.62 | $3.13 |
+
+**Reading this honestly**: the giveback percentage did decrease — Fix 1's narrow,
+targeted mechanism (converting favorable movement to realized profit more efficiently)
+measurably worked. But the *total available MFE itself* also dropped substantially
+(1,112 → 911 pips), and several new, near-instant trades appear in the post-fix set
+that weren't present before (tickets 10, 20, 32, 46 — MFE near zero, closing within
+under an hour). This is **path dependency, not measurement noise**: changing exit
+timing changes exactly when a sequence-slot frees up, which changes whether and when
+subsequent signals can open a new position, which cascades into a genuinely different
+set of downstream trades over a 40-trade sample. The fix didn't get *worse* at
+capturing a given trade's available profit efficiently — the population of trades
+itself shifted underneath it.
+
+**Conclusion**: Fix 1 does what it was built to do (reduces bar-close-driven giveback,
+confirmed on the same mechanism, same direction, smaller magnitude but real). It does
+not improve aggregate P/L on this specific 40-trade historical window — and per this
+investigation's own stated priority ("not to maximize backtest profit... to make the
+implementation correct and consistent with the intended specification"), that's a
+different, less important question than whether the mechanism itself is now
+consistent. Whether to keep it is a judgment call between "the exit-timing
+inconsistency is now resolved" and "this one window's aggregate result went the wrong
+way for reasons that are path-dependent noise, not a flaw in the fix" — not something
+resolved by a single 40-trade sample either way. A larger out-of-sample check (the
+same OOS-A/OOS-B windows already established for the DCA track) would be the way to
+get a more reliable read before deciding, rather than trusting one 13-month window.
+
 ## 8. What this is not
 
 Per the investigation's own explicit instruction: this analysis does not recommend
