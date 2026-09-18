@@ -62,16 +62,35 @@ results, you execute the run itself.
 
 ```
 src/experts/DCA_EA.mq5        — the EA (only file we're taking live)
-src/indicators/QMP_Filter.mq5 — runtime dependency (iCustom "QMP Filter")
-src/indicators/QQE_Adv.mq5    — runtime dependency (iCustom "QQE Adv")
-src/indicators/BB.mq5         — NOT a runtime dependency of DCA_EA.mq5 (it uses the
-                                 native iBands(), not this file) — legacy/reference only
-src/indicators/MACD_Platinum.mq5 — NOT a runtime dependency — legacy/reference only
+src/indicators/QMP_Filter.mq5    — runtime dependency (DCA_EA.mq5's iCustom "QMP Filter")
+src/indicators/QQE_Adv.mq5       — runtime dependency (DCA_EA.mq5's iCustom "QQE Adv")
+src/indicators/MACD_Platinum.mq5 — runtime dependency (INDIRECT — QMP_Filter.mq5 itself
+                                    calls this via iCustom internally; DCA_EA.mq5 never
+                                    references it directly, which is why this was missed
+                                    the first time — CORRECTED below)
+src/indicators/BB.mq5            — NOT a runtime dependency (DCA_EA.mq5 uses the native
+                                    iBands(), not this file) — legacy/reference only
 ```
+
+**CORRECTION (found setting up a second terminal — RoboForex — from scratch)**: this
+section originally listed `MACD_Platinum.mq5` as not a runtime dependency. That was
+wrong. `QMP_Filter.mq5` calls it internally via `iCustom` (confirmed by MetaEditor's own
+"tester_indicator MACD_Platinum has been implicitly added" message during compilation,
+which only fires when a real `iCustom` reference exists). It happened to work on the
+FTMO terminal used for every backtest up to this point purely by coincidence —
+`MACD_Platinum.ex5` was already sitting compiled in that terminal's Indicators folder
+from earlier work in this project, not because `DCA_EA.mq5`/`EA_DCA_CENT_V1.mq5` didn't
+need it. Every fresh terminal setup (like RoboForex's, being built now) needs all three
+indicators — `QMP_Filter`, `QQE_Adv`, and `MACD_Platinum` — compiled and present, or
+`QMP Filter`'s entry signal will silently fail (an `INVALID_HANDLE` from the missing
+indicator, which the EA's own fail-closed `CopyBuffer` guards would then just skip
+rather than crash on — meaning this failure mode is silent, not a hard error, and easy
+to miss without noticing the EA simply never enters a trade).
 
 - Single `#include <Trade\Trade.mqh>` — standard MT5 library, no custom `.mqh` files.
 - `QQE_Adv.mq5` and `BB.mq5` both `#include <MovingAverages.mqh>` (standard library).
-  `QMP_Filter.mq5` is self-contained.
+  `QMP_Filter.mq5` is self-contained in terms of `#include`s, but not in terms of its
+  runtime `iCustom` dependency on `MACD_Platinum.mq5` (see the correction above).
 - All other indicator work (native Bollinger Bands, ATR, MA, HTF Bollinger Bands) uses
   built-in `iBands()`/`iATR()`/`iMA()` — no extra files required.
 - **Dependency footprint for live deployment**: `DCA_EA.mq5` + `QMP_Filter.mq5` +
