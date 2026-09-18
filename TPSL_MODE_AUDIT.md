@@ -156,16 +156,75 @@ terminal, to avoid re-triggering the cache-drift issue just documented).
 
 ---
 
-## 5. Not yet done (explicitly, per the request's own mandatory Implemented/Tested/
+## 5. Implementation status (per the request's own mandatory Implemented/Tested/
 Not yet tested/Not supported/Requires clarification distinction)
 
-- **Not started**: any code change. This document is audit + baseline only.
-- **Requires a scoping decision before coding** (flagged, not guessed): whether the
-  4 SL methods that adjust lot size (§12.5/§12.6 of the request) round lot size before
-  or after applying `InpMaxInitialLot`/broker volume-step normalization — the
-  existing `NormalizeLot()` (`DCA_EA.mq5`) is the natural reuse point, but the request's
-  risk-based lot-sizing math needs to run *before* that clamp is applied, which is a
-  new call-order question, not an existing pattern to copy.
-- **Not supported in this design**: Partial Close in TP/SL mode (§2, compatibility
-  matrix) — excluded rather than reinterpreted, per the request's own instruction to
-  document limitations rather than claim unverified support.
+**Implementation complete.** `DCA_EA.mq5` now has `InpTradeMode` (DCA/TP-SL), all 7
+SL methods, the Balance-% TP exit type, mode-appropriate lot sizing, post-fill SL
+attachment with broker min-stop/freeze-level validation, and OnInit hard-fail
+validation for TP/SL-incompatible combinations (`QQE50_RECOVERY`, Partial Close,
+Dynamic Stop). Compiles clean (0 errors, 0 warnings).
+
+| Item | Status |
+|---|---|
+| `InpTradeMode` gate (no averaging in TP/SL mode) | **Implemented and tested** |
+| SL Type: Fixed Distance in Pips | **Implemented and tested** — see §6 |
+| SL Type: ATR-Based | Implemented, **not yet tested** |
+| SL Type: Risk %/Currency — Fixed Lot | Implemented, **not yet tested** |
+| SL Type: Risk %/Currency — Adjust Lot | Implemented, **not yet tested** |
+| SL Type: X Pips Beyond QMP Signal | Implemented, **not yet tested** (blocked — see §8) |
+| Balance % TP (new exit type) | Implemented, **not yet tested** (blocked — see §8) |
+| Reused existing exit strategies (BB Centre/Opposite Band, Fixed Target, Pure Trailing, First Profitable) | Implemented; BB Centre Band **tested** via §7, others not yet |
+| `QQE50_RECOVERY` excluded from TP/SL mode | **Implemented**, validated by code review of the OnInit hard-fail; not yet exercised as a live rejected-init test |
+| Partial Close / Dynamic Stop excluded from TP/SL mode | **Implemented**, same as above |
+| DCA-mode regression (existing behaviour unchanged) | **Tested — exact match**, see §6 |
+| Restart recovery for TP/SL positions | Implemented via the existing generic `Sequence`/`SaveState` mechanism (§1.2); **not yet tested** |
+| `g_pendingSignalRefTime` restart-persistence | **Not implemented** — explicit, documented limitation (see the global's own code comment): a restart during the pending-signal window loses the QMP-Offset SL reference specifically; `ComputeSLPrice()` detects this and rejects the trade safely rather than guessing |
+| Partial Close semantic for TP/SL mode | **Not supported** (excluded rather than reinterpreted, per §2/§20 of the request) |
+
+## 6. DCA-mode regression test — PASS
+
+Same exact configuration as the §4 baseline, rerun against the code with TP/SL mode
+added (`InpTradeMode` defaulting to `MODE_DCA`, matching every existing `.set`):
+**$192.13 net profit, PF 4.93, RF 2.67, Sharpe 3.09, 57 trades — an exact match**,
+confirming the new code path has zero effect on existing DCA behaviour.
+
+## 7. TP/SL-mode functional test — Fixed Pips SL: PASS (Test B)
+
+`tpsl_test_sets/test_B_fixed_pips.set` (`InpTradeMode=1`, `InpSLType=0` Fixed Pips,
+`InpSLDistancePips=50`, `InpExitStrategy=0` BB Centre Band unchanged): 41 trades, no
+averaging anywhere in the deal log (every entry is immediately followed by exactly one
+close, never a second add-on). Three SL hits inspected directly against their entry
+prices:
+
+| Entry | SL hit price | Distance |
+|---|---|---|
+| 1.03530 (sell) | 1.04030 | **50.00 pips exactly** |
+| 1.04207 (buy) | 1.03707 | **50.00 pips exactly** |
+| 1.03871 (buy) | 1.03367 | 50.04 pips (within normal broker rounding) |
+
+The `sl 1.0xxxx` comment on each closing deal confirms these were genuine broker-side
+stop-loss hits (MT5 only writes that comment when a position's own attached SL was
+triggered), not internally-simulated closes — direct evidence `AttachStopLoss()`'s
+`PositionModify()` call is working. Non-SL closes in the same run resolved via the
+unchanged BB Centre Band exit logic, confirming exit-strategy reuse also works
+end-to-end. Per the request's own Rule 9, this test verified *trade mechanics*
+(entry/SL price/exit reason), not profitability — the run's net result (-$23.16) is
+irrelevant to what was being validated.
+
+## 8. Blocked: QMP-Offset SL + Balance-% TP test (Test E)
+
+`tpsl_test_sets/test_E_qmp_offset_balance_pct.set` was built and attempted, but hit an
+**unrelated infrastructure problem**: this FTMO terminal's cached default login has
+drifted to the RoboForex account (`52010662`) used earlier this session on a separate
+terminal — every launch, including with an explicit `Server=FTMO-Server4` override
+added specifically to fix this, still authorized against RoboForex instead of the
+`Login=540291482` specified in the `.ini`. This affected the *login/data source*, not
+the EA code — §6/§7's tests both ran successfully on the correct FTMO login just
+before this started, ruling out a code regression. Root cause not fully diagnosed
+(suspected: the terminal's cloud-sync "MQL5 Algo Forge"/"MQL5.community" identity
+layer overriding the config-file login after the fact) — flagged rather than worked
+around blindly, since guessing further risks silently validating against the wrong
+data again, the exact failure mode this project has repeatedly had to catch.
+**QMP-Offset SL and Balance-% TP remain implemented but functionally unverified until
+this is resolved.**

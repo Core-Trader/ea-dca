@@ -40,6 +40,37 @@ enum ENUM_MULTIPLIER_SYSTEM
    MULT_CUSTOM             // Custom (uses the Custom Multiplier String below)
   };
 
+//+------------------------------------------------------------------+
+//| TP/SL mode (TPSL_MODE_AUDIT.md). Placed first per the reference     |
+//| transcript's own ordering ("the very next setting after your        |
+//| license key"). DCA=0 preserves default.set's existing behaviour —   |
+//| this input did not exist before, so every existing .set imports     |
+//| with TradeMode defaulting to DCA, unchanged.                        |
+//+------------------------------------------------------------------+
+enum ENUM_TRADE_MODE
+  {
+   MODE_DCA = 0,          // Dollar-Cost Averaging (existing behaviour)
+   MODE_TPSL              // Take Profit & Stop Loss (single-position, no averaging)
+  };
+
+//+------------------------------------------------------------------+
+//| Stop-loss calculation method — TP/SL mode only, per                 |
+//| TPSL_MODE_AUDIT.md §12. FIXED_LOT variants keep the normal DCA      |
+//| base-lot sizing and derive the SL distance from the risk amount;    |
+//| ADJUST_LOT variants keep a configured SL distance (InpSLDistancePips)|
+//| and derive the lot size from the risk amount instead.               |
+//+------------------------------------------------------------------+
+enum ENUM_SL_TYPE
+  {
+   SL_FIXED_PIPS = 0,            // Fixed Distance in Pips
+   SL_RISK_PERCENT_FIXED_LOT,    // Risk % of Balance — Fixed Lot (derives SL distance)
+   SL_RISK_CURRENCY_FIXED_LOT,   // Fixed Currency Risk — Fixed Lot (derives SL distance)
+   SL_ATR,                       // ATR-Based (reuses InpATRPeriod)
+   SL_RISK_PERCENT_ADJUST_LOT,   // Risk % of Balance — Adjust Lot Size (fixed distance)
+   SL_RISK_CURRENCY_ADJUST_LOT,  // Fixed Currency Risk — Adjust Lot Size (fixed distance)
+   SL_QMP_OFFSET                 // X Pips Beyond QMP Signal Candle
+  };
+
 enum ENUM_LOT_SIZING_MODE
   {
    LOT_FIXED = 0,          // Fixed Lot Size
@@ -67,10 +98,12 @@ enum ENUM_EXIT_STRATEGY
   {
    EXIT_BB_CENTRE_BAND = 0,  // BB Centre Band          (BB Mode)
    EXIT_BB_OPPOSITE_BAND,    // BB Opposite Band        (BB Mode)
-   EXIT_QQE50_RECOVERY,      // QQE 50 + Recovery       (QQE Mode)
+   EXIT_QQE50_RECOVERY,      // QQE 50 + Recovery       (QQE Mode) — DCA mode only, see ValidateExitStrategyCompatibility()
    EXIT_FIRST_PROFITABLE,    // First Profitable Close  (Any Mode)
    EXIT_FIXED_TARGET,        // Fixed Profit Target     (Any Mode)
-   EXIT_PURE_TRAILING        // Pure Trailing Stop      (Any Mode)
+   EXIT_PURE_TRAILING,       // Pure Trailing Stop      (Any Mode)
+   EXIT_BALANCE_PERCENT      // Balance % Target        (TP/SL Mode) — appended, not inserted:
+                              // preserves every existing .set's numeric value for 0-5 unchanged
   };
 
 enum ENUM_FIXED_TARGET_TYPE
@@ -119,6 +152,9 @@ enum ENUM_MA_FILTER_BEHAVIOUR
 //| Input Parameters — order/grouping/names match default.set exactly |
 //| so the shipped .set file imports cleanly against this input block.|
 //+------------------------------------------------------------------+
+
+input group "Trade Mode"
+input ENUM_TRADE_MODE        InpTradeMode             = MODE_DCA;         // Trade Mode (DCA / Take Profit & Stop Loss)
 
 input group "Position Sizing"
 input ENUM_MULTIPLIER_SYSTEM InpMultiplierSystem      = MULT_LINEAR;      // Multiplier System
@@ -178,7 +214,20 @@ input bool                   InpUseDynamicStop          = false;               /
 input double                 InpDynamicStopDistancePips = 20.0;                // Dynamic Stop Distance (pips)
 
 input group "Recovery Mode Settings"
-input double                 InpBreakevenBufferPips     = 10.0;   // Recovery Buffer Above Breakeven (pips)
+input double                 InpBreakevenBufferPips     = 10.0;   // Recovery Buffer Above Breakeven (pips) — DCA mode only
+
+input group "TP/SL Mode - Stop Loss"
+input string                 InpTPSL_SL_Info            = "Info only: this whole group only applies when Trade Mode = Take Profit & Stop Loss. No effect in DCA mode.";
+input ENUM_SL_TYPE           InpSLType                  = SL_FIXED_PIPS; // Stop Loss Type
+input double                 InpSLDistancePips          = 50.0;   // SL Distance (pips) — Fixed Distance / Adjust-Lot methods
+input double                 InpSLRiskPercent           = 1.0;    // SL Risk (% of Balance) — Risk-% methods
+input double                 InpSLRiskCurrency          = 100.0;  // SL Risk (Account Currency) — Risk-Currency methods
+input double                 InpSLATRMultiplier         = 1.5;    // SL ATR Multiplier — ATR method (reuses InpATRPeriod)
+input double                 InpSLQMPOffsetPips         = 20.0;   // SL Offset Beyond QMP Signal Candle (pips) — QMP-Offset method
+
+input group "TP/SL Mode - Take Profit"
+input string                 InpTPSL_TP_Info            = "Info only: only used if Exit Strategy = Balance % Target. No effect otherwise or in DCA mode.";
+input double                 InpTPBalancePercent        = 0.1;    // TP Target (% of Balance)
 
 input group "Exit Parameters - Fixed Target"
 input ENUM_FIXED_TARGET_TYPE InpFixedTargetType         = TARGET_PIPS;   // Fixed Target Type
@@ -411,6 +460,15 @@ int g_htfDirection = 0;   // -1 bearish, 0 unknown/neutral (both directions bloc
 //--- be many bars in the past by the time the zone finally arms.
 bool g_pendingSignal = false, g_pendingSignalIsBuy = false, g_pendingSignalCentreBreached = false;
 
+//--- TP/SL mode only (TPSL_MODE_AUDIT.md §12.7): the signal candle's own timestamp,
+//--- captured alongside the pending signal above, so the QMP-Offset SL method can
+//--- re-derive that exact bar's High/Low on demand at trade-open time (rather than
+//--- caching prices, which could go stale) via iBarShift(). KNOWN LIMITATION: not yet
+//--- added to SaveState()/LoadState() — a restart during the pending-signal window
+//--- loses this specific reference; ComputeSLPrice() detects that (0/invalid) and
+//--- rejects the trade safely rather than guessing, per §13.
+datetime g_pendingSignalRefTime = 0;
+
 //--- Per-closed-bar indicator snapshot. BB/QQE/ATR/MA values at shift=1 don't change
 //--- again once that bar closes, so they're fetched once per bar and reused by every
 //--- gate function instead of each one independently calling CopyBuffer().
@@ -616,6 +674,61 @@ bool ValidateExitStrategyCompatibility()
       Print("EA-DCA: Note — InpAlwaysCloseOnOppositeBand is set to true but Exit Strategy is '",
             EnumToString(InpExitStrategy), "', not BB Opposite Band. This option has no effect ",
             "unless Exit Strategy = BB Opposite Band.");
+
+   //--- TP/SL mode compatibility (TPSL_MODE_AUDIT.md §2 compatibility matrix) — hard fails,
+   //--- same pattern as the checks above, not silent behavioural differences.
+   if(InpTradeMode == MODE_TPSL)
+     {
+      if(InpExitStrategy == EXIT_QQE50_RECOVERY)
+        {
+         Print("EA-DCA: Exit Strategy 'QQE 50 + Recovery' is not available in TP/SL mode — its Recovery "
+               "Mode logic assumes DCA averaging economics (breakeven vs. a multi-leg average price), "
+               "which doesn't apply to an independently-managed single position.");
+         ok = false;
+        }
+      if(InpUsePartialClose)
+        {
+         Print("EA-DCA: Partial Close is not supported in TP/SL mode (TPSL_MODE_AUDIT.md §2/§20) — its "
+               "\"close all legs but one\" semantic has no meaning for a single-trade position. Disable "
+               "it or switch to DCA mode.");
+         ok = false;
+        }
+      if(InpUseDynamicStop)
+        {
+         Print("EA-DCA: Dynamic Stop is not supported in TP/SL mode — it's a separate breakeven-arm "
+               "trailing mechanism that would conflict with TP/SL mode's own dedicated SL framework. "
+               "Disable it, or use SL Type = ATR / Fixed Pips with a trailing Exit Strategy instead.");
+         ok = false;
+        }
+
+      bool needsPips = (InpSLType == SL_FIXED_PIPS || InpSLType == SL_RISK_PERCENT_ADJUST_LOT ||
+                         InpSLType == SL_RISK_CURRENCY_ADJUST_LOT);
+      if(needsPips && InpSLDistancePips <= 0.0)
+        {
+         Print("EA-DCA: SL Type '", EnumToString(InpSLType), "' requires InpSLDistancePips > 0.");
+         ok = false;
+        }
+      if((InpSLType == SL_RISK_PERCENT_FIXED_LOT || InpSLType == SL_RISK_PERCENT_ADJUST_LOT) && InpSLRiskPercent <= 0.0)
+        {
+         Print("EA-DCA: SL Type '", EnumToString(InpSLType), "' requires InpSLRiskPercent > 0.");
+         ok = false;
+        }
+      if((InpSLType == SL_RISK_CURRENCY_FIXED_LOT || InpSLType == SL_RISK_CURRENCY_ADJUST_LOT) && InpSLRiskCurrency <= 0.0)
+        {
+         Print("EA-DCA: SL Type '", EnumToString(InpSLType), "' requires InpSLRiskCurrency > 0.");
+         ok = false;
+        }
+      if(InpSLType == SL_ATR && InpSLATRMultiplier <= 0.0)
+        {
+         Print("EA-DCA: SL Type 'ATR' requires InpSLATRMultiplier > 0.");
+         ok = false;
+        }
+      if(InpSLType == SL_QMP_OFFSET && InpSLQMPOffsetPips < 0.0)
+        {
+         Print("EA-DCA: SL Type 'QMP Offset' requires InpSLQMPOffsetPips >= 0.");
+         ok = false;
+        }
+     }
 
    return(ok);
   }
@@ -1883,6 +1996,160 @@ void AddOnToAllOpenSequences(bool isBuy)
 //| sequences are rare in practice despite being checked every bar.      |
 //| Returns true only if a trade was actually opened.                    |
 //+------------------------------------------------------------------+
+//+------------------------------------------------------------------+
+//| TP/SL mode only (TPSL_MODE_AUDIT.md §12.5/§12.6). Lot size derived |
+//| from a FIXED SL distance (InpSLDistancePips) and the configured    |
+//| risk amount, using the broker's own OrderCalcProfit() rather than  |
+//| a hand-rolled tick-value formula — matches this project's existing |
+//| pattern (MarginOk() uses OrderCalcMargin() the same way) and works |
+//| correctly for any symbol/account-currency combination without      |
+//| hardcoding USD assumptions, per §12.3/§13. Returns 0.0 on any       |
+//| failure — the caller must treat that as "reject the trade."        |
+//+------------------------------------------------------------------+
+double ComputeRiskAdjustedLot(bool isBuy)
+  {
+   if(InpSLDistancePips <= 0.0) return(0.0);
+   double distancePrice = PipsToPrice(InpSLDistancePips);
+
+   double riskMoney = (InpSLType == SL_RISK_PERCENT_ADJUST_LOT)
+                       ? AccountInfoDouble(ACCOUNT_BALANCE) * InpSLRiskPercent / 100.0
+                       : InpSLRiskCurrency;
+   if(riskMoney <= 0.0) return(0.0);
+
+   double price   = isBuy ? SymbolInfoDouble(_Symbol, SYMBOL_ASK) : SymbolInfoDouble(_Symbol, SYMBOL_BID);
+   double slPrice = isBuy ? price - distancePrice : price + distancePrice;
+   if(slPrice <= 0.0) return(0.0);
+
+   double lossPerLot = 0.0;
+   ENUM_ORDER_TYPE type = isBuy ? ORDER_TYPE_BUY : ORDER_TYPE_SELL;
+   if(!OrderCalcProfit(type, _Symbol, 1.0, price, slPrice, lossPerLot) || lossPerLot >= 0.0)
+      return(0.0);   // broker calc failed, or somehow non-negative — reject rather than guess
+
+   return(NormalizeLot(riskMoney / MathAbs(lossPerLot)));
+  }
+
+//+------------------------------------------------------------------+
+//| TP/SL mode only (TPSL_MODE_AUDIT.md §12, all 7 SL types). Computes |
+//| the actual SL price from the ACTUAL fill price (not a pre-trade    |
+//| estimate) — the order is already open by the time this runs, which |
+//| is deliberate: several methods need the real entry price, and      |
+//| §13 ("never allow an invalid calculated SL to generate an           |
+//| unintended market order") is honoured by validating post-fill and  |
+//| closing the position again if no valid SL results (see             |
+//| AttachStopLoss() and its caller), rather than guessing a           |
+//| pre-trade SL from an estimated price. Returns 0.0 on any failure — |
+//| callers must treat that as "reject."                                |
+//+------------------------------------------------------------------+
+double ComputeSLPrice(bool isBuy, double entryPrice, double lot)
+  {
+   double distancePrice = 0.0;
+
+   switch(InpSLType)
+     {
+      case SL_FIXED_PIPS:
+      case SL_RISK_PERCENT_ADJUST_LOT:
+      case SL_RISK_CURRENCY_ADJUST_LOT:
+         if(InpSLDistancePips <= 0.0) return(0.0);
+         distancePrice = PipsToPrice(InpSLDistancePips);
+         break;
+
+      case SL_RISK_PERCENT_FIXED_LOT:
+      case SL_RISK_CURRENCY_FIXED_LOT:
+        {
+         double riskMoney = (InpSLType == SL_RISK_PERCENT_FIXED_LOT)
+                             ? AccountInfoDouble(ACCOUNT_BALANCE) * InpSLRiskPercent / 100.0
+                             : InpSLRiskCurrency;
+         if(riskMoney <= 0.0 || lot <= 0.0) return(0.0);
+
+         //--- reference: loss per 100 pips at this lot size, to derive a per-pip rate —
+         //--- avoids assuming a fixed pip value that isn't true for every instrument.
+         double refDistance = PipsToPrice(100.0);
+         double refSL       = isBuy ? entryPrice - refDistance : entryPrice + refDistance;
+         double lossPerRef  = 0.0;
+         ENUM_ORDER_TYPE type = isBuy ? ORDER_TYPE_BUY : ORDER_TYPE_SELL;
+         if(!OrderCalcProfit(type, _Symbol, lot, entryPrice, refSL, lossPerRef) || lossPerRef >= 0.0)
+            return(0.0);
+         double lossPerPip = MathAbs(lossPerRef) / 100.0;
+         if(lossPerPip <= 0.0) return(0.0);
+         distancePrice = PipsToPrice(riskMoney / lossPerPip);
+         break;
+        }
+
+      case SL_ATR:
+        {
+         double atr = ATRValue();
+         if(atr <= 0.0 || InpSLATRMultiplier <= 0.0) return(0.0);
+         distancePrice = atr * InpSLATRMultiplier;
+         break;
+        }
+
+      case SL_QMP_OFFSET:
+        {
+         if(g_pendingSignalRefTime == 0) return(0.0);   // lost across a restart — reject, don't guess (§13)
+         int shift = iBarShift(_Symbol, PERIOD_CURRENT, g_pendingSignalRefTime, true);
+         if(shift < 0) return(0.0);
+         double refLow  = iLow(_Symbol, PERIOD_CURRENT, shift);
+         double refHigh = iHigh(_Symbol, PERIOD_CURRENT, shift);
+         if(refLow <= 0.0 || refHigh <= 0.0) return(0.0);
+         double offset = PipsToPrice(InpSLQMPOffsetPips);
+         return(NormalizeDouble(isBuy ? refLow - offset : refHigh + offset, _Digits));
+        }
+     }
+
+   if(distancePrice <= 0.0) return(0.0);
+   return(NormalizeDouble(isBuy ? entryPrice - distancePrice : entryPrice + distancePrice, _Digits));
+  }
+
+//+------------------------------------------------------------------+
+//| TP/SL mode only. Validates the computed SL against the broker's    |
+//| minimum stop distance and freeze level (§13) before attaching it   |
+//| via PositionModify(). Returns false on any failure; the caller      |
+//| closes the just-opened position rather than leave it unprotected —  |
+//| the whole point of TP/SL mode is a guaranteed stop, so "open        |
+//| without one" is never an acceptable fallback.                       |
+//+------------------------------------------------------------------+
+bool AttachStopLoss(ulong ticket, bool isBuy, double slPrice)
+  {
+   if(slPrice <= 0.0) return(false);
+   if(!PositionSelectByTicket(ticket)) return(false);
+
+   double bid = SymbolInfoDouble(_Symbol, SYMBOL_BID);
+   double ask = SymbolInfoDouble(_Symbol, SYMBOL_ASK);
+   long   stopsLevelPoints  = SymbolInfoInteger(_Symbol, SYMBOL_TRADE_STOPS_LEVEL);
+   long   freezeLevelPoints = SymbolInfoInteger(_Symbol, SYMBOL_TRADE_FREEZE_LEVEL);
+   double point = SymbolInfoDouble(_Symbol, SYMBOL_POINT);
+   double minDistance = MathMax((double)stopsLevelPoints, (double)freezeLevelPoints) * point;
+
+   double refPrice       = isBuy ? bid : ask;
+   double actualDistance = MathAbs(refPrice - slPrice);
+   if(minDistance > 0.0 && actualDistance < minDistance)
+     {
+      Print("EA-DCA TP/SL: calculated SL ", DoubleToString(slPrice, _Digits),
+            " is inside the broker's minimum stop distance (", DoubleToString(minDistance, _Digits),
+            ") for ticket ", ticket, " — rejecting rather than sending an invalid stop.");
+      return(false);
+     }
+
+   //--- sanity: SL must be on the correct side of price for the position direction.
+   if(isBuy  && slPrice >= refPrice) return(false);
+   if(!isBuy && slPrice <= refPrice) return(false);
+
+   if(!trade.PositionModify(ticket, slPrice, 0.0))
+     {
+      Print("EA-DCA TP/SL: PositionModify failed for ticket ", ticket, ". Retcode ",
+            trade.ResultRetcode(), " (", trade.ResultRetcodeDescription(), ")");
+      return(false);
+     }
+   return(true);
+  }
+
+//+------------------------------------------------------------------+
+//| Entry point for BOTH modes — TPSL_MODE_AUDIT.md §1.2: this is the  |
+//| only place a brand-new sequence/position opens, unconditionally,    |
+//| in DCA and TP/SL mode alike. TP/SL mode branches internally for its |
+//| risk-adjusted lot sizing and post-fill SL attachment; nothing about |
+//| signal detection or the entry gates above changes between modes.    |
+//+------------------------------------------------------------------+
 bool TryOpenNewSequence(bool isBuy)
   {
    if(!IsWithinTradingSession())       return(false);
@@ -1898,11 +2165,47 @@ bool TryOpenNewSequence(bool isBuy)
 
    double baseLot = ComputeBaseLotForNewSequence(isBuy);
    double lot     = NormalizeLot(baseLot * GetMultiplierForIndex(0));
+
+   bool isTPSL = (InpTradeMode == MODE_TPSL);
+   bool adjustLot = isTPSL && (InpSLType == SL_RISK_PERCENT_ADJUST_LOT || InpSLType == SL_RISK_CURRENCY_ADJUST_LOT);
+   if(adjustLot)
+     {
+      double riskLot = ComputeRiskAdjustedLot(isBuy);
+      if(riskLot <= 0.0)
+        {
+         Print("EA-DCA TP/SL: rejected — could not compute a valid risk-adjusted lot size "
+               "(SL Type ", EnumToString(InpSLType), "). Signal discarded, no order sent.");
+         return(false);
+        }
+      baseLot = riskLot;
+      lot     = riskLot;
+     }
+
    if(!MarginOk(isBuy, lot)) return(false);
 
    double filledPrice = 0.0;
    ulong  ticket = SendMarketOrder(isBuy, lot, filledPrice);
    if(ticket == 0) return(false);
+
+   if(isTPSL)
+     {
+      double slPrice = ComputeSLPrice(isBuy, filledPrice, lot);
+      if(!AttachStopLoss(ticket, isBuy, slPrice))
+        {
+         Print("EA-DCA TP/SL: no valid stop loss could be attached to ticket ", ticket,
+               " — closing the position immediately rather than leaving it unprotected.");
+         trade.PositionClose(ticket);
+         return(false);
+        }
+      Print("EA-DCA TP/SL ENTRY | ", isBuy ? "BUY" : "SELL",
+            " | Entry=", DoubleToString(filledPrice, _Digits),
+            " | Lot=", DoubleToString(lot, 2),
+            " | SLType=", EnumToString(InpSLType),
+            " | SL=", DoubleToString(slPrice, _Digits),
+            " | ActiveBuy=", CountOpenSequences(true),
+            " | ActiveSell=", CountOpenSequences(false),
+            " | Magic=", InpMagicNumber);
+     }
 
    CreateNewSequence(isBuy, ticket, baseLot, filledPrice);
    ConsumeZoneLatch(isBuy);
@@ -1935,7 +2238,11 @@ void ProcessNewBar()
      {
       bool isBuy = (dot > 0);
 
-      AddOnToAllOpenSequences(isBuy);
+      //--- DCA-only: averaging never happens in TP/SL mode (TPSL_MODE_AUDIT.md §1.2 —
+      //--- this single gate is most of "disable DCA averaging, treat each entry as
+      //--- independent"). TryOpenNewSequence() below is unconditional in both modes.
+      if(InpTradeMode == MODE_DCA)
+         AddOnToAllOpenSequences(isBuy);
 
       //--- a fresh dot always supersedes any older pending one, matching
       //--- QMP's own trend-flip semantics.
@@ -1943,6 +2250,7 @@ void ProcessNewBar()
       g_pendingSignalIsBuy          = isBuy;
       g_pendingSignalCentreBreached = g_bbSnapshotValid &&
                                        (g_bar1Low <= g_bbMiddle1 && g_bar1High >= g_bbMiddle1);
+      g_pendingSignalRefTime        = iTime(_Symbol, PERIOD_CURRENT, 1);   // §12.7 QMP-Offset SL reference
      }
 
    if(g_pendingSignal && TryOpenNewSequence(g_pendingSignalIsBuy))
@@ -2533,6 +2841,24 @@ void HandleFixedTarget(bool isBuy, int idx)
   }
 
 //+------------------------------------------------------------------+
+//| Balance % Target (TPSL_MODE_AUDIT.md §14) — new exit type, mainly   |
+//| intended for TP/SL mode but not restricted to it (matches how       |
+//| every other exit strategy here is available regardless of trade     |
+//| mode; TP/SL mode just happens to be where a single-position target  |
+//| like this makes the most sense). Target adapts to current account   |
+//| size on every check, per the request's own "must not simply add a   |
+//| fixed number of pips" requirement — deliberately re-read live        |
+//| rather than locked in at entry.                                      |
+//+------------------------------------------------------------------+
+void HandleBalancePercentTarget(bool isBuy, int idx)
+  {
+   if(InpTPBalancePercent <= 0.0) return;
+   double target = AccountInfoDouble(ACCOUNT_BALANCE) * InpTPBalancePercent / 100.0;
+   if(GetSequenceProfitMoney(isBuy, idx) >= target)
+      CloseSequenceAndCleanup(isBuy, idx, "balance % target");
+  }
+
+//+------------------------------------------------------------------+
 //| Pure Trailing Stop — its own independent mechanism, unrelated to    |
 //| the BB/QQE exit-condition logic above. Starts trailing once either  |
 //| the pips-based or dollar-based start threshold fires (whichever     |
@@ -2618,6 +2944,7 @@ void CheckSequenceExitPerTick(bool isBuy, int idx)
       case EXIT_FIRST_PROFITABLE: HandleFirstProfitable(isBuy, idx);       break;
       case EXIT_FIXED_TARGET:     HandleFixedTarget(isBuy, idx);           break;
       case EXIT_PURE_TRAILING:    HandlePureTrailing(isBuy, idx);          break;
+      case EXIT_BALANCE_PERCENT:  HandleBalancePercentTarget(isBuy, idx);  break;
      }
   }
 
