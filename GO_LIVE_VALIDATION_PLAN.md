@@ -561,3 +561,73 @@ deliberately not applied here in isolation — they're carried forward to Phase 
 (production `.set` construction) and Phase 9 (catastrophic-loss hard limits), where they
 belong together with the account's real risk budget rather than being bolted on
 mid-optimization for their own sake.
+
+### 4.11 Walk-forward analysis — assessed as not informative given data volume, not run
+
+MT5's built-in walk-forward optimizer is GUI-only (Phase 1 finding). More importantly,
+running it wouldn't add real signal here: a proper walk-forward needs enough data for
+several rolling optimize/test folds, each with enough trades to be statistically
+meaningful. This project has ~24 months of real-tick data and 58 in-sample trades total;
+slicing that further into multiple rolling folds would produce folds with a handful of
+trades each — too thin to distinguish a real pattern from noise. The 2-window
+in-sample/out-of-sample split already done in §3.4-3.5 **is** effectively a single-fold
+walk-forward, and is the most granular one this dataset can honestly support. Stated
+plainly rather than running a formal walk-forward for the sake of ticking the box and
+presenting noisy, uninterpretable fold-by-fold numbers as if they meant something.
+
+### 4.12 Spread/slippage stress test — already done earlier this project, reconfirmed still valid
+
+A controlled `InpMaxSpread` sweep (0/100/400/1000 points) was already run earlier in
+this project (`PNL_DISCREPANCY_ROOT_CAUSE_REPORT.md`, Finding 1): net profit varied by
+less than $2 across the entire range, despite unlocking materially more trades at the
+loose end. That mechanism (the spread gate on new-sequence entries) hasn't been touched
+by any change made since — including the Finding 2 exit-timing fix and this project's
+own `EA_DCA_CENT_V1.mq5` baselining — so the conclusion still holds: **this EA's PnL is
+not meaningfully spread-sensitive** within any realistic range. Not re-run here to avoid
+duplicating already-solid evidence. A true execution-slippage stress test (beyond
+spread) isn't directly possible in MT5's Strategy Tester — it has no independent
+"apply N points of adverse slippage to every fill" lever; `InpSlippage=3` is the EA's own
+maximum-deviation tolerance at send time, not a backtest-simulated cost. Real slippage
+characteristics will only be knowable from live/forward-test execution data (Phase 7).
+
+### 4.13 Monte Carlo testing (trade-resampling bootstrap)
+
+Built directly from real backtest deal logs (no synthetic data), per the approach
+flagged as feasible in Phase 1. Extracted each closed position's net realized cash
+impact (profit + that deal's commission + swap, read directly from consecutive Balance
+column differences on `out`-type deals) — 58 from the in-sample baseline, 19 from OOS-A,
+45 from OOS-B. Resampled these **with replacement** to build randomized equity paths and
+see how much the specific historical trade *ordering* matters, independent of the
+strategy's average edge.
+
+**Run 1 — in-sample trades only (58-trade pool, 20,000 simulated 58-trade paths)**:
+worst outcome across all 20,000 reshuffles still ended net positive (worst final balance
+$100,002.54 vs. $100,000 start); median max drawdown $11.03, 99th percentile $26.13,
+absolute worst-case-of-20,000 $51.02. Taken alone, this looks almost too good — because
+it is: resampling only the strongest of the three known windows can't produce anything
+worse than what that window's own trades allow.
+
+**Run 2 — pooled across all three windows (122-trade pool: in-sample + OOS-A + OOS-B,
+20,000 simulated 58-trade paths)** — the more representative, appropriately more
+conservative version, since it lets a simulated path draw disproportionately from
+OOS-A's weaker trades:
+
+| | Value |
+|---|---|
+| Median max drawdown | $23.64 |
+| 95th percentile max drawdown | $42.94 |
+| 99th percentile max drawdown | $56.65 |
+| Worst of 20,000 simulated paths | $98.67 |
+| Probability of a path ending net negative | **0.02%** (4 of 20,000) |
+
+**Explicit limitations of this method** (per the "distinguish assumptions from empirical
+observations" principle): this bootstrap can only reorder trade outcomes that actually
+occurred in the ~24 months of real data available — it cannot invent a worse single loss
+than the worst one actually observed, and it says nothing about a genuinely new regime
+or a structural change in the strategy's win rate. It measures *sequencing/ordering
+risk* given the empirically observed trade distribution, not *tail risk beyond what's
+been seen*. With only 122 pooled trades, the 99th-percentile estimate itself is a noisy
+estimate, not a precise figure. All figures above are on the $100,000 test-account scale
+and are **not yet rescaled to the $150 cent account** — that rescaling depends on
+Phase 5/6 decisions (lot sizing, risk caps) not yet finalized, and is explicitly a Phase
+5/6 task, not done prematurely here.
