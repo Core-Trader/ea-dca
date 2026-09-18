@@ -268,6 +268,40 @@ resolved by a single 40-trade sample either way. A larger out-of-sample check (t
 same OOS-A/OOS-B windows already established for the DCA track) would be the way to
 get a more reliable read before deciding, rather than trusting one 13-month window.
 
+## 8b. Cross-symbol check — giveback confirmed general, not an EURUSD artifact
+
+Everything above used EURUSD exclusively. Reran Test B (post-Fix-1, forensic build) on
+GBPUSD and USDJPY (both confirmed 100% real-tick quality on this account, same
+2025.01.01-2026.01.22 window) before treating the EURUSD conclusions as generalizable.
+
+**Pip-conversion correctness, confirmed on a genuinely different quoting convention**:
+USDJPY entry `158.421` → SL hit at exactly `157.921` (comment `sl 157.921`) — a price
+distance of 0.500, which for a 3-digit JPY pair (pip = 0.01, not 0.0001) is exactly
+50.0 pips, matching `InpSLDistancePips=50` precisely. Confirms `PipsToPrice()`/
+`g_pipSize`'s "10x point on 3/5-digit broker" rule is genuinely symbol-agnostic, not
+just correct by coincidence on EURUSD's own convention.
+
+**Giveback generalizes, magnitude varies by symbol**:
+
+| Symbol | BB-exit giveback (post-Fix-1) |
+|---|---|
+| EURUSD | 25.5% |
+| GBPUSD | 15.6% |
+| USDJPY | 29.1% |
+
+Present on every symbol tested, at materially different magnitudes — confirms the
+mechanism identified in §1 is a general property of bar-close-gated exit checking, not
+an artifact of EURUSD's particular volatility profile. The magnitude difference
+(GBPUSD notably lower) is expected — different pairs have different intrabar-vs-close
+price behavior — and isn't itself investigated further here.
+
+**Honest P/L context, not a strategy validation**: same unoptimized configuration
+across 4 symbols (EURUSD, GBPUSD, USDJPY, AUDUSD) — only USDJPY was net profitable.
+This configuration exists to validate the mechanism, not as a tuned strategy, per this
+investigation's own stated priority — mixed/negative aggregate P/L here is expected
+and not itself a finding, but it's recorded rather than only reporting the metric that
+happened to look favorable.
+
 ## 8. What this is not
 
 Per the investigation's own explicit instruction: this analysis does not recommend
