@@ -2759,10 +2759,11 @@ void HandleBBCentreOrQQE50(bool isBuy, int idx, bool isBBMode)
 
    if(!InpUseDynamicStop)
      {
+      //--- Fix 1 mirrored here to keep this forensic build in sync with DCA_EA.mq5
+      //--- (Fix 2 was tested and reverted — TPSL_EQUITY_BALANCE_ROOT_CAUSE.md §8c —
+      //--- not confirmed across EURUSD/GBPUSD). Pure-read logging only, trading
+      //--- logic must stay byte-identical to the live file.
       double requiredPips = recoveryActive ? InpBreakevenBufferPips : 0.0;
-      //--- Fix 1 (TPSL_EQUITY_BALANCE_ROOT_CAUSE.md) mirrored here to keep this
-      //--- forensic build in sync with DCA_EA.mq5 — pure-read logging only,
-      //--- trading logic must stay byte-identical to the live file.
       bool atBreakeven = (InpTradeMode == MODE_TPSL)
                           ? (GetSequenceProfitPips(isBuy, idx) >= requiredPips)
                           : (GetSequenceProfitPipsFromClose(isBuy, idx) >= requiredPips);

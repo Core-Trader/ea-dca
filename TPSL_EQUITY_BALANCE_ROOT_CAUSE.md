@@ -302,6 +302,50 @@ investigation's own stated priority — mixed/negative aggregate P/L here is exp
 and not itself a finding, but it's recorded rather than only reporting the metric that
 happened to look favorable.
 
+## 8c. Fix 2 — tested, hypothesis NOT confirmed, reverted
+
+Implemented exactly as specified in §6 (mode-gated: `requiredPips = 0.0` unconditionally
+for `MODE_TPSL`, DCA mode's buffer behavior untouched). Controlled same-data comparison
+(Fix-1-only vs. Fix-1+Fix-2 binaries, back-to-back, EURUSD Test B):
+
+| | Fix-1-only | Fix-1+Fix-2 |
+|---|---|---|
+| Net Profit | -$32.93 | -$29.42 |
+| Profit Factor | 0.67 | 0.69 |
+| Trades | 41 | 41 |
+| **BB-exit giveback (forensic)** | **25.5%** | **26.2%** |
+
+A small aggregate P/L improvement, but the giveback ratio — the actual mechanism Fix 2
+targets — did not improve; if anything it's marginally worse, well within
+sample-size noise on 22 trades. **Cross-symbol check (GBPUSD) contradicts the
+hypothesis more clearly**:
+
+| | Fix-1-only | Fix-1+Fix-2 |
+|---|---|---|
+| SL total | -$103.15 | -$103.15 (identical) |
+| BB-exit total | $98.84 | $91.89 |
+| Net | -$4.31 | **-$11.26 (worse)** |
+| Giveback | 15.6% | **17.4% (worse)** |
+
+**Why the intuitive hypothesis didn't hold up, on reflection**: the breakeven buffer
+is a floor a position must cross to exit, but it's also the reason a position stays
+open long enough to capture *further* favorable continuation when price keeps moving
+in its favor. Lowering the floor to zero makes some trades exit earlier and avoid a
+reversal — but makes others exit earlier and miss upside they'd otherwise have
+captured. Empirically these two effects roughly offset, rather than the removal being
+a clean win. This is exactly why the investigation's own process requires testing a
+hypothesis rather than trusting reasoning about it, however sound the reasoning
+sounds going in.
+
+**Classification: Unconfirmed Backtesting Hypothesis — not supported by evidence
+across two symbols. Reverted.** Fix 1 stands on its own (confirmed mechanism
+improvement, evidenced across three symbols); Fix 2 is removed rather than kept on the
+strength of one ambiguous, noise-level EURUSD result while GBPUSD actively
+contradicts it. A different buffer *value* (e.g. reducing, not eliminating,
+`InpBreakevenBufferPips` for TP/SL mode) remains a distinct, untested hypothesis if
+this is revisited later — not something this result rules out, since it tested the
+*elimination* of the buffer specifically, not a smaller one.
+
 ## 8. What this is not
 
 Per the investigation's own explicit instruction: this analysis does not recommend

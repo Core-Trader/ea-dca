@@ -2760,16 +2760,20 @@ void HandleBBCentreOrQQE50(bool isBuy, int idx, bool isBBMode)
 
    if(!InpUseDynamicStop)
      {
+      //--- FIX 2 was tested here (TPSL_EQUITY_BALANCE_ROOT_CAUSE.md §8c) — mode-gating
+      //--- requiredPips to 0.0 for TP/SL mode, on the hypothesis that the breakeven-
+      //--- buffer floor (designed for DCA's multi-leg averaging) was causing
+      //--- unnecessary giveback for a single SL-protected position. NOT CONFIRMED:
+      //--- across EURUSD and GBPUSD, the giveback ratio didn't improve (25.5%→26.2%,
+      //--- 15.6%→17.4%) and GBPUSD's net P/L got worse. Reverted — the buffer stays
+      //--- unconditional, same as DCA mode, for TP/SL mode too.
       double requiredPips = recoveryActive ? InpBreakevenBufferPips : 0.0;
-      //--- FIX (TPSL_EQUITY_BALANCE_ROOT_CAUSE.md, Fix 1, CONFIRMED): bar-close
-      //--- profit is deliberately correct for DCA mode (validated against the
-      //--- reference EA's own DCA behavior — see GetSequenceProfitPipsFromClose()'s
-      //--- own header) but was silently inherited by TP/SL mode too, where it made
-      //--- any favorable spike that reversed within a single bar invisible to this
-      //--- check. Forensic MFE/MAE evidence: 29.3% average giveback on BB-Centre-
-      //--- Band-exited TP/SL trades (up to 80.5% on one trade) vs. ~0% on the
-      //--- live-tick-based Balance-% exit in the same backtest run. Mode-gated so
-      //--- DCA mode's already-validated behavior is completely unaffected.
+      //--- FIX 1 (CONFIRMED): bar-close profit is deliberately correct for DCA mode
+      //--- (validated against the reference EA's own DCA behavior — see
+      //--- GetSequenceProfitPipsFromClose()'s own header) but was silently inherited
+      //--- by TP/SL mode too, where it made any favorable spike that reversed within
+      //--- a single bar invisible to this check. Mode-gated so DCA mode's already-
+      //--- validated behavior is completely unaffected.
       bool atBreakeven = (InpTradeMode == MODE_TPSL)
                           ? (GetSequenceProfitPips(isBuy, idx) >= requiredPips)
                           : (GetSequenceProfitPipsFromClose(isBuy, idx) >= requiredPips);
