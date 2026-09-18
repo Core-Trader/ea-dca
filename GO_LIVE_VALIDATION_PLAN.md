@@ -631,3 +631,85 @@ estimate, not a precise figure. All figures above are on the $100,000 test-accou
 and are **not yet rescaled to the $150 cent account** — that rescaling depends on
 Phase 5/6 decisions (lot sizing, risk caps) not yet finalized, and is explicitly a Phase
 5/6 task, not done prematurely here.
+
+---
+
+## Phase 9 — Catastrophic-Loss Prevention (defense-in-depth)
+
+Moved ahead of Phase 5 (still blocked on the real cent-account symbol specification)
+since this is pure code audit + risk-framework design, not something that needs a
+broker connection. Findings feed directly into Phase 6 (production `.set`) and Phase 8
+(emergency thresholds).
+
+### 9.1 What the EA already protects against (verified in code, not assumed)
+
+| Protection | Where | What it does |
+|---|---|---|
+| Magic-number collision lock | `CheckMagicNumberCollision()`/`MagicLockName()`, `DCA_EA.mq5:507-552` | A terminal Global Variable keyed by Symbol+Magic hard-blocks a second live chart from running the same Symbol+Magic combination — prevents two EA instances fighting over the same positions. |
+| Pre-trade margin check | `MarginOk()`, `:1626-1647` | Computes real required margin via `OrderCalcMargin()` and rejects (logs, doesn't crash) if it exceeds `ACCOUNT_MARGIN_FREE` — checked on **every** entry, new-sequence and add-on alike (`:1865`, `:1901`). |
+| Spread gate | `SpreadOk()`, `:1136`, checked at `:1849` (add-ons) and `:1890` (new sequences) | Blocks entries above `InpMaxSpread` — covers both entry types, not just new sequences. |
+| Indicator-handle validity | `OnInit()`, every `INVALID_HANDLE` check + every `CopyBuffer(...) > 0` guard throughout | A failed/missing indicator handle or a `CopyBuffer()` short-read causes that check to fail closed (skip the bar/gate) rather than act on stale or zero-filled data. |
+| State persistence across restarts | `SaveState()`/`LoadState()`, `:1479-1572`, `:2739-2760` | Full sequence/latch/session state written to a per-Symbol+Magic file, reloaded on `OnInit()`. Structural events (new trade, sequence close) bypass the routine per-tick save throttle specifically so a crash between saves loses as little state as possible. |
+| Stale-ticket guard | `:1765-1781` | Re-verifies a remembered position ticket's symbol+magic before trusting it, rather than assuming ticket numbers are never reused. |
+| Algo-trading permission checks | `OnInit()`, `:468-479` | Hard-fails if `TERMINAL_TRADE_ALLOWED`/`ACCOUNT_TRADE_ALLOWED`/`ACCOUNT_TRADE_EXPERT` aren't all set. |
+| Exit-strategy/Indicator-mode compatibility gate | `ValidateExitStrategyCompatibility()`, `:564-610` (Phase 1) | Hard-fails invalid combinations rather than silently running broken logic. |
+| Malformed custom-multiplier-string guard | `ValidateCustomMultiplierString()` (Phase 1) | Hard-fails rather than silently parsing to 0.0 and zero-sizing a trade. |
+| Equity Protection (Close All) | `InpUseEquityProtection` + `EQUITY_PROTECT_PERCENT`/`AMOUNT`, `:2660-2680` | **A real circuit breaker already exists in the code** — closes everything if floating loss exceeds a threshold. Percent-of-balance mode is self-scaling/cent-account-safe by construction (Phase 1 audit). |
+
+### 9.2 What's missing or off by default — the real gaps
+
+- **`InpUseEquityProtection=false` in the current `default.set`.** The single biggest
+  finding of this section: the EA has a working account-wide circuit breaker, and it is
+  **switched off**. There is currently no EA-level floor stopping a genuinely adverse,
+  never-before-seen move from running the account's floating loss arbitrarily deep,
+  other than the broker's own stop-out level. **Recommendation for the live `.set`: turn
+  this on**, using the percent-of-balance mode (already cent-safe) — exact threshold
+  value to be set in Phase 6 alongside the account's real risk budget.
+- **`InpMaxTradesPerSequence=0` (unlimited) in the current `default.set`.** Already
+  flagged in §4.7: in ~24 months of real data no sequence ever needed more than 4
+  trades, and capping costs nothing historically. Combined with the point below, this is
+  the second concrete, free-to-apply hard limit for Phase 6.
+- **No fixed stop-loss anywhere, by explicit design** (`DCA_EA.mq5`'s own header:
+  *"No fixed stop-loss: risk is controlled entirely by lot sizing, sequence caps, and
+  the chosen exit strategy"*). This is a deliberate strategy characteristic, not a bug —
+  but it means, combined with the two points above, that **before Phase 6's hard caps
+  are actually applied, there is currently no hard per-sequence loss ceiling at all**
+  other than the broker's own margin call/stop-out — which happens far too late to be
+  called risk management. This is the most important single reason §4.6/§4.7's "free"
+  caps need to actually be applied in Phase 6, not just noted as available.
+- **No explicit reconnection-state reconciliation.** State persistence (§9.1) covers EA
+  restart/terminal restart, but there's no code that, specifically on regaining
+  connection after a network drop, re-verifies the broker's actual open positions
+  against the EA's internal `g_buySequences`/`g_sellSequences` arrays before resuming
+  decisions. MT5 generally handles this gracefully on its own (no `OnTick()` calls fire
+  while disconnected), but this hasn't been explicitly tested here — flagged for Phase 7
+  forward-testing rather than assumed safe.
+- **No account-currency/cent-account self-check** (already established in Phase 1's
+  audit) — correctness depends entirely on `.set` calibration, with no EA-level fallback
+  if it's ever wrong.
+
+### 9.3 Defense-in-depth, by layer
+
+| Layer | Existing | Recommended addition |
+|---|---|---|
+| **1. EA level** | Margin check, spread gate, indicator-handle guards, magic-number lock, state persistence, exit-strategy validation, custom-string validation | Turn on `InpUseEquityProtection`; apply `InpMaxTradesPerSequence` and `InpMaxSequencesPerDirection` caps (Phase 6, using §4.6/§4.7's evidence) |
+| **2. MT5/account level** | Broker-side margin call/stop-out (always active, outside the EA's control) | Confirm the actual cent account's margin-call/stop-out levels once the symbol spec is available (Phase 5) — this is the true last-resort floor if everything else fails |
+| **3. Broker level** | Whatever FTMO/the cent-account broker enforces (max leverage, negative-balance protection if offered) | Confirm negative-balance protection status on the actual cent account — standard on most retail/cent accounts but must be confirmed, not assumed, per the brief's own "verify the actual broker implementation" instruction |
+| **4. VPS/platform level** | None currently — this is dev-environment only | Phase 7 concern: a VPS with auto-restart-on-crash for the terminal, and ideally a dead-man's-switch/heartbeat alert if the terminal or EA stops updating (covered in Phase 8/10) |
+| **5. Manual intervention** | None automated — entirely on the user | Phase 8's measurable emergency-intervention thresholds (next) give this layer objective triggers instead of "if it looks bad" |
+
+### 9.4 Failure modes from the brief, mapped to what actually protects against them today
+
+| Failure mode | Protected today? | By what |
+|---|---|---|
+| Runaway position accumulation | **Partially** | `InpMaxSequencesPerDirection=3` already caps concurrent sequences; `InpMaxTradesPerSequence` is unlimited (gap — §9.2) |
+| Incorrect lot sizing | Partially | `NormalizeLot()` clamps to broker min/max/step; nothing stops a misconfigured `.set` from being economically wrong (cent-account rescale risk, Phase 1) |
+| Duplicate orders | Yes | Magic-number collision lock (one live instance per Symbol+Magic); new-sequence entries are bar-gated, not tick-gated |
+| Failed stops | N/A by design — no fixed stops exist; risk is structural (lot sizing + caps), not order-level | See §9.2 |
+| Excessive spread | Yes | `SpreadOk()`, both entry types |
+| Corrupted/missing indicator data | Yes | Fail-closed `CopyBuffer()`/`INVALID_HANDLE` guards throughout |
+| EA restart / terminal restart | Yes | `SaveState()`/`LoadState()` |
+| Connection loss | Assumed (MT5-native), not explicitly tested | Flagged for Phase 7 |
+| Partial execution | Not specifically handled | No code found that distinguishes a partially-filled order from a fully-filled one — MT5 market orders on forex are effectively all-or-nothing in practice, but not explicitly verified here |
+| Margin exhaustion | Yes | `MarginOk()` pre-trade check |
+| Unexpected account-denomination behavior | **No** | Phase 1's central finding — zero EA-level cent-account awareness |
