@@ -989,3 +989,68 @@ mutually exclusive:
 build the production `.set` (the risk-cap values from §4.6/§4.7/§9.2, the equity
 protection recommendation, the real spread/swap numbers above) is ready — Phase 6 just
 needs to know which of these four directions (or what blend) to build toward.
+
+### 5.4 RoboForex terminal set up and tested directly — the capital-adequacy risk, confirmed empirically at real scale
+
+Set up a second, independent terminal (RoboForex, `C:\RoboForex MT5 Terminal`) from
+scratch: copied and compiled `EA_DCA_CENT_V1.mq5` plus its indicator dependencies
+(`QMP_Filter`, `QQE_Adv`, `MACD_Platinum` — see the Phase 1 correction above), logged
+into the account the user has available there (`52010662`, `RoboForex-Pro` server).
+
+**Setup finding**: `iCustom()` with a bare name resolves against the *root* of
+`MQL5\Indicators\`, not recursively into subfolders — confirmed by comparing against
+the FTMO terminal, which has always had `QMP Filter.ex5`/`QQE Adv.ex5`/
+`MACD_Platinum.ex5` sitting directly at the Indicators root (space-containing names
+matching the exact `iCustom()` call strings) rather than in the `EA-DCA-V1.0` subfolder
+this document assumed was canonical. Replicated that same root-level placement on the
+RoboForex terminal to fix an initial `OnInit failed` / "cannot load custom indicator"
+error.
+
+**Data availability on this account**: real tick data exists in two disconnected
+windows — a tiny, isolated ~5-week chunk around 2010-01 to 2010-02 (`99%` quality, 161
+H4 bars, likely a legacy/template snapshot), and a substantial, genuinely usable window
+from **2024-01-01 onward** (`99% real ticks`, 4,212 H4 bars) — consistent with the
+~2024-onward real-data floor already found on the FTMO terminal in Phase 3.1, on a
+completely different broker. (A real-account Tester restriction was also hit and
+resolved along the way — the first attempt with this account produced `0 bars`/`$0.00`
+deposit and `"some error after pass finished"`; a second attempt succeeded cleanly once
+the indicators were correctly placed, so that turned out to be the indicator-loading
+issue above, not a real-account restriction after all.)
+
+**The result that matters — baseline `.set`, unmodified, `Deposit=400`, 2024-01-01 to
+2026-09-18, real RoboForex-Pro tick data**:
+
+| Metric | Value |
+|---|---|
+| Total Net Profit | $547.95 |
+| Balance Drawdown Maximal | $46.02 (**7.27%**) |
+| **Equity Drawdown Maximal** | **$220.58 (35.99%)** |
+| Profit Factor | 3.73 |
+| Recovery Factor | 2.48 |
+| Sharpe Ratio | 1.34 |
+| Total Trades / Deals | 173 / 346 |
+| Win rate | 73.99% |
+| Largest single loss | -$25.40 |
+
+**This is the empirical confirmation of §5.3's analytical projection, at real scale.**
+The strategy ended up net profitable over this window, but at some point a floating
+loss reached **36% of account equity** before recovering — the gap between the 7.27%
+*balance* drawdown (what was actually realized) and the 35.99% *equity* drawdown (what
+was floating, unrealized, at the worst point) is the real, measured size of the near-miss
+this project has been trying to quantify since Phase 5.1. On a genuinely $150 account
+scaled the same way, a comparable episode would mean watching roughly a third of the
+account evaporate on paper, with no circuit breaker in place to stop it, before it
+happened to recover. It didn't blow up this time — but "didn't blow up this specific
+time" is not the same as "safe," and this number is exactly why the max-floating-loss
+circuit breaker (§8's earlier discussion) is the priority, not optional polish.
+
+**Also recorded, as an illustrative (not statistical) data point**: the isolated 2010
+window, when tested with the same unmodified baseline and `Deposit=400`, produced an
+actual worked example of the failure mode with no circuit breaker in place — a 4-leg BUY
+sequence (0.01→0.02→0.03→0.04 lot) averaged down through a real ~800-pip EURUSD decline
+(1.4393 → 1.3634) and was force-closed by a margin stop-out, taking the account from
+$400 to **-$3.32** — below zero. Only 5 trades total in that tiny window, so it isn't
+statistically representative of anything — but it's a real, broker-side-confirmed
+demonstration that this failure mode is not hypothetical, and that going negative (not
+just losing the deposit) is possible absent negative-balance protection or a circuit
+breaker.
