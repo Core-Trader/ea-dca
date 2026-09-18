@@ -782,3 +782,83 @@ gate's pass/fail state per bar without altering trading behavior), (3) check bro
 status pages/news for an abnormal market condition, (4) only resume normal operation
 once a specific, named cause is identified and judged benign — never resume just because
 the metric happened to recover on its own without an explanation.
+
+---
+
+## Phase 10 — Monitoring Checklist
+
+Directly derived from §8.2's thresholds — same metrics, same Normal/Warning/Critical
+bands, reformatted as a practical routine rather than a reference table.
+
+### 10.1 Daily (takes ~5 minutes)
+
+| Check | Normal | Warning | Critical |
+|---|---|---|---|
+| Balance vs. equity gap | Equity within 1% of balance | 1-3% gap | >3% gap (floating loss — see §8.2) |
+| Today's realized P&L | Any value — single-day noise isn't itself a signal | — | A single day's loss alone exceeds the §8.2 3% drawdown band |
+| Open positions match expectation | Count and total lot size match what the last known sequence state implies | Any unexplained position | Any unexplained position **and** you can't immediately trace it to a specific sequence — treat as §8.2's zero-tolerance structural-check row |
+| Experts/Journal log | No errors since last check | 1 isolated error | 2+ errors |
+| Terminal/VPS still running and connected | Yes | Reconnected since last check (any gap >5 min) | Currently disconnected |
+
+### 10.2 Weekly (takes ~20 minutes)
+
+| Check | Normal | Warning | Critical |
+|---|---|---|---|
+| Trade count this week | Consistent with ~1-4/week (baseline ~4.5-5.3/month) | 0 trades this week (if 0 for >6 weeks running, escalate per §8.2) | Sustained >6-7 trades/week |
+| Win rate, last 20 trades | ≥60% | 50-60% | <50% (§8.2: pause) |
+| Rolling equity drawdown from peak | ≤1% | 1-3% | >3% |
+| Average spread observed vs. `InpMaxSpread` | Comfortably under | Regularly within 10 pts of cap | Cap routinely hit |
+| Commission + swap as a fraction of gross trading P&L | Roughly consistent with Phase 2's baseline (~10% combined) | Meaningfully higher (broker/swap terms may have changed) | — |
+| Margin level | Confirm real thresholds once Phase 5 completes | Below 500% | Below 300% |
+| Compare actual equity curve shape to the backtest/forward-test equity curve | Broadly similar shape | Visibly diverging trend | Sharp, unexplained divergence |
+
+### 10.3 What "normal" vs "warning" vs "critical" means in practice
+
+- **Normal**: no action, no log entry needed beyond the routine check itself.
+- **Warning**: note it (date, metric, value) somewhere durable — this plan document's
+  changelog is the natural place — and watch the next 1-2 checks specifically for that
+  metric. Do not change any EA parameter on the strength of a single Warning.
+- **Critical**: stop and follow §8's decision tree immediately; do not wait for the next
+  scheduled check.
+
+---
+
+## Phase 11 — Go/No-Go Decision Framework (current state)
+
+Honest snapshot as of this point in the process — not a final go-live sign-off, since
+Phase 5 (cent-account validation), Phase 6 (final production `.set`), and Phase 7
+(forward testing) are still outstanding, two of them blocked on inputs only the user can
+provide. Every classification below is backed by a specific phase/section above, not
+asserted.
+
+| Area | Status | Evidence |
+|---|---|---|
+| **Code integrity** | **PASS** | Compiles clean (0 errors/0 warnings, verified repeatedly); `EA_DCA_CENT_V1.mq5` diff-verified byte-identical to `DCA_EA.mq5` beyond its header; full dependency inventory (Phase 1). |
+| **Backtest integrity** | **PASS WITH CONDITIONS** | Settings verified against each report's own Settings section every run, not just trusted logs; real commission/swap modeled (Phase 2). Condition: only ~24 months of genuine (non-synthetic) tick data exists on this account (Phase 3.1) — a permanent data-availability constraint, not a testing flaw, but it caps how much regime diversity can ever be claimed here. |
+| **Strategy behaviour** | **PASS WITH CONDITIONS** | Extensively investigated this project (entry/exit logic audit, PnL-discrepancy root-cause, Finding 2 fix, validated). Condition: a small ($16.57) PnL-gap residual vs. the reference EA remains explicitly unconfirmed/undecomposed — known, documented, not blocking. |
+| **Optimization robustness** | **PASS WITH CONDITIONS** | 4 one-at-a-time sensitivity sweeps completed with a sound, OOS-checked methodology (Phase 4); correctly rejected two attractive-looking-but-overfit candidates. Condition: necessarily narrow (4 parameters, one at a time) given the available data volume — broader exploration would need more live/forward-test history first. |
+| **Out-of-sample performance** | **PASS WITH CONDITIONS** | Two genuinely untouched OOS windows tested (Phase 3.5); combined run-rate closely matches in-sample. Condition: one window (OOS-A) has only 19 trades — real evidence, but a small sample; total genuine OOS evidence is only ~12 months. |
+| **Execution robustness** | **NOT VALIDATED** | Spread-sensitivity proven low-impact (Finding 1, Phase 4.12). But real execution quality — actual fill slippage, actual latency — has never been measured, because no live/forward-test data exists yet. Cannot be validated by backtesting alone; this is what Phase 7 is for. |
+| **Cent-account compatibility** | **NOT VALIDATED** | Thorough code-level audit done (Phase 1: 5 fixed-currency inputs identified, none active by default; zero EA-level currency self-awareness). But the actual cent-account symbol specification (`EURUSDc`/`GBPUSDc` contract size, volume min/step, margin currency, real swap/commission) has never been obtained or tested — Phase 5 hasn't started, blocked on broker information only the user can provide. |
+| **Risk management (design)** | **PASS WITH CONDITIONS** | Concrete, measurable framework built (Phase 8/9) with real gaps identified and evidence-backed recommendations. Condition: the recommendations (enable Equity Protection, apply the `InpMaxTradesPerSequence`/`InpMaxSequencesPerDirection` caps) are not yet applied to an actual production `.set` — that's Phase 6, not done. |
+| **Catastrophic-loss protection** | **NEEDS INVESTIGATION** | EA-level and MT5/account-level layers audited (Phase 9). VPS/platform layer (auto-restart, heartbeat/dead-man's-switch alerting) is entirely unaddressed — genuinely a Phase 7 deployment-environment decision, not something backtesting can validate. |
+| **Live monitoring readiness** | **PASS WITH CONDITIONS** | Concrete, threshold-based daily/weekly checklist built directly from real backtest calibration (Phase 8/10). Condition: never exercised against real live data — whether the thresholds are practically workable day-to-day is unverified until Phase 7. |
+| **GBPUSD / second-symbol readiness** | **NOT VALIDATED** | Confirmed materially different risk profile under EURUSD-tuned parameters (Phase 3.2, profit factor 2.11 vs 5.52). No optimization or OOS validation has been run for GBPUSD specifically. |
+
+### 11.1 What this means concretely
+
+**Not ready to go live today.** The two hard blockers are: (1) Phase 5 cent-account
+validation — needs the real `EURUSDc`/`GBPUSDc` symbol specification from you, and (2) a
+production `.set` (Phase 6) actually applying the risk-management recommendations from
+Phase 8/9 rather than just documenting them. Everything that *could* be done without
+those two inputs has been — the optimization, robustness, and risk-framework work in
+this document is real, evidence-based progress, not a placeholder.
+
+**GBPUSD is a separate, not-yet-started validation track** and should not go live on day
+one alongside EURUSD without its own pass through Phases 2-4.
+
+**Once Phase 5 unblocks**, the remaining path is short: Phase 6 (apply the already-
+identified caps + rescale any fixed-currency inputs actually turned on + build the real
+`.set`), then Phase 7 (a genuine forward-test/demo period on the cent account before any
+real money), which is also the only way to validate execution robustness and monitoring-
+checklist practicality — no amount of additional backtesting substitutes for that.
