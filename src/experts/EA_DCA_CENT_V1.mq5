@@ -262,6 +262,11 @@ input ENUM_EQUITY_PROTECTION_MODE InpEquityProtectionMode    = EQUITY_PROTECT_PE
 input double                      InpEquityProtectionPercent = 0.6;                   // Threshold (% of Account Balance)
 input double                      InpEquityProtectionAmount  = 500.0;                 // Threshold (Account Currency)
 
+input group "Advanced - Max Floating Loss (Circuit Breaker)"
+input string                 InpMaxFloatingLoss_Info    = "Info only: unlike Equity Protection above (a profit lock — closes on combined floating PROFIT), this is a real loss-based circuit breaker. Percent-of-balance is currency-denomination-agnostic by construction, so it applies correctly regardless of any account-currency scaling question.";
+input bool                   InpUseMaxFloatingLoss      = false; // Enable Max Floating Loss Circuit Breaker (Close All)
+input double                 InpMaxFloatingLossPercent  = 15.0;  // Max Floating Loss Threshold (% of Account Balance)
+
 input group "Advanced - Entry Options"
 input string                  InpAllDCA_SignalsMatchEntry_Info = "Info only: if enabled, only one sequence per direction runs, and every add-on trade must match the same entry rules (not just a QMP dot).";
 input bool                    InpAllSignalsMatchEntryCriteria  = false; // All DCA Signals Must Match Entry Criteria
@@ -2698,6 +2703,48 @@ void CheckEquityProtection()
   }
 
 //+------------------------------------------------------------------+
+//| Max Floating Loss circuit breaker (cent-account go-live process,   |
+//| GO_LIVE_VALIDATION_PLAN.md Phase 5/8/9). This EA has no fixed       |
+//| stop-loss anywhere by design, and CheckEquityProtection() above is  |
+//| a PROFIT lock, not a loss stop (confirmed by re-reading its own     |
+//| header — a mischaracterization this project's own validation plan  |
+//| had to correct). Before this function, there was no loss-based     |
+//| circuit breaker anywhere in the EA: an adverse sequence's only      |
+//| backstop was its own exit strategy eventually triggering (no cap   |
+//| on how far price could move first) or the broker's margin call.    |
+//| Empirically confirmed necessary, not hypothetical: a real backtest |
+//| ($400 deposit, RoboForex real tick data 2024-2026) showed a 35.99% |
+//| equity drawdown with nothing in place to stop it, and an isolated  |
+//| 2010 data window showed an actual negative-balance outcome via     |
+//| margin stop-out.                                                    |
+//|                                                                    |
+//| Percent-of-balance by construction — deliberately NOT a fixed      |
+//| currency amount (unlike Equity Protection's Amount mode), because   |
+//| this project spent considerable effort establishing that fixed-    |
+//| currency inputs need cent-account-aware rescaling while percentage |
+//| ones are self-scaling regardless of any account-currency question  |
+//| still open at the time this was written. Same one-shot "close      |
+//| everything" shape as CheckEquityProtection() — this is the loss-    |
+//| side mirror of that function, not a per-sequence trailing stop.    |
+//+------------------------------------------------------------------+
+void CheckMaxFloatingLoss()
+  {
+   if(!InpUseMaxFloatingLoss) return;
+   if(ArraySize(g_buySequences) == 0 && ArraySize(g_sellSequences) == 0) return;
+
+   double threshold = AccountInfoDouble(ACCOUNT_BALANCE) * InpMaxFloatingLossPercent / 100.0;
+   if(threshold <= 0.0) return;
+   if(GetTotalFloatingProfit() > -threshold) return;   // not yet breached (floating profit still above -threshold)
+
+   Print("EA-DCA: Max Floating Loss circuit breaker triggered — closing all managed sequences (combined floating loss reached ",
+         DoubleToString(InpMaxFloatingLossPercent, 2), "% of balance).");
+   for(int i = ArraySize(g_buySequences) - 1; i >= 0; i--)
+      CloseSequenceAndCleanup(true, i, "Max Floating Loss circuit breaker");
+   for(int i = ArraySize(g_sellSequences) - 1; i >= 0; i--)
+      CloseSequenceAndCleanup(false, i, "Max Floating Loss circuit breaker");
+  }
+
+//+------------------------------------------------------------------+
 //| Max Daily Drawdown tracker (plug-and-play, user-supplied). Purely   |
 //| observational — feeds OnTester() below for use as a custom          |
 //| optimization criterion (Strategy Tester's "Custom max" setting);    |
@@ -3195,6 +3242,7 @@ void OnTick()
    CheckEndOfDayAndWeek();
    CheckExitsPerTick();
    CheckEquityProtection();
+   CheckMaxFloatingLoss();
    UpdateMaxDailyDrawdown();
    if(IsNewBar())
       ProcessNewBar();
