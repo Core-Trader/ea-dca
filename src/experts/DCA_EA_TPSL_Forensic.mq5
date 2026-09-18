@@ -2004,6 +2004,17 @@ void AddOnToAllOpenSequences(bool isBuy)
 //| correctly for any symbol/account-currency combination without      |
 //| hardcoding USD assumptions, per §12.3/§13. Returns 0.0 on any       |
 //| failure — the caller must treat that as "reject the trade."        |
+//|                                                                    |
+//| FIX (TPSL_MODE_AUDIT.md §11.3): clamped to InpMaxInitialLot (if >0), |
+//| same as the Step-Based DCA lot modes already do (see                |
+//| ComputeBaseLotForNewSequence()). Found via §11.3's Test I: an        |
+//| uncapped risk-derived lot silently ignored this input entirely —     |
+//| e.g. 1% risk / 50-pip SL resolved to ~2.0 lots regardless of what     |
+//| InpMaxInitialLot was set to. Clamping here only ever REDUCES the     |
+//| lot below what the risk formula wanted, so actual $ risk at the      |
+//| fixed SL distance ends up below the configured target when the cap   |
+//| binds — never above it — the same direction of tradeoff the         |
+//| Step-Based modes already accept.                                     |
 //+------------------------------------------------------------------+
 double ComputeRiskAdjustedLot(bool isBuy)
   {
@@ -2024,7 +2035,11 @@ double ComputeRiskAdjustedLot(bool isBuy)
    if(!OrderCalcProfit(type, _Symbol, 1.0, price, slPrice, lossPerLot) || lossPerLot >= 0.0)
       return(0.0);   // broker calc failed, or somehow non-negative — reject rather than guess
 
-   return(NormalizeLot(riskMoney / MathAbs(lossPerLot)));
+   double riskLot = riskMoney / MathAbs(lossPerLot);
+   if(InpMaxInitialLot > 0.0 && riskLot > InpMaxInitialLot)
+      riskLot = InpMaxInitialLot;
+
+   return(NormalizeLot(riskLot));
   }
 
 //+------------------------------------------------------------------+

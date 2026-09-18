@@ -321,22 +321,32 @@ Quantitative confirmation the lot-adjustment math itself is correct:
 This is strong evidence `ComputeRiskAdjustedLot()` recomputes lot size correctly and
 proportionally to the configured risk on every trade.
 
-**Specification Gap found**: `ComputeRiskAdjustedLot()` never reads `InpMaxInitialLot`
-— confirmed by code inspection, that cap (`DCA_EA.mq5` "Max Initial Lot Size (0 =
-uncapped)") is applied only inside `ComputeBaseLotForNewSequence()`, the normal
-DCA-style sizing path never used by the Adjust-Lot SL types. In Test I this produced
-~2.0-lot single positions on a $100,000 account from a 1%-risk/50-pip configuration —
-with `InpMaxSequencesPerDirection=3`, up to 3 such positions per direction (6 total,
-both directions) could be open simultaneously, meaning any `InpMaxInitialLot` safety
-cap a user has configured is silently bypassed whenever either Adjust-Lot SL type is
-active. Not an Implementation Bug — the two lot-sizing code paths are legitimately
-separate, and the original TP/SL feature request never specified whether the general
-lot cap should also constrain risk-derived position sizing — but it is a real gap a
-user should decide on (extend `InpMaxInitialLot` to also bound
-`ComputeRiskAdjustedLot()`'s output, add a dedicated TP/SL-mode cap, or leave
-uncapped-by-design and document it) before either Adjust-Lot SL type is used with a
-risk% high enough, or an account small enough, for this to matter live — this is
-especially relevant before any cent-account deployment of TP/SL mode.
+**Specification Gap found — FIXED**: `ComputeRiskAdjustedLot()` never read
+`InpMaxInitialLot` — confirmed by code inspection, that cap (`DCA_EA.mq5` "Max Initial
+Lot Size (0 = uncapped)") was applied only inside `ComputeBaseLotForNewSequence()`, the
+normal DCA-style sizing path never used by the Adjust-Lot SL types. In Test I this
+produced ~2.0-lot single positions on a $100,000 account from a 1%-risk/50-pip
+configuration — with `InpMaxSequencesPerDirection=3`, up to 3 such positions per
+direction (6 total, both directions) could be open simultaneously, meaning any
+`InpMaxInitialLot` safety cap a user had configured was silently bypassed whenever
+either Adjust-Lot SL type was active. Not an Implementation Bug in the sense of
+producing a wrong number — the two lot-sizing code paths are legitimately separate,
+and the original TP/SL feature request never specified whether the general lot cap
+should also constrain risk-derived position sizing — but the user's explicit direction
+was not to leave it silently uncapped, so `ComputeRiskAdjustedLot()` (in both
+`DCA_EA.mq5` and `DCA_EA_TPSL_Forensic.mq5`, kept in sync) now clamps its computed lot
+to `InpMaxInitialLot` when set (>0), mirroring the exact clamp pattern
+`ComputeBaseLotForNewSequence()`'s Step-Based branch already uses. The clamp only ever
+*reduces* the lot below what the risk formula alone would have produced — actual $ risk
+at the fixed SL distance ends up below the configured target when the cap binds, never
+above it, so this cannot introduce a new way to take on more risk than configured.
+
+**Validated**: re-ran Test I (`InpMaxInitialLot=1.0`) post-fix. Every trade's lot is now
+exactly `1.0` (previously ~2.0, unclamped) — confirmed directly in the deal log, not
+inferred. Net profit -$3,257.60 (previously -$6,492.21, ≈49.8% wider than exactly half
+due to lot-step rounding and per-lot commission, not a clean 2x), same 41 trades, same
+Profit Factor 0.67 — i.e. the trade pattern is completely unaffected, only position
+size scaled down as intended. Compiles clean, 0 errors/0 warnings, both files.
 
 ## 12. Summary
 
@@ -346,6 +356,7 @@ Balance-% TP is confirmed (§9). DCA-mode backward compatibility is confirmed ex
 (§6), including after the `EA_DCA_CENT_V1.mq5` re-baseline. Two informational findings
 came out of §11 — a Fixed-Lot risk-based SL distance can be practically unreachable at
 small lot sizes (design characteristic, no fix needed) and Adjust-Lot risk-based SL
-types bypass `InpMaxInitialLot` (Specification Gap, needs a decision, not yet acted
-on). No code changes were made for either finding — both are reported per this
+types bypassed `InpMaxInitialLot` (Specification Gap, **fixed and validated** in §11.3
+— `ComputeRiskAdjustedLot()` now clamps to it). Only the Fixed-Lot distance
+characteristic remains a documented behavior rather than a code change, per this
 project's classification discipline, pending user direction.
