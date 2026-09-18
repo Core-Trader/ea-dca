@@ -654,17 +654,25 @@ broker connection. Findings feed directly into Phase 6 (production `.set`) and P
 | Algo-trading permission checks | `OnInit()`, `:468-479` | Hard-fails if `TERMINAL_TRADE_ALLOWED`/`ACCOUNT_TRADE_ALLOWED`/`ACCOUNT_TRADE_EXPERT` aren't all set. |
 | Exit-strategy/Indicator-mode compatibility gate | `ValidateExitStrategyCompatibility()`, `:564-610` (Phase 1) | Hard-fails invalid combinations rather than silently running broken logic. |
 | Malformed custom-multiplier-string guard | `ValidateCustomMultiplierString()` (Phase 1) | Hard-fails rather than silently parsing to 0.0 and zero-sizing a trade. |
-| Equity Protection (Close All) | `InpUseEquityProtection` + `EQUITY_PROTECT_PERCENT`/`AMOUNT`, `:2660-2680` | **A real circuit breaker already exists in the code** — closes everything if floating loss exceeds a threshold. Percent-of-balance mode is self-scaling/cent-account-safe by construction (Phase 1 audit). |
+| Equity Protection (Close All) | `InpUseEquityProtection` + `EQUITY_PROTECT_PERCENT`/`AMOUNT`, `:2660-2680` | **CORRECTED (previously mischaracterized in this row — see the strike-through note in §9.2)**: this is a **profit-lock**, not a loss-stop. Per its own header comment (`:2655-2669`) it closes everything once *combined floating profit* reaches the threshold, to lock in gains before they reverse — offline simulation cited in that comment specifically tuned it against *winning* sequences. It does not fire on losses at all. |
 
 ### 9.2 What's missing or off by default — the real gaps
 
-- **`InpUseEquityProtection=false` in the current `default.set`.** The single biggest
-  finding of this section: the EA has a working account-wide circuit breaker, and it is
-  **switched off**. There is currently no EA-level floor stopping a genuinely adverse,
-  never-before-seen move from running the account's floating loss arbitrarily deep,
-  other than the broker's own stop-out level. **Recommendation for the live `.set`: turn
-  this on**, using the percent-of-balance mode (already cent-safe) — exact threshold
-  value to be set in Phase 6 alongside the account's real risk budget.
+- **CORRECTION (found and fixed during the Phase 5 cent-account discussion, before any
+  live decision was made on the strength of the original wrong reading)**: this section
+  originally described `InpUseEquityProtection` as a loss-based circuit breaker and
+  recommended turning it on as one. That was wrong — re-reading its own header comment
+  (`:2655-2669`) shows it closes everything on *combined floating profit* reaching the
+  threshold (a portfolio-wide profit lock), not on loss. **This means the honest finding
+  is more serious than originally stated: there is currently no loss-based circuit
+  breaker anywhere in this EA at all** — not off-by-default, genuinely absent. The only
+  things that can stop an adverse sequence today are (1) its own exit strategy
+  eventually triggering (no cap on how far price can move first), (2) the broker's
+  margin-call/stop-out (RoboForex: 30% margin level, Phase 5.1 — a very late, blunt
+  backstop, not risk management), and (3) manual intervention per Phase 8. A genuine
+  max-floating-loss circuit breaker does not exist in the code today and would need to
+  be added — tracked as the priority candidate for `EA_DCA_CENT_V1.mq5` specifically
+  (see the cent-account capital-adequacy discussion this plan's chat history led to).
 - **`InpMaxTradesPerSequence=0` (unlimited) in the current `default.set`.** Already
   flagged in §4.7: in ~24 months of real data no sequence ever needed more than 4
   trades, and capping costs nothing historically. Combined with the point below, this is
@@ -840,7 +848,7 @@ asserted.
 | **Out-of-sample performance** | **PASS WITH CONDITIONS** | Two genuinely untouched OOS windows tested (Phase 3.5); combined run-rate closely matches in-sample. Condition: one window (OOS-A) has only 19 trades — real evidence, but a small sample; total genuine OOS evidence is only ~12 months. |
 | **Execution robustness** | **NOT VALIDATED** | Spread-sensitivity proven low-impact (Finding 1, Phase 4.12). But real execution quality — actual fill slippage, actual latency — has never been measured, because no live/forward-test data exists yet. Cannot be validated by backtesting alone; this is what Phase 7 is for. |
 | **Cent-account compatibility** | **NEEDS INVESTIGATION** *(updated — see Phase 5)* | Real RoboForex ProCent specs now obtained (contract size unchanged at 100,000 units/lot, 0.01 lot min, 30% stop-out). Phase 5 surfaced a bigger, quantified finding than the original currency-unit concern: `InpInitialLot=0.01` is a fixed absolute size independent of account balance, so the Monte Carlo's worst-of-20,000 dollar drawdown ($98.67) would be ~66% of a $150 account vs. 0.10% of the $100,000 test account. This is a capital-adequacy decision for the user, not a code defect — tracked as the one open item blocking Phase 6. |
-| **Risk management (design)** | **PASS WITH CONDITIONS** | Concrete, measurable framework built (Phase 8/9) with real gaps identified and evidence-backed recommendations. Condition: the recommendations (enable Equity Protection, apply the `InpMaxTradesPerSequence`/`InpMaxSequencesPerDirection` caps) are not yet applied to an actual production `.set` — that's Phase 6, not done. |
+| **Risk management (design)** | **NEEDS INVESTIGATION** *(downgraded from PASS WITH CONDITIONS — see Phase 9's correction)* | Concrete, measurable monitoring framework built (Phase 8), but a genuine loss-based circuit breaker does not currently exist anywhere in the EA's code — `InpUseEquityProtection` was found to be a profit-lock, not a loss-stop, correcting this document's own earlier error. Applying the `InpMaxTradesPerSequence`/`InpMaxSequencesPerDirection` caps (Phase 6) helps but doesn't add an actual hard-dollar-loss ceiling. |
 | **Catastrophic-loss protection** | **NEEDS INVESTIGATION** | EA-level and MT5/account-level layers audited (Phase 9). VPS/platform layer (auto-restart, heartbeat/dead-man's-switch alerting) is entirely unaddressed — genuinely a Phase 7 deployment-environment decision, not something backtesting can validate. |
 | **Live monitoring readiness** | **PASS WITH CONDITIONS** | Concrete, threshold-based daily/weekly checklist built directly from real backtest calibration (Phase 8/10). Condition: never exercised against real live data — whether the thresholds are practically workable day-to-day is unverified until Phase 7. |
 | **GBPUSD / second-symbol readiness** | **NOT VALIDATED** | Confirmed materially different risk profile under EURUSD-tuned parameters (Phase 3.2, profit factor 2.11 vs 5.52). No optimization or OOS validation has been run for GBPUSD specifically. |
