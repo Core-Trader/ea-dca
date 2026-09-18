@@ -839,7 +839,7 @@ asserted.
 | **Optimization robustness** | **PASS WITH CONDITIONS** | 4 one-at-a-time sensitivity sweeps completed with a sound, OOS-checked methodology (Phase 4); correctly rejected two attractive-looking-but-overfit candidates. Condition: necessarily narrow (4 parameters, one at a time) given the available data volume — broader exploration would need more live/forward-test history first. |
 | **Out-of-sample performance** | **PASS WITH CONDITIONS** | Two genuinely untouched OOS windows tested (Phase 3.5); combined run-rate closely matches in-sample. Condition: one window (OOS-A) has only 19 trades — real evidence, but a small sample; total genuine OOS evidence is only ~12 months. |
 | **Execution robustness** | **NOT VALIDATED** | Spread-sensitivity proven low-impact (Finding 1, Phase 4.12). But real execution quality — actual fill slippage, actual latency — has never been measured, because no live/forward-test data exists yet. Cannot be validated by backtesting alone; this is what Phase 7 is for. |
-| **Cent-account compatibility** | **NOT VALIDATED** | Thorough code-level audit done (Phase 1: 5 fixed-currency inputs identified, none active by default; zero EA-level currency self-awareness). But the actual cent-account symbol specification (`EURUSDc`/`GBPUSDc` contract size, volume min/step, margin currency, real swap/commission) has never been obtained or tested — Phase 5 hasn't started, blocked on broker information only the user can provide. |
+| **Cent-account compatibility** | **NEEDS INVESTIGATION** *(updated — see Phase 5)* | Real RoboForex ProCent specs now obtained (contract size unchanged at 100,000 units/lot, 0.01 lot min, 30% stop-out). Phase 5 surfaced a bigger, quantified finding than the original currency-unit concern: `InpInitialLot=0.01` is a fixed absolute size independent of account balance, so the Monte Carlo's worst-of-20,000 dollar drawdown ($98.67) would be ~66% of a $150 account vs. 0.10% of the $100,000 test account. This is a capital-adequacy decision for the user, not a code defect — tracked as the one open item blocking Phase 6. |
 | **Risk management (design)** | **PASS WITH CONDITIONS** | Concrete, measurable framework built (Phase 8/9) with real gaps identified and evidence-backed recommendations. Condition: the recommendations (enable Equity Protection, apply the `InpMaxTradesPerSequence`/`InpMaxSequencesPerDirection` caps) are not yet applied to an actual production `.set` — that's Phase 6, not done. |
 | **Catastrophic-loss protection** | **NEEDS INVESTIGATION** | EA-level and MT5/account-level layers audited (Phase 9). VPS/platform layer (auto-restart, heartbeat/dead-man's-switch alerting) is entirely unaddressed — genuinely a Phase 7 deployment-environment decision, not something backtesting can validate. |
 | **Live monitoring readiness** | **PASS WITH CONDITIONS** | Concrete, threshold-based daily/weekly checklist built directly from real backtest calibration (Phase 8/10). Condition: never exercised against real live data — whether the thresholds are practically workable day-to-day is unverified until Phase 7. |
@@ -862,3 +862,103 @@ identified caps + rescale any fixed-currency inputs actually turned on + build t
 `.set`), then Phase 7 (a genuine forward-test/demo period on the cent account before any
 real money), which is also the only way to validate execution robustness and monitoring-
 checklist practicality — no amount of additional backtesting substitutes for that.
+
+---
+
+## Phase 5 — Cent-Account Validation
+
+Broker confirmed as RoboForex (`roboforex.com`) by the user. Real symbol specifications
+retrieved directly from RoboForex's own published contract-specification pages and
+account documentation (cited below) — not assumed.
+
+### 5.1 RoboForex ProCent — real specifications (EURUSDc / GBPUSDc)
+
+| Property | Value | Source |
+|---|---|---|
+| Account denomination | 100x the base currency — a $10 deposit shows as 1,000 US Cents. **Confirmed**: symbols carry a `-c` suffix (`EURUSDc`, `GBPUSDc`), matching what the user reported | [RoboForex Cent Account](https://roboforex.com/forex-trading/trading/cent-account/), search-confirmed suffix convention |
+| Contract size (1.0 lot) | 100,000 base-currency units — **identical to a standard account**, not rescaled | [EURUSD ProCent spec](https://roboforex.com/forex-trading/trading/specifications/card/pro-cent/EURUSD/) |
+| Minimum order volume | 0.01 lot (MT5) | [RoboForex Cent Account](https://roboforex.com/forex-trading/trading/cent-account/) |
+| Maximum order volume | 1,000 lots | [RoboForex Cent Account](https://roboforex.com/forex-trading/trading/cent-account/) |
+| Volume step | 0.01 lot | [RoboForex Cent Account](https://roboforex.com/forex-trading/trading/cent-account/) |
+| Leverage | Up to 1:2000 on Cent accounts (exact per-account value must be confirmed at account opening) | [search result summary] |
+| Stop Out level | **30%** margin level | [RoboForex Cent Account](https://roboforex.com/forex-trading/trading/cent-account/) — this is the real number for Phase 8's margin-level thresholds, replacing the placeholder there |
+| EURUSD average spread | ~1.3 pips (13 points) | [EURUSD ProCent spec](https://roboforex.com/forex-trading/trading/specifications/card/pro-cent/EURUSD/) — comfortably under `InpMaxSpread=40` points |
+| GBPUSD average spread | ~1.5 pips (15 points) | [GBPUSD ProCent spec](https://roboforex.com/forex-trading/trading/specifications/card/pro-cent/GBPUSD/) — also comfortably under `InpMaxSpread=40` |
+| EURUSD swap | Long -1 pip / Short +0.25 pip | [EURUSD ProCent spec](https://roboforex.com/forex-trading/trading/specifications/card/pro-cent/EURUSD/) |
+| GBPUSD swap | Long -0.4 pip / Short -0.45 pip | [GBPUSD ProCent spec](https://roboforex.com/forex-trading/trading/specifications/card/pro-cent/GBPUSD/) |
+| Trading session | 00:05-23:55 (platform time) | Both spec pages above |
+
+**Note on confidence**: these were retrieved via automated web fetch of RoboForex's own
+pages, which is good primary-source evidence but was not cross-checked against a live
+MT5 terminal actually connected to a RoboForex ProCent account (no such connection is
+available in this environment). **Before funding a real account, re-verify these exact
+numbers from within the MT5 terminal itself** (Market Watch → right-click `EURUSDc` /
+`GBPUSDc` → Specification) — treat this table as strong preparatory evidence, not a
+substitute for that final check.
+
+### 5.2 The central finding: contract size is NOT rescaled — only the account's currency label is
+
+This is the most important, and initially counter-intuitive, result of this phase.
+**"100 cent lots = 1 standard lot" refers to the account balance's currency unit, not to
+position size.** A `0.01` lot order on `EURUSDc` controls the exact same 1,000-unit real
+notional as a `0.01` lot order on standard `EURUSD` — RoboForex's own spec page confirms
+"trading conditions are equal to those for standard accounts." MT5 scales **every**
+cent-account money value consistently (balance, equity, floating P&L, margin) by the
+same 100x factor, so ratios (% drawdown, % of balance) come out identical whether
+expressed in cents or dollars — Phase 1's original concern about the five fixed-currency
+inputs (`InpStepAmount`, `InpProfitTargetCurrency`, etc.) is still completely valid on
+its own terms (a literal `50.0` would mean 50 cents = $0.50, not $50, unless rescaled),
+but it is **not** the biggest risk this phase found.
+
+### 5.3 The real risk: $150 is very small relative to this EA's minimum viable position size
+
+`InpInitialLot=0.01` is a **fixed absolute lot size** (`InpLotSizeMode=LOT_FIXED`,
+`default.set`) — it does not scale with account balance at all. Every dollar-drawdown
+figure measured in Phases 2-4 (e.g., the Monte Carlo's worst-of-20,000 simulated path,
+§4.13: **$98.67**) is the real absolute dollar amount that specific sequence of 0.01-0.04
+lot trades produced — a fact about the lot sizes traded, completely independent of
+whatever balance the backtest happened to start from ($100,000, arbitrarily). **The
+exact same absolute-dollar outcome would occur if the identical trade sequence played
+out on a $150 account**, because `LOT_FIXED` mode doesn't know or care what the account
+balance is.
+
+Concretely: $98.67 / $150 = **65.8% of the account** — vs. the 0.10% it represented
+against the $100,000 test balance. Even a single one-pip adverse move on a lone 0.01 lot
+position ($0.10) is already 0.067% of $150 — comparable to or larger than this EA's
+*entire* historically observed drawdown range (0.08%-0.10% typical, per §3.5) in one
+pip. **This has nothing to do with cent-account mechanics or currency-unit bugs (§5.2
+rules that out) — it is a structural capital-adequacy mismatch between the broker's
+0.01 lot minimum (fixed, cannot go smaller) and $150 of real capital.** It would be
+equally true on a $150 *standard* (non-cent) RoboForex account with the same 0.01 lot
+floor. Back-solving the other direction: to make that same $98.67 worst-case represent
+a comparable ~1% of equity (matching §8.2's Warning band), the account would need to be
+on the order of **~$9,900** — a large gap from $150.
+
+This is a real, quantified finding, not a reason to abandon the plan — but it is a
+decision only the user can make, not one to resolve unilaterally. Four options, not
+mutually exclusive:
+
+1. **Fund the account with substantially more capital** before going live, closer to
+   the ballpark computed above, so the existing validated risk profile actually applies.
+2. **Deliberately treat the $150 as a bounded, fully-at-risk live-fire pilot** — accept
+   that a single adverse sequence could consume a large fraction of it, explicitly
+   because the point of this phase is validating real execution/behavior cheaply before
+   committing more capital, not replicating the backtest's sub-1% drawdown experience.
+3. **Sharply tighten the hard caps specifically for the $150 phase** — e.g.
+   `InpMaxTradesPerSequence=1` (no DCA averaging at all) or `InpMaxSequencesPerDirection=1`
+   — which bounds the absolute-dollar worst case much lower, at the cost of changing the
+   strategy's character substantially from what was actually backtested. This is a
+   capital-adequacy-driven change, not a backtest-chasing one, so it doesn't conflict
+   with the "don't change parameters to improve results" principle — but it does mean
+   the extensive validation in Phases 2-4 applies less directly to whatever reduced
+   version actually trades.
+4. **Switch `InpLotSizeMode` to `LOT_PERCENT_BALANCE`/`LOT_PERCENT_EQUITY`** so sizing at
+   least auto-scales as the account grows from deposits or gains — doesn't solve the
+   immediate $150-vs-0.01-lot floor problem (the broker's minimum is still 0.01 lot
+   regardless of what the percentage calculation would prefer), but avoids the position
+   staying fixed at an increasingly inappropriate size if the account grows later.
+
+**This is now the single open decision blocking Phase 6.** Everything else needed to
+build the production `.set` (the risk-cap values from §4.6/§4.7/§9.2, the equity
+protection recommendation, the real spread/swap numbers above) is ready — Phase 6 just
+needs to know which of these four directions (or what blend) to build toward.
