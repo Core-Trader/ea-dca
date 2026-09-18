@@ -1054,3 +1054,62 @@ statistically representative of anything — but it's a real, broker-side-confir
 demonstration that this failure mode is not hypothetical, and that going negative (not
 just losing the deposit) is possible absent negative-balance protection or a circuit
 breaker.
+
+### 5.5 Max Floating Loss circuit breaker — built, and tested against both scenarios
+
+Added `InpUseMaxFloatingLoss`/`InpMaxFloatingLossPercent` + `CheckMaxFloatingLoss()` to
+`EA_DCA_CENT_V1.mq5` only (`DCA_EA.mq5` untouched, per standing instruction) — the
+loss-side mirror of `CheckEquityProtection()`, percent-of-balance so it's
+denomination-agnostic regardless of how the still-open Cent-redenomination question
+resolves. Compiled clean on both terminals.
+
+**Test 1 — the "normal" window** (baseline `.set` + breaker at 10/15/20/25%, same
+$400/2024-2026 RoboForex data as §5.4's $547.95/35.99%-equity-DD baseline):
+
+| Threshold | Net Profit | Balance DD Max | Equity DD Max | Profit Factor | Trades |
+|---|---|---|---|---|---|
+| *(none, baseline)* | **$547.95** | 7.27% | 35.99% | 3.73 | 173 |
+| 10% | $347.60 | **18.21%** | 20.15% | 2.27 | 167 |
+| 15% | $367.62 | 27.05% | 28.96% | 2.36 | 168 |
+| 20% | $429.69 | 23.42% | 21.99% | 2.63 | 170 |
+| 25% | $400.77 | 28.16% | 26.92% | 2.37 | 170 |
+
+**Counter-intuitive but important finding**: every threshold *reduced* profit and
+*increased* realized (balance) drawdown relative to the no-breaker baseline, even
+though it cut the equity (floating) drawdown roughly in half. Mechanism: in this
+specific historical window, the deep floating losses that drove the baseline's 35.99%
+equity drawdown went on to **recover on their own** without any intervention — the
+circuit breaker, by forcibly closing at a fixed floating-loss threshold, crystallizes
+that loss instead of letting it ride out the recovery. In a window where the strategy
+"got away with it," adding a circuit breaker is close to pure cost. This is the
+insurance-premium tradeoff stated plainly: it isn't free, and this data doesn't pretend
+otherwise.
+
+**Test 2 — the scenario the breaker actually exists for** (15% threshold, same isolated
+2010-01/02 window that produced the -$3.32 negative-balance blowup with no breaker,
+above):
+
+| | No breaker | 15% breaker |
+|---|---|---|
+| Outcome | **-$3.32 (negative balance)** | **-$20.59 (net loss, balance stays positive)** |
+| Balance Drawdown Maximal | not separately measured (full account loss) | $60.70 (15.01%) |
+| Trades | 11 (4-leg sequence grew to 0.10 lot before blowing up) | 8 (breaker closed the losing sequence at 2 legs, before it could grow further) |
+
+The deal log shows exactly the mechanism working as intended: the same losing BUY
+sequence that, unchecked, grew to 4 legs (0.01→0.02→0.03→0.04 lot) and then lost $398
+in one simultaneous close, this time got force-closed by the breaker after only 2 legs
+(-$59.01 combined) — small, survivable, and nowhere near wiping out the account.
+**This is the demonstration that justifies the feature**: in the scenario it exists for
+(a real, non-recovering adverse trend), it converts a catastrophic, negative-balance
+outcome into a modest, bounded loss.
+
+**Recommendation, not a decision made unilaterally**: the 2024-2026 sweep is too noisy/
+small-sample to treat any single threshold as "optimal" (20% happened to show the best
+profit *and* better drawdown than 15%/25% in this one window — picking it for that
+reason would be exactly the in-sample-cherry-picking mistake this project has
+repeatedly had to catch itself making elsewhere, e.g. §4.5). Given this project's own
+stated priority (capital preservation over maximum profit) and the user's real,
+constrained risk budget (€1000 max), the more conservative end of the tested range
+(10-15%) fits that priority better than the highest-profit-in-this-sample end (20%) —
+but the final threshold remains the user's risk-tolerance call, not something to be
+picked by backtest performance.
