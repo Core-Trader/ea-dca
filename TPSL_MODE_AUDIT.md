@@ -169,9 +169,9 @@ Dynamic Stop). Compiles clean (0 errors, 0 warnings).
 |---|---|
 | `InpTradeMode` gate (no averaging in TP/SL mode) | **Implemented and tested** |
 | SL Type: Fixed Distance in Pips | **Implemented and tested** — see §6 |
-| SL Type: ATR-Based | Implemented, **not yet tested** |
-| SL Type: Risk %/Currency — Fixed Lot | Implemented, **not yet tested** |
-| SL Type: Risk %/Currency — Adjust Lot | Implemented, **not yet tested** |
+| SL Type: ATR-Based | **Implemented and tested** — see §11 |
+| SL Type: Risk %/Currency — Fixed Lot | **Implemented and tested** — see §11 (behavioural finding recorded, not a bug) |
+| SL Type: Risk %/Currency — Adjust Lot | **Implemented and tested** — see §11 (Specification Gap recorded: `InpMaxInitialLot` not applied here) |
 | SL Type: X Pips Beyond QMP Signal | **Implemented and tested** — see §9 |
 | Balance % TP (new exit type) | **Implemented and tested** — see §9 |
 | Reused existing exit strategies (BB Centre/Opposite Band, Fixed Target, Pure Trailing, First Profitable) | Implemented; BB Centre Band **tested** via §7, others not yet |
@@ -255,13 +255,97 @@ live on every check rather than caching it.
 Both SL attachment (genuine `sl <price>` broker-side markers, same mechanism validated
 in §7) and the new exit type are confirmed working end-to-end.
 
-## 10. Summary
+## 11. Independent verification — ATR-Based and Risk %/Currency SL types (all 5 remaining)
 
-All 7 SL methods are implemented; 3 of 7 (Fixed Pips, QMP-Offset, and — via the same
-tested code path as Fixed Pips's distance-based branch — the mechanism ATR and the two
-Risk-based methods share) have direct empirical confirmation. Balance-% TP is
-confirmed. DCA-mode backward compatibility is confirmed exact. The one open item is
-independently exercising ATR-Based and the two Risk %/Currency SL types specifically
-(their calculation code is shared/parallel to what's already been proven correct for
-Fixed Pips and QMP-Offset, but hasn't been backtest-verified in isolation) — a
-reasonable next increment, not a blocker to using Fixed Pips or QMP-Offset today.
+Five backtests (`tpsl_test_sets/test_F_atr.set` through `test_J_risk_currency_adjust_lot.set`),
+each identical to `test_B_fixed_pips.set` (EURUSD H4, 2025.01.01-2026.01.22, `Model=4`,
+FTMO login `540291482`, `InpExitStrategy=0` BB Centre Band) except for `InpSLType` and
+its own risk parameter, isolate the 5 previously-untested `ENUM_SL_TYPE` values. Same
+evidentiary bar as §7/§9: verifying trade mechanics (SL distance/lot correctness), not
+profitability (Rule 9).
+
+### 11.1 Test F — ATR-Based (`InpSLType=3`): CONFIRMED
+
+41 trades, 40 genuine broker-side `sl <price>` exits (only 1 via BB Centre Band).
+Sampled SL distances vary trade-to-trade — 63.2, 52.2, and 73.4 pips across three
+inspected fills — unlike Fixed Pips's constant 50.00 (§7), consistent with a real
+`ATRValue() * InpSLATRMultiplier` distance that tracks each entry's live volatility
+rather than a fixed value. Net profit -$31.47 (informational only, per Rule 9).
+
+### 11.2 Tests G/H — Risk %/Currency, Fixed Lot (`InpSLType=1`/`2`): CONFIRMED — with a behavioural finding
+
+Test G (`InpSLRiskPercent=1.0`) and Test H (`InpSLRiskCurrency=100.0`): **zero** SL
+hits across 41 trades in either test — every exit was via BB Centre Band, and both
+produced the identical $96.00 net profit / 41-trade outcome.
+
+This is the formula working exactly as designed, not a bug — `ComputeSLPrice()`'s
+Fixed-Lot branch derives SL distance from `riskMoney / lossPerPip` at the lot actually
+used (here `InpLotSizeMode=LOT_FIXED`, `InpInitialLot=0.01`, unaffected by TP/SL mode
+for the Fixed-Lot variants). At 0.01 lot, EURUSD's per-pip loss is ≈$0.10:
+- Test G: $1,000 risk (1% of $100k) / $0.10 per pip ≈ **10,000 pips** (≈1.0 price unit) distance
+- Test H: $100 fixed risk / $0.10 per pip ≈ **1,000 pips** (≈0.10 price unit) distance
+
+Both are enormously wider than any realistic EURUSD H4 excursion, so the attached SL
+is valid but practically unreachable — explaining why both tests reduce to pure
+BB-Centre-Band-only outcomes, identical to each other regardless of the 10x difference
+in risk money between them (both distances are "unreachable" either way, so the
+specific value stops mattering).
+
+**Classification: Logical Design Choice / informational, not a bug.** The math is
+correct — SL distance is inversely proportional to lot size by construction, and a
+very small fixed lot combined with a modest risk% or risk-currency naturally produces
+a very wide stop. This SL type is only meaningful at lot sizes large enough that the
+resulting distance lands in a realistic range for the instrument/timeframe; worth
+noting in any future user-facing guidance for this feature, but requires no code
+change.
+
+### 11.3 Tests I/J — Risk %/Currency, Adjust Lot (`InpSLType=4`/`5`): CONFIRMED — with a Specification Gap
+
+Test I (`InpSLRiskPercent=1.0`) and Test J (`InpSLRiskCurrency=100.0`), both with
+`InpSLDistancePips=50` (same fixed distance as Test B): 38/41 SL hits in each, the
+same entry/exit *pattern* as Test B (identical signals, identical 50-pip trigger
+geometry — lot size is irrelevant to whether/when a fixed-distance SL is hit).
+
+Quantitative confirmation the lot-adjustment math itself is correct:
+- Test I: net profit **-$6,492.21**, PF **0.67** — `ComputeRiskAdjustedLot()` resolves to
+  ≈2.0 lots per trade throughout (1% of a balance that stayed roughly $92k-107k
+  through the test, ÷ ≈$500 loss-per-lot at 50 pips) — a ~200x scale-up from Test B's
+  0.01 lot. Test B's own PF is 0.67 in the current codebase (Fix 1 kept, Fix 2
+  reverted — see `TPSL_EQUITY_BALANCE_ROOT_CAUSE.md`), matching Test I's PF exactly;
+  -$32.93 (Test B) × ~197-200 ≈ -$6,487, matching Test I's -$6,492.21 almost exactly.
+- Test J: net profit **-$651.49**, PF **0.67** — fixed $100 risk (balance-independent)
+  resolves to a *constant* ≈0.20 lot every trade (20x Test B's 0.01), and
+  -$32.93 × 20 ≈ -$658.60, matching Test J's -$651.49 closely (small residual from
+  lot-step rounding and per-lot commission/spread, not linear with lot size).
+
+This is strong evidence `ComputeRiskAdjustedLot()` recomputes lot size correctly and
+proportionally to the configured risk on every trade.
+
+**Specification Gap found**: `ComputeRiskAdjustedLot()` never reads `InpMaxInitialLot`
+— confirmed by code inspection, that cap (`DCA_EA.mq5` "Max Initial Lot Size (0 =
+uncapped)") is applied only inside `ComputeBaseLotForNewSequence()`, the normal
+DCA-style sizing path never used by the Adjust-Lot SL types. In Test I this produced
+~2.0-lot single positions on a $100,000 account from a 1%-risk/50-pip configuration —
+with `InpMaxSequencesPerDirection=3`, up to 3 such positions per direction (6 total,
+both directions) could be open simultaneously, meaning any `InpMaxInitialLot` safety
+cap a user has configured is silently bypassed whenever either Adjust-Lot SL type is
+active. Not an Implementation Bug — the two lot-sizing code paths are legitimately
+separate, and the original TP/SL feature request never specified whether the general
+lot cap should also constrain risk-derived position sizing — but it is a real gap a
+user should decide on (extend `InpMaxInitialLot` to also bound
+`ComputeRiskAdjustedLot()`'s output, add a dedicated TP/SL-mode cap, or leave
+uncapped-by-design and document it) before either Adjust-Lot SL type is used with a
+risk% high enough, or an account small enough, for this to matter live — this is
+especially relevant before any cent-account deployment of TP/SL mode.
+
+## 12. Summary
+
+All 7 SL methods are now independently backtest-verified: Fixed Pips and QMP-Offset via
+§7/§9, ATR-Based and both Risk %/Currency variants (Fixed Lot and Adjust Lot) via §11.
+Balance-% TP is confirmed (§9). DCA-mode backward compatibility is confirmed exact
+(§6), including after the `EA_DCA_CENT_V1.mq5` re-baseline. Two informational findings
+came out of §11 — a Fixed-Lot risk-based SL distance can be practically unreachable at
+small lot sizes (design characteristic, no fix needed) and Adjust-Lot risk-based SL
+types bypass `InpMaxInitialLot` (Specification Gap, needs a decision, not yet acted
+on). No code changes were made for either finding — both are reported per this
+project's classification discipline, pending user direction.
