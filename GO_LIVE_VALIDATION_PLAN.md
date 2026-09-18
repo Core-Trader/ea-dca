@@ -713,3 +713,72 @@ broker connection. Findings feed directly into Phase 6 (production `.set`) and P
 | Partial execution | Not specifically handled | No code found that distinguishes a partially-filled order from a fully-filled one — MT5 market orders on forex are effectively all-or-nothing in practice, but not explicitly verified here |
 | Margin exhaustion | Yes | `MarginOk()` pre-trade check |
 | Unexpected account-denomination behavior | **No** | Phase 1's central finding — zero EA-level cent-account awareness |
+
+---
+
+## Phase 8 — Emergency Intervention Rules (measurable thresholds)
+
+Calibrated directly against Phases 2-4's real numbers, not generic rules of thumb.
+Thresholds are expressed as **percentages or ratios wherever possible** (account-size-
+agnostic, usable today) rather than dollar amounts, since the cent account's actual lot
+sizing isn't finalized until Phase 6 — dollar-denominated versions of these same
+thresholds get filled in there. Historical baseline for calibration: equity drawdown
+stayed in the 0.08%-0.10% range across in-sample and both OOS windows under the
+parameters actually going live (Phase 3.5); even the Monte Carlo's worst-of-20,000
+pooled simulation (§4.13) only reached ~0.10%; win rate 72-76%; trade frequency ~4.5-5.3
+trades/month; historical maximum single losing trade was a small fraction of average
+win size (Phase 2).
+
+### 8.1 Decision tree
+
+```
+                    ┌─────────────────────────────────────────────┐
+                    │  OBSERVE (continuous monitoring, Phase 10)   │
+                    └───────────────────┬───────────────────────┘
+                                         │
+                          any §8.2 trigger fires?
+                                         │
+                    ┌────────────────────┼────────────────────┐
+                   NO                 WARNING              CRITICAL
+                    │                    │                     │
+                 CONTINUE          INVESTIGATE            immediate action
+                                    (no action to           per trigger's
+                                    the EA itself;           own row in §8.2
+                                    confirm cause             (PAUSE /
+                                    before deciding            REDUCE /
+                                    anything else)              CLOSE /
+                                         │                    DISABLE)
+                              cause found & benign? ──YES──► back to CONTINUE
+                                         │
+                                        NO
+                                         │
+                              escalate per §8.2's row for
+                              that specific trigger
+```
+
+### 8.2 Triggers, thresholds, and required action
+
+| Signal | Normal | Warning → Investigate | Critical → act now |
+|---|---|---|---|
+| **Equity drawdown from peak balance** | ≤ 1% | 1%-3%: investigate, no EA change yet | **>3%: PAUSE new sequences.** **>5%: CLOSE all positions, DISABLE the EA**, then investigate. (Calibrated as ~10x-50x the worst level ever observed under these exact parameters across in-sample/OOS/Monte Carlo — hitting even the Warning band is already a genuine departure from everything tested.) |
+| **Realized win rate, rolling 20-trade window** | ≥ 60% | 50%-60%: investigate | <50%: PAUSE (historical baseline is 72-76%; below-50% over 20 trades is a real behavioral shift, not noise) |
+| **Trade frequency (rolling 30 days)** | 2-15 trades/month | 0 trades in >45 days (possible silent failure), or >20 trades/month | 0 trades in >90 days with the terminal/VPS confirmed running: **DISABLE and investigate** — something has silently broken. >30 trades/month: PAUSE and investigate (far outside anything backtested — could be a logic bug spamming entries, or a market regime the strategy was never validated for) |
+| **Position/lot size on any single order** | Exactly matches `InpInitialLot` × the active multiplier system's value for that trade index (Phase 4.2's table) | N/A — zero tolerance | **Any mismatch at all: DISABLE immediately, investigate.** This should be structurally impossible if the EA and broker are both functioning; a mismatch means state corruption, a parallel EA instance, or a broker-side problem. |
+| **Live spread (rolling observation)** | Comfortably under `InpMaxSpread` (40 pts) most of the time | Regularly observed within 10 points of the cap | Cap being hit routinely enough to visibly suppress trade frequency: investigate broker/liquidity conditions before assuming the strategy stopped working |
+| **Execution slippage vs. `InpSlippage=3` pts request** | Fills at or near requested price | Any consistent (not one-off) slippage beyond the request | Repeated (3+) rejected/failed orders in a session: **PAUSE**, investigate broker/connection |
+| **`OrderSend`/runtime errors in the Experts/Journal log** | None | 1 isolated error: investigate before next trade | 2+ in a rolling 24h window: **PAUSE**, investigate |
+| **Connection/VPS stability** | Continuous | Any disconnection >5 min during active session: investigate on reconnect, manually verify broker positions vs. EA's internal sequence state (Phase 9's flagged gap — this is the one thing that isn't automatically verified) | 3+ disconnections in a week: escalate as a platform/VPS problem (Phase 7), not a strategy problem |
+| **Margin level** | Broker-specific, confirm real numbers in Phase 5 | Below 500%: investigate | Below 300%: **REDUCE exposure** (skip new sequences). Below 150%: **CLOSE positions manually** before the broker's own stop-out forces it at a worse moment. |
+| **Structural strategy-behavior check** | Concurrent sequences per direction ≤ `InpMaxSequencesPerDirection`; trades per sequence ≤ `InpMaxTradesPerSequence` (once Phase 6 applies real caps, per §9.2) | N/A — zero tolerance | Any breach: **DISABLE immediately.** Same reasoning as the lot-size row — structurally shouldn't be possible if the code and its caps are working. |
+| **Divergence from tested/forward-tested behavior** | Monthly PnL run-rate within the range already seen (§3.5: ~$9-22/month equivalent, scaled to account size) | 1 month meaningfully outside that range: investigate, no action | 2 consecutive months meaningfully outside that range, or a single drawdown event exceeding the Monte Carlo's 99th-percentile estimate (§4.13): **PAUSE, full review before resuming** |
+
+### 8.3 What "investigate" actually means
+
+Not a vague instruction — investigating means, in order: (1) check the Experts/Journal
+log for errors around the trigger time, (2) compare the actual trade/position against
+what `EA_DCA_CENT_V1.mq5`'s logic predicts for that bar (the `DCA_EA_Forensic.mq5`
+diagnostic build from earlier in this project exists exactly for this — it logs every
+gate's pass/fail state per bar without altering trading behavior), (3) check broker
+status pages/news for an abnormal market condition, (4) only resume normal operation
+once a specific, named cause is identified and judged benign — never resume just because
+the metric happened to recover on its own without an explanation.
