@@ -1113,3 +1113,45 @@ constrained risk budget (€1000 max), the more conservative end of the tested r
 (10-15%) fits that priority better than the highest-profit-in-this-sample end (20%) —
 but the final threshold remains the user's risk-tolerance call, not something to be
 picked by backtest performance.
+
+### 5.6 Redenomination question — resolved directionally, and a real bug caught before it mattered
+
+RoboForex support, asked directly, first said a $150 deposit would make the EA "behave
+as if" $15,000 (implying real risk reduction), then on follow-up narrowed that to "it's
+actually going to show up as 15000 in MT5" — display, not behavior. Consistent with
+every piece of direct evidence gathered in this document (§5.1-§5.4's `OrderCalcProfit`
+tests and the realistic, non-inflated dollar amounts throughout every RoboForex deal
+log): the balance number is expected to inflate ~100x on deposit, while trade-level P&L
+math keeps operating in real, un-scaled dollars.
+
+**Consequence, confirmed empirically rather than just argued**: reran the §5.5 circuit
+breaker sweep with `Deposit=40000` instead of `400` (same `.set`s, same 2024-2026
+window) to see what happens if that mismatch is real. Result — **the 15%, 20%, and 25%
+thresholds all reproduced the unmodified no-breaker baseline exactly**
+($547.95 net profit, $220.58 equity DD, 173 trades, identical across all three):
+
+| Threshold, at `Deposit=40000` | Net Profit | Equity DD | Trades |
+|---|---|---|---|
+| 15% | $547.95 | $220.58 (**0.55%**) | 173 |
+| 20% | $547.95 | $220.58 (**0.55%**) | 173 |
+| 25% | $547.95 | $220.58 (**0.55%**) | 173 |
+
+Mechanism confirmed exactly as predicted: `threshold = ACCOUNT_BALANCE × %` computes
+against an inflated `40,000`, giving thresholds ($6,000-$10,000) that real, small-lot
+trade P&L can never reach — so the breaker never fires, providing **zero** real
+protection. The 2010 disaster-window check makes the cost concrete: at `Deposit=40000`,
+the 15% breaker let equity drawdown reach **$1,004.43** (over 2.5x the real $400 that
+would actually be deposited) before doing anything, ending at -$310.59 — worse in real
+terms than the $400-calibrated version's -$20.59, and barely better than having no
+breaker at all.
+
+**This is exactly the failure mode §5.3-§5.5 warned was possible, now confirmed rather
+than hypothetical — caught here, before any real money was exposed to it.** The fix is
+straightforward and now clearly specified: `CheckMaxFloatingLoss()` (and
+`CheckEquityProtection()`, which has the identical exposure) must compute their
+threshold against the account's **real** deposited value, not whatever
+`AccountInfoDouble(ACCOUNT_BALANCE)` returns directly, if RoboForex's display-inflation
+is confirmed real. Not yet implemented — deliberately held pending the actual deposit
+landing and a direct, in-context measurement of the true inflation factor (§5.4/§5's
+open action item), since guessing the correction factor wrong would be worse than
+leaving the current, honestly-labelled behavior in place a little longer.
