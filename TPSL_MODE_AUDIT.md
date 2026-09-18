@@ -348,7 +348,48 @@ due to lot-step rounding and per-lot commission, not a clean 2x), same 41 trades
 Profit Factor 0.67 — i.e. the trade pattern is completely unaffected, only position
 size scaled down as intended. Compiles clean, 0 errors/0 warnings, both files.
 
-## 12. Summary
+## 13. TP/SL mode validated on the cent-account track (`EA_DCA_CENT_V1.mq5`)
+
+Everything above validated TP/SL mode on `DCA_EA.mq5`. After the two re-baselines
+(commits `c68e806` TP/SL port, `793d30a` `InpMaxInitialLot` fix port), TP/SL mode
+itself had never actually been exercised on `EA_DCA_CENT_V1.mq5` — only its DCA-mode
+regression had been re-checked. Closed that gap with a regression-equivalence check:
+re-run the same two `.set` files against `EA_DCA_CENT_V1.mq5` (same FTMO dev-track
+terminal/account this file's own DCA-mode baseline uses — this is not yet the actual
+RoboForex cent account, see the note below) and confirm identical results to
+`DCA_EA.mq5`'s own already-validated numbers.
+
+| | `DCA_EA.mq5` | `EA_DCA_CENT_V1.mq5` | Match |
+|---|---:|---:|---|
+| Test B (Fixed Pips SL): Net Profit / PF / Trades | -$32.93 / 0.67 / 41 | -$32.93 / 0.67 / 41 | **Exact** |
+| Test I (Risk% Adjust-Lot SL, post-fix): Net Profit / Trades / Lot per trade | -$3,257.60 / 41 / 1.00 | -$3,257.60 / 41 / 1.00 | **Exact** |
+
+Both bit-for-bit identical, confirming the port carried TP/SL mode and the
+`InpMaxInitialLot` fix over correctly with zero drift, including the risk-adjusted lot
+clamp mechanism (Test I) and basic SL-attachment mechanics (Test B).
+
+**Infrastructure finding, new this check**: on the first attempt, Test B's `.set` file
+(`test_B_fixed_pips.set`) had fallen out of `MQL5\Profiles\Tester\` since it was last
+copied there (before this session's context compaction — only the newer `test_F`
+through `test_J` files were re-copied afterward). With `ExpertParameters` pointing to a
+bare filename that no longer existed in that folder, the Tester did **not** error —
+it silently ran with the `.mq5`'s raw compiled-in defaults (`InpTradeMode=0`,
+`InpMaxSequencesPerDirection=100`, etc.), producing a normal-looking "successfully
+finished" report at exactly the plain DCA-mode baseline numbers ($225.70, 58 trades).
+Caught immediately by the same "verify the report's Settings section" discipline
+`CLAUDE.md` already mandates — but this is a **third, previously-undocumented failure
+mode** distinct from the two already recorded there (no `ExpertParameters`/absolute
+path → reuses a stale `.set`; this case → missing file → falls back to compiled
+defaults). Worth adding to `CLAUDE.md` as its own bullet.
+
+**Still open, not yet done**: this validates the *code path* is correct on
+`EA_DCA_CENT_V1.mq5`, run on the FTMO dev-track account (100,000 USD, 1:30 leverage) —
+not yet on the actual RoboForex cent account with real cent-account contract
+size/margin/spread. Per this project's own established distinction
+(`GO_LIVE_VALIDATION_PLAN.md`), that remains a separate, later validation step before
+any live TP/SL deployment there.
+
+## 14. Summary
 
 All 7 SL methods are now independently backtest-verified: Fixed Pips and QMP-Offset via
 §7/§9, ATR-Based and both Risk %/Currency variants (Fixed Lot and Adjust Lot) via §11.
@@ -359,4 +400,7 @@ small lot sizes (design characteristic, no fix needed) and Adjust-Lot risk-based
 types bypassed `InpMaxInitialLot` (Specification Gap, **fixed and validated** in §11.3
 — `ComputeRiskAdjustedLot()` now clamps to it). Only the Fixed-Lot distance
 characteristic remains a documented behavior rather than a code change, per this
-project's classification discipline, pending user direction.
+project's classification discipline, pending user direction. TP/SL mode's port onto
+the cent-account track (`EA_DCA_CENT_V1.mq5`) is now confirmed exact-match on the
+FTMO dev-track account (§13); real RoboForex cent-account validation remains a
+separate, not-yet-started step.

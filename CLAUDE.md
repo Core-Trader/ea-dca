@@ -71,8 +71,24 @@ conversation carries forward to the next run.
   this project's `MQL5\Profiles\Tester\` folder has many stale presets from
   prior test iterations (this project's own history and other AI-assisted
   variants sharing the same environment). It will NOT fall back to the
-  `.mq5`'s compiled-in defaults. Verify the report's Settings section
-  actually shows the intended parameter values before trusting any result.
+  `.mq5`'s compiled-in defaults in that case. Verify the report's Settings
+  section actually shows the intended parameter values before trusting any
+  result.
+- **A THIRD, distinct failure mode: if the bare filename passed to
+  `ExpertParameters=` no longer exists in `MQL5\Profiles\Tester\`** (e.g. it
+  was copied there in an earlier session and has since been removed/never
+  re-copied — that folder is not guaranteed to still hold every `.set` you've
+  ever used), the Tester does NOT error and does NOT reuse a stale `.set`
+  either — it silently runs with the `.mq5`'s raw **compiled-in defaults**.
+  Confirmed 2026-09-19: `EA_DCA_CENT_V1.mq5` produced a completely
+  normal-looking "successfully finished" report at exactly its plain
+  DCA-mode baseline numbers when the intended TP/SL `.set` file had fallen
+  out of that folder — no error, no warning, values simply reverted to
+  whatever `input` defaults are hardcoded in the source. Same rule applies:
+  verify the report's Settings section shows the intended values, and
+  additionally confirm the `.set` file you intend to reference is actually
+  present in `MQL5\Profiles\Tester\` *right now*, not just "was copied there
+  earlier this project."
 - **Use `Model=4` ("Every tick based on real ticks"), not `Model=1`.**
   Confirmed this session: this EA's touch-mode exits read live bid/ask every
   tick, so `Model=1`'s synthetic intrabar tick path produces a materially
