@@ -191,7 +191,73 @@ of "different objectives, not one best config" distinction §13 asks for: a
 robustness-first pick would lean toward `Period≈20-25, Dev≈1.5-1.75`; a
 profit-focused pick toward `Period≈45-50, Dev≈1.5-2.0`.
 
-**Not yet done**: GBPUSD and USDJPY grids (running), full-metric-set deep dives (win
-rate, consecutive losses, sequence stats — not in the optimizer's own summary columns)
-for the specific robust-region candidates identified here, and out-of-sample
-validation of whichever region holds up across all 3 symbols.
+## 6. BB Period × Deviation optimization grid — GBPUSD and USDJPY, cross-symbol comparison
+
+Same grid, same method, same `Deposit=15000` window. Raw results:
+`roboforex_study/reports/bb_optimization/{gbpusd,usdjpy}_bb_grid.csv`.
+
+### GBPUSD — a different but still coherent picture
+
+Equity DD% is **not** smooth like EURUSD's — it clusters into two discrete bands (~3.0-3.2%
+at Dev≤2.00, dropping to ~1.9-2.2% at Dev≥2.5), a step rather than a gradient, but still
+a bounded, sane range overall. **Profit Factor's relationship with Deviation is the
+opposite of EURUSD's**: PF *increases* with higher Deviation at higher Periods (Period=45
+climbs from PF 2.37 at Dev=1.50 to **3.56 at Dev=3.00**), whereas EURUSD's PF favored *low*
+Deviation everywhere. Raw Profit still favors low Deviation (matching EURUSD's direction),
+so this is a genuine PF-vs-Profit divergence specific to GBPUSD, not a contradiction of the
+profit finding. Top profit region: Period 35-50, Dev 1.50-2.00 — the same general
+neighborhood as EURUSD's own top region, which is a reassuring point of cross-symbol
+consistency for the *profit-maximizing* zone specifically, even though the DD and PF
+character around it differs.
+
+### USDJPY — a genuine sharp discontinuity, not a robust region
+
+This is materially different from both other symbols and needs to be treated with the
+caution §6/§17 rule 11 calls for ("treat unusually high PnL or low drawdown as something
+to investigate, not automatically good"):
+
+- **Equity DD% jumps as a cliff, not a gradient**: Period=20-25 stays in an 8.25-8.73%
+  band; Period=30-50 jumps sharply to **18.2-24.1%** — more than double, with no smooth
+  transition in between. This is a regime change in the grid, not a gentle slope.
+- **The single highest-profit combinations sit directly in the highest-drawdown region**:
+  `Period=30, Dev=1.50` ($4,354.74, the grid's best profit) carries a **24.04% equity
+  drawdown** — by far the worst risk in the entire grid. `Period=50, Dev=1.50-2.00`
+  ($4,280-4,297) sits at 24.08-24.11% DD, same story. Chasing USDJPY's top-profit row
+  means taking on dramatically more risk than any EURUSD/GBPUSD combination tested.
+- **A separate corner shows suspiciously high Profit Factor**: `Period=20-25,
+  Dev=2.75-3.00` reaches **PF 6.28-7.62** — roughly double the best PF seen anywhere on
+  EURUSD or GBPUSD — paired with the *lowest* drawdown band (8.5-8.7%) and the fewest
+  trades (136-171 of the grid's ~250-300 typical range). This combination of unusually
+  high PF + low trade count + being an isolated corner of the grid (not a broad region)
+  is exactly the "investigate, don't celebrate" pattern the study's own rules flag —
+  plausibly a small-sample artifact (a handful of large wins skewing the ratio) rather
+  than a genuinely robust edge. **Not validated further yet — flagged, not endorsed.**
+
+**Interpretation**: USDJPY's BB-strategy behavior is not simply "the same strategy,
+scaled" — it has a qualitatively different risk structure from EUR/GBP, consistent with
+§4's earlier finding (USDJPY blew a $400 account, survived and was most profitable at
+$15,000, but with far deeper equity drawdown even at default parameters). The
+optimization grid confirms this isn't a default-parameter fluke: elevated, discontinuous
+drawdown is a structural feature of USDJPY under this strategy across most of the tested
+parameter space, not just the default combination.
+
+## 7. Summary so far — robust vs. symbol-specific behavior
+
+| | EURUSD | GBPUSD | USDJPY |
+|---|---|---|---|
+| Equity DD% pattern across grid | Smooth, tight (1.41-1.65%) | Stepped, two bands (1.9-3.2%) | **Cliff** (8.3-24.1%) |
+| Profit vs Deviation | Monotonic, low-Dev wins | Monotonic, low-Dev wins | Monotonic, low-Dev wins (but see DD) |
+| PF vs Deviation | Low-Dev wins | **High-Dev wins at high Period** (opposite of EURUSD) | Low-Dev wins generally, except a suspicious high-Dev/low-Period corner |
+| Best-profit region's own risk | Low DD (~1.4%) | Moderate DD (~3.1%) | **Worst DD in the whole grid (~24%)** |
+
+The direction "low BB Deviation tends to maximize raw profit" **is** consistent across
+all 3 symbols — a genuine cross-symbol robust observation. Everything about *risk*
+(drawdown magnitude, its relationship to the profit-maximizing region, and PF's own
+relationship to Deviation) is symbol-specific and, for USDJPY, structurally different
+in a way that should weigh heavily against simply porting EURUSD's or GBPUSD's
+"optimal" parameters onto it without separate scrutiny.
+
+**Not yet done**: full-metric-set deep dives (win rate, consecutive losses, sequence
+stats — not in the optimizer's own summary columns) for the specific robust-region
+candidates identified here; out-of-sample validation of whichever region holds up
+across symbols; the QQE-strategy optimization grid (Task pending).
