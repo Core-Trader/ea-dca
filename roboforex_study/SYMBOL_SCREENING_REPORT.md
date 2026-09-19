@@ -148,47 +148,93 @@ with the existing EUR/GBP/JPY-weighted portfolio.
 
 ---
 
-## C. Portfolio-Level Analysis — partial, quantitative correlation not yet done
+## C. Portfolio-Level Analysis
 
-**What this section can say now, without new backtests**: the Tier 1 candidates
-(AUDUSD, USDCHF, USDCAD, CADCHF) collectively span AUD, CHF, and CAD exposure —
-currencies with **zero overlap** against the existing EUR/GBP/JPY-weighted
-portfolio. Structurally, adding any of them changes *which* macro drivers the
-combined book is exposed to (e.g., AUD/CAD commodity-currency dynamics, CHF
-safe-haven flows) rather than adding a fourth bet on the same EUR/GBP/JPY
-complex the existing portfolio already concentrates in. That is a genuine
-diversification argument on its face, but it is a **structural/qualitative**
-one, not the quantitative equity-curve correlation, drawdown-overlap, and
-combined-portfolio-behavior analysis the task asked for (§4 of the request).
+**Method**: 7 single-parameter backtests (default `strategyA_bb_default.set`, no
+optimization), one each for the 3 existing-portfolio symbols and the 4 Tier 1
+candidates, all over the identical 2025.03.01–2026.03.01 window. Each result's
+Total Net Profit/Trades was cross-checked against Pass 1's own numbers for that
+symbol and matches exactly (e.g. EURUSD $177.27/56 trades, USDCHF $362.14/79
+trades — identical to §A), confirming these are the same underlying runs, just
+with the full deal log available this time instead of only summary stats. Deal
+logs parsed for `(time, running Balance)`, forward-filled onto a daily grid,
+converted to daily % returns, and cross-correlated. Full data and scripts:
+`roboforex_study/reports/correlation_study/`.
 
-**Why that quantitative analysis isn't in this report**: it requires per-trade or
-per-period equity/balance time series for each candidate (at a chosen parameter
-set) run over the *same* window, which the optimization XMLs used here don't
-contain — they're summary statistics per parameter combination, not deal logs.
-Building it means re-running each shortlisted symbol as a **single** (non-
-optimization) backtest at its chosen parameters, extracting the Balance/Equity
-column from each deal log (the same method already used elsewhere in this
-project for forensic trade analysis), and separately re-running the 3 existing-
-portfolio symbols over this *same* 1-year window (their own established numbers
-are from the longer 2024.01–2026.09 window, not directly comparable). That's
-roughly 7-8 additional single-symbol runs, each fast (a single backtest, not a
-49-combo optimization), followed by a correlation computation in Python.
+**A methodological limitation surfaced immediately and is reported here rather
+than glossed over**: "Balance" only steps down when a trade *closes* at a
+loss, and for this BB-Centre-Band-exit strategy, Balance drawdown is almost
+imperceptibly small for every symbol tested (well under 0.5% for 6 of 7
+symbols) — consistent with a pattern this project has documented repeatedly
+elsewhere (`TPSL_EQUITY_BALANCE_ROOT_CAUSE.md`): Balance looks smooth while
+**Equity** (which reflects floating losses on sequences still open) is where
+the real risk shows up, and each report's own Equity DD Maximal figure
+(EURUSD 0.48%, GBPUSD 0.74%, USDJPY 4.69%, AUDUSD 0.65%, USDCHF 1.44%, USDCAD
+1.33%, CADCHF 0.42% — all matching §A's Pass 1 figures exactly) confirms real
+risk is 3-10x larger than Balance DD suggests. The `.htm` deal log gives
+Balance at each close event, not a continuous floating-equity series, so this
+analysis can show *realized-P&L timing correlation* (a genuine, useful result)
+but **cannot yet show true equity-drawdown overlap** — that specifically needs
+a forensic-instrumented build (the same per-tick MFE/MAE pattern already used
+elsewhere in this project) run for each candidate, not attempted here to keep
+this pass fast. Flagged as the top item in §D, not silently approximated.
 
-**This is the natural next step and is listed first in §D below** — not
-skipped, deliberately deferred as its own scoped unit of work rather than
-folded into this already-large screening pass, consistent with the task's own
-"fast discovery pass" framing for this stage.
+### Daily-return correlation matrix (the real result of this section)
+
+|  | EURUSD | GBPUSD | USDJPY | AUDUSD | USDCHF | USDCAD | CADCHF |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| **EURUSD** | 1.00 | 0.38 | 0.28 | 0.10 | 0.05 | 0.10 | 0.04 |
+| **GBPUSD** | 0.38 | 1.00 | 0.06 | 0.13 | 0.02 | 0.09 | 0.08 |
+| **USDJPY** | 0.28 | 0.06 | 1.00 | 0.03 | 0.01 | -0.00 | 0.01 |
+| **AUDUSD** | 0.10 | 0.13 | 0.03 | 1.00 | 0.03 | 0.09 | 0.07 |
+| **USDCHF** | 0.05 | 0.02 | 0.01 | 0.03 | 1.00 | 0.07 | 0.15 |
+| **USDCAD** | 0.10 | 0.09 | -0.00 | 0.09 | 0.07 | 1.00 | 0.03 |
+| **CADCHF** | 0.04 | 0.08 | 0.01 | 0.07 | 0.15 | 0.03 | 1.00 |
+
+**This is a genuine, quantitative confirmation of §B's currency-overlap
+argument, not just the qualitative heuristic it was presented as before this
+section was completed.** The existing 3-symbol portfolio already shows some
+internal correlation (EUR-GBP 0.38, EUR-JPY 0.28 — both plausibly USD-leg-driven
+co-movement; GBP-JPY only 0.06). **Every one of the 4 Tier 1 candidates
+correlates weakly (0.01–0.15) against all 3 existing-portfolio symbols and
+against each other** — the single highest candidate-pair correlation is
+USDCHF-CADCHF at 0.15 (their shared CHF leg, unsurprising and still low in
+absolute terms). AUDUSD's highest correlation with anything is 0.13 (vs
+GBPUSD) — essentially an independent return stream. This is real evidence, not
+an assumption, that all 4 Tier 1 candidates would add genuinely uncorrelated
+return sources rather than just leveraging up the same underlying EUR/GBP/JPY
+bet the existing portfolio already makes.
+
+### Combined portfolio profit (informational — not the interesting finding on its own)
+
+| Portfolio | Combined profit (1 yr, $15k/symbol) |
+|---|---:|
+| Existing only (EURUSD+GBPUSD+USDJPY) | $668.98 |
+| + AUDUSD | $899.72 |
+| + USDCHF | $1,031.12 |
+| + USDCAD | $870.04 |
+| + CADCHF | $816.46 |
+| All 7 combined | $1,610.40 |
+
+Combined profit rising as more independently-profitable symbols are added is
+expected and not, by itself, evidence of a diversification benefit — the same
+would happen by adding any profitable symbol regardless of correlation. The
+correlation matrix above is the part of this analysis that actually
+distinguishes "adding more of the same bet" from "adding a genuinely different
+one," and it supports the latter for all 4 Tier 1 candidates.
 
 ---
 
 ## D. Recommended Next Tests
 
-1. **Portfolio-level correlation analysis (highest priority, directly requested)**
-   — single-parameter backtests for AUDUSD, USDCHF, USDCAD, CADCHF (Tier 1) plus
-   EURUSD/GBPUSD/USDJPY (existing portfolio), all over the identical
-   2025.03.01–2026.03.01 window, extracting Balance/Equity per-deal series and
-   computing pairwise return correlation, drawdown-overlap timing, and combined
-   portfolio equity-curve smoothness vs. the existing 3-symbol portfolio alone.
+1. **True equity-curve drawdown-overlap analysis (was highest priority; now
+   partially done)** — §C's correlation matrix is complete and is a real,
+   quantitative result. What's still missing is genuine **equity** (not
+   balance) drawdown-overlap timing, which needs a forensic-instrumented build
+   (per-tick floating-equity logging, the same pattern already used elsewhere
+   in this project) run for each of the 4 Tier 1 candidates plus the 3
+   existing-portfolio symbols, over the same window — this is the one piece of
+   the original request's §4 that remains genuinely undone, not approximated.
 2. **Wider historical period for the Tier 1 candidates** — this screen
    deliberately used only 1 year; before treating AUDUSD/USDCHF/USDCAD/CADCHF as
    validated, re-run them over the same longer 2024.01–2026.09 window already

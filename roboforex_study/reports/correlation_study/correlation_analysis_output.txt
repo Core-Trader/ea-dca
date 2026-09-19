@@ -1,0 +1,29 @@
+=== Max drawdown (daily balance, %) and when it occurred ===
+  EURUSD     0.00%  on 2025-03-01
+  GBPUSD     0.01%  on 2025-08-19
+  USDJPY     0.00%  on 2025-03-01
+  AUDUSD     0.00%  on 2025-04-25
+  USDCHF     0.00%  on 2025-08-05
+  USDCAD     0.00%  on 2025-04-09
+  CADCHF     0.00%  on 2025-08-20
+
+=== Pairwise daily-return correlation matrix ===
+           EURUSD   GBPUSD   USDJPY   AUDUSD   USDCHF   USDCAD   CADCHF
+EURUSD       1.00     0.38     0.28     0.10     0.05     0.10     0.04
+GBPUSD       0.38     1.00     0.06     0.13     0.02     0.09     0.08
+USDJPY       0.28     0.06     1.00     0.03     0.01    -0.00     0.01
+AUDUSD       0.10     0.13     0.03     1.00     0.03     0.09     0.07
+USDCHF       0.05     0.02     0.01     0.03     1.00     0.07     0.15
+USDCAD       0.10     0.09    -0.00     0.09     0.07     1.00     0.03
+CADCHF       0.04     0.08     0.01     0.07     0.15     0.03     1.00
+
+=== Combined portfolios: existing (EUR+GBP+JPY) vs existing+candidate ===
+Existing portfolio (EURUSD+GBPUSD+USDJPY), equal-weighted $15k each:
+  Combined profit: $668.98   Combined max DD: 0.00% on 2025-08-19
+  + AUDUSD   combined profit: $   899.72   combined max DD:  0.00% on 2025-08-19   avg corr vs existing 3: +0.09
+  + USDCHF   combined profit: $  1031.12   combined max DD:  0.00% on 2025-08-19   avg corr vs existing 3: +0.02
+  + USDCAD   combined profit: $   870.04   combined max DD:  0.00% on 2025-08-19   avg corr vs existing 3: +0.06
+  + CADCHF   combined profit: $   816.46   combined max DD:  0.00% on 2025-08-20   avg corr vs existing 3: +0.04
+
+All 7 combined (existing 3 + all 4 Tier-1 candidates):
+  Combined profit: $1610.40   Combined max DD: 0.00% on 2025-08-19
