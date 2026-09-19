@@ -454,10 +454,10 @@ give more confidence is a decision for the user, not resolved here.
 
 ## E. Recommended Next Tests
 
-1. **Decide USDCAD's deployment status given D2's findings** — enable the Max
-   Floating Loss circuit breaker specifically for this symbol before deploying
-   it, deploy as-is with manual equity monitoring, or hold it back pending
-   walk-forward/Monte Carlo. Not a test to run, a decision to make.
+1. ~~Decide USDCAD's deployment status given D2's findings~~ — **decided
+   2026-09-19**: keep the Max Floating Loss circuit breaker disabled for now,
+   USDCAD stays in the portfolio as-is, revisit after walk-forward/Monte
+   Carlo if either surfaces further concerns. See `CURRENT_PORTFOLIO.md`.
 2. **Parameter sensitivity re-check specifically for EURJPY-style cliffs** —
    given how serious and non-obvious both that finding and USDCAD's turned out
    to be, it's worth a denser parameter grid (not just the 7×7 already run)

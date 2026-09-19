@@ -2,11 +2,12 @@
 
 **Status**: first-cut deployment candidate, not a final recommendation. Assembled
 from `SYMBOL_SCREENING_REPORT.md`'s existing portfolio plus its 4 Tier 1
-candidates. **Update 2026-09-19**: wider-window/out-of-sample validation (report
-§D) has since run and found a real, serious issue with USDCAD specifically —
-see the flag right below before treating this composition as settled. Denser
-parameter-sensitivity check, walk-forward, and Monte Carlo are still open.
-**This is a working baseline to continue adjusting, not a go-live sign-off.**
+candidates. **Update 2026-09-19**: wider-window/out-of-sample validation
+(report §D) found and investigated (§D2) a real drawdown episode on USDCAD —
+resolved as a genuine but self-recovering near-miss, decided to keep in the
+portfolio as-is (circuit breaker still off). Denser parameter-sensitivity
+check, walk-forward, and Monte Carlo are still open. **This is a working
+baseline to continue adjusting, not a go-live sign-off.**
 
 > ⚠ **USDCAD downgraded from Tier 1 — investigated, a genuine near-miss, not
 > disqualifying but not risk-free.** Out-of-sample testing found a real 10.17%
@@ -19,10 +20,11 @@ parameter-sensitivity check, walk-forward, and Monte Carlo are still open.
 > ~$453 realized loss, not a forced stop-out — the strategy's own
 > mean-reversion design worked as intended. But for 8 weeks, Balance showed
 > almost nothing wrong (DD stayed ~3.2%) while Equity was down over 10% — a
-> real risk window invisible on the easy-to-glance-at metric. **Decision
-> needed** (§E item 1): enable the Max Floating Loss circuit breaker
-> specifically for USDCAD before deploying it, deploy as-is with manual
-> equity monitoring, or hold it back pending walk-forward/Monte Carlo.
+> real risk window invisible on the easy-to-glance-at metric. **Decided
+> 2026-09-19**: keep the Max Floating Loss circuit breaker disabled for now
+> (not deploying it yet) — USDCAD stays in the portfolio as-is, matching its
+> tested (breaker-off) configuration, pending the remaining walk-forward/Monte
+> Carlo work. Revisit if either of those surfaces further concerns.
 
 ## Composition
 
@@ -33,7 +35,7 @@ parameter-sensitivity check, walk-forward, and Monte Carlo are still open.
 | USDJPY | Existing portfolio | Same — carries known elevated equity DD (4.2-4.7% across every test run so far), kept in per this study's own finding that it's also the single most profitable symbol tested; risk/reward tradeoff, not an oversight |
 | AUDUSD | Tier 1 candidate | `SYMBOL_SCREENING_REPORT.md` §B — most structurally robust symbol in the whole screen (tightest DD band, 0.13-0.69% across the full 49-combo grid, zero losing combinations), lowest correlation to the existing 3 (0.03-0.22) |
 | USDCHF | Tier 1 candidate | Same §B — clean, stable grid, meaningful optimization improvement without degrading risk-adjusted quality. Highest correlation to the existing portfolio of the 4 candidates (0.23 vs EUR/JPY on the equity measure) and co-drawdows with USDJPY in Apr 2025 — kept in, but see the note below |
-| USDCAD | **Investigated, decision needed — see warning above** | Same §B screening looked clean, but the 1-year window missed a real 10.17% equity DD episode; trade-level investigation (§D2) found it was a genuine but ultimately self-resolving near-miss (~$453 realized loss, not a stop-out), not a fatal flaw — deployment decision still open |
+| USDCAD | Investigated, kept in as-is | Same §B screening looked clean, but the 1-year window missed a real 10.17% equity DD episode; trade-level investigation (§D2) found it was a genuine but ultimately self-resolving near-miss (~$453 realized loss, not a stop-out). Circuit breaker deliberately left off for now (see warning above) |
 | CADCHF | Tier 1 candidate | Same §B — tightest DD band alongside AUDUSD, near-zero correlation to the existing portfolio, gave the single largest combined-portfolio drawdown reduction of the 4 candidates in §C's equity analysis |
 
 **Quantitative diversification evidence** (`SYMBOL_SCREENING_REPORT.md` §C):
@@ -112,10 +114,8 @@ path). **Account**: RoboForex-Pro, Login `52010662`.
 
 ## Deployment checklist (for when you're ready, not done here)
 
-- [ ] **Decide on USDCAD specifically** — deploy alongside the other 6 anyway,
-      hold it back pending the trade-level investigation
-      (`SYMBOL_SCREENING_REPORT.md` §E item 1), or drop it and consider a
-      replacement from Tier 2
+- [x] **USDCAD decision made 2026-09-19**: deploy alongside the other 6,
+      circuit breaker deliberately left off, pending walk-forward/Monte Carlo
 - [ ] Decide on the Max Floating Loss circuit breaker threshold before committing
       live capital, given it's currently off
 - [ ] Attach `EA_DCA_CENT_V1.mq5` to charts (one per symbol above), H4,
