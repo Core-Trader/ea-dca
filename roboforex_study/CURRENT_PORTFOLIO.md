@@ -1,0 +1,86 @@
+# Current RoboForex Cent-Account Portfolio — 7 Symbols
+
+**Status**: first-cut deployment candidate, not a final recommendation. Assembled
+from `SYMBOL_SCREENING_REPORT.md`'s existing portfolio plus its 4 Tier 1
+candidates, all still pending the further validation listed in that report's §D
+(wider historical window, out-of-sample testing, denser parameter-sensitivity
+check, walk-forward, Monte Carlo). **This is a working baseline to continue
+adjusting, not a go-live sign-off.**
+
+## Composition
+
+| Symbol | Role | Basis |
+|---|---|---|
+| EURUSD | Existing portfolio | `GO_LIVE_VALIDATION_PLAN.md` Phase 1-3, `ROBOFOREX_MULTI_SYMBOL_STUDY.md` |
+| GBPUSD | Existing portfolio | Same |
+| USDJPY | Existing portfolio | Same — carries known elevated equity DD (4.2-4.7% across every test run so far), kept in per this study's own finding that it's also the single most profitable symbol tested; risk/reward tradeoff, not an oversight |
+| AUDUSD | Tier 1 candidate | `SYMBOL_SCREENING_REPORT.md` §B — most structurally robust symbol in the whole screen (tightest DD band, 0.13-0.69% across the full 49-combo grid, zero losing combinations), lowest correlation to the existing 3 (0.03-0.22) |
+| USDCHF | Tier 1 candidate | Same §B — clean, stable grid, meaningful optimization improvement without degrading risk-adjusted quality. Highest correlation to the existing portfolio of the 4 candidates (0.23 vs EUR/JPY on the equity measure) and co-drawdows with USDJPY in Apr 2025 — kept in, but see the note below |
+| USDCAD | Tier 1 candidate | Same §B — tight DD range, no PF-inflation artifacts, new currency (CAD), low correlation everywhere |
+| CADCHF | Tier 1 candidate | Same §B — tightest DD band alongside AUDUSD, near-zero correlation to the existing portfolio, gave the single largest combined-portfolio drawdown reduction of the 4 candidates in §C's equity analysis |
+
+**Quantitative diversification evidence** (`SYMBOL_SCREENING_REPORT.md` §C):
+combined equity drawdown for all 7 together is **0.77%**, against 1.43% for the
+existing 3 alone and 4.28% for USDJPY standalone — a real, measured
+diversification benefit, not an assumption.
+
+**Known open concern, not yet resolved**: USDCHF and CADCHF correlate with each
+other at 0.34 (the highest pair in the whole matrix) and have a real overlapping
+drawdown episode in January 2026. Both are included here since each individually
+still reduces combined portfolio risk, but §D item 6 (not yet run) specifically
+checks whether running both together adds materially less benefit than either
+paired with AUDUSD/USDCAD alone.
+
+## What's deliberately NOT changed from the tested configuration
+
+- **Parameters are the study's DEFAULT set (`strategyA_bb_default.set`), not the
+  Pass 2 "optimized" `InpBBPeriod`/`InpBBDeviation` combinations** — those were
+  explicitly flagged in the screening report as candidate evidence needing
+  further robustness testing (wider window, OOS, denser grid) before adoption,
+  most pointedly after the EURJPY near-wipeout finding showed how close a
+  dangerous parameter cliff can sit to an attractive-looking optimum. Using
+  defaults here means every number in `SYMBOL_SCREENING_REPORT.md`'s
+  "Default result" columns is the actual expected behavior of these `.set`
+  files, not an untested extrapolation.
+- **Max Floating Loss circuit breaker (`InpUseMaxFloatingLoss`) left disabled**,
+  matching exactly what every backtest in this study actually exercised — a
+  deliberate choice (confirmed with the user 2026-09-19), not an oversight. This
+  is real cent-account risk-control functionality (`GO_LIVE_VALIDATION_PLAN.md`)
+  that should be revisited before any live capital is committed, once a
+  threshold has been deliberately chosen and tested for this specific
+  multi-symbol context — not silently inherited from a single-symbol study.
+- **Magic Number `123456` shared across all 7 symbols.** Safe per the EA's own
+  `CheckMagicNumberCollision()` logic (keyed by Symbol+Magic together, not Magic
+  alone — confirmed by code inspection) and matches every test run in this
+  entire study exactly. Not split into per-symbol magic numbers; if per-symbol
+  trade-history filtering in the account statement becomes useful later, this
+  is a one-line change per `.set` file, not a structural one.
+- **Lot sizing (`InpInitialLot=0.01`, `LOT_FIXED`) and account-currency handling
+  unchanged** — per this study's own earlier finding
+  (`GO_LIVE_VALIDATION_PLAN.md` §5.3), RoboForex cent-account contract size and
+  per-lot risk are not rescaled, only the balance display is, so no cent-specific
+  adjustment to lot sizing is needed here.
+
+## Files
+
+`roboforex_study/sets/cent_portfolio/<SYMBOL>.set` — one file per symbol, content
+currently identical (MT5 `.set` files don't encode which symbol to trade; that's
+determined by which chart the EA is attached to). Provided per-symbol for
+clarity when loading each chart, and so future per-symbol tuning has a natural
+home without touching the others.
+
+**Target EA**: `EA_DCA_CENT_V1.mq5` (the cent-account track build, currently at
+commit `793d30a` — InpMaxInitialLot fix applied to the risk-adjusted lot-sizing
+path). **Account**: RoboForex-Pro, Login `52010662`.
+
+## Deployment checklist (for when you're ready, not done here)
+
+- [ ] Decide on the Max Floating Loss circuit breaker threshold before committing
+      live capital, given it's currently off
+- [ ] Attach `EA_DCA_CENT_V1.mq5` to 7 charts (one per symbol above), H4,
+      loading the matching `.set` file on each
+- [ ] Confirm each chart's Magic Number collision check passes (expected: yes,
+      all different symbols)
+- [ ] Re-confirm `SYMBOL_SCREENING_REPORT.md` §D's still-open items before
+      trusting this composition long-term, especially the wider-window and
+      out-of-sample checks for the 4 newer candidates
