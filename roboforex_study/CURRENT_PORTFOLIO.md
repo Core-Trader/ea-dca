@@ -2,12 +2,14 @@
 
 **Status**: first-cut deployment candidate, not a final recommendation. Assembled
 from `SYMBOL_SCREENING_REPORT.md`'s existing portfolio plus its 4 Tier 1
-candidates. **Update 2026-09-19**: wider-window/out-of-sample validation
-(report §D) found and investigated (§D2) a real drawdown episode on USDCAD —
-resolved as a genuine but self-recovering near-miss, decided to keep in the
-portfolio as-is (circuit breaker still off). Denser parameter-sensitivity
-check, walk-forward, and Monte Carlo are still open. **This is a working
-baseline to continue adjusting, not a go-live sign-off.**
+candidates. **Update 2026-09-19**: the full validation backlog (§D2-§D6 —
+wider-window/OOS, trade-level investigation, dense parameter-cliff check,
+walk-forward, Monte Carlo, USDCHF/CADCHF co-dependency) is now **complete**.
+One real issue was found and investigated on USDCAD (resolved as a genuine,
+self-recovering near-miss); everything else came back clean. **This is a
+working baseline to continue adjusting, not a go-live sign-off** — the
+remaining open items are deployment decisions (circuit breaker threshold),
+not further backtesting.
 
 > ⚠ **USDCAD downgraded from Tier 1 — investigated, a genuine near-miss, not
 > disqualifying but not risk-free.** Out-of-sample testing found a real 10.17%
@@ -23,8 +25,11 @@ baseline to continue adjusting, not a go-live sign-off.**
 > real risk window invisible on the easy-to-glance-at metric. **Decided
 > 2026-09-19**: keep the Max Floating Loss circuit breaker disabled for now
 > (not deploying it yet) — USDCAD stays in the portfolio as-is, matching its
-> tested (breaker-off) configuration, pending the remaining walk-forward/Monte
-> Carlo work. Revisit if either of those surfaces further concerns.
+> tested (breaker-off) configuration. **Since this decision, walk-forward
+> (§D4) found a second losing window and Monte Carlo (§D5) confirmed USDCAD
+> as the outlier on a fifth independent method** — neither changes the
+> decision, but both are consistent with, not contradicting, this risk
+> profile. See §D2/§D4/§D5 for full detail.
 
 ## Composition
 
@@ -43,12 +48,14 @@ combined equity drawdown for all 7 together is **0.77%**, against 1.43% for the
 existing 3 alone and 4.28% for USDJPY standalone — a real, measured
 diversification benefit, not an assumption.
 
-**Known open concern, not yet resolved**: USDCHF and CADCHF correlate with each
-other at 0.34 (the highest pair in the whole matrix) and have a real overlapping
-drawdown episode in January 2026. Both are included here since each individually
-still reduces combined portfolio risk, but §D item 6 (not yet run) specifically
-checks whether running both together adds materially less benefit than either
-paired with AUDUSD/USDCAD alone.
+**USDCHF/CADCHF co-dependency — checked, not a concern in practice**
+(`SYMBOL_SCREENING_REPORT.md` §D6): they do correlate at 0.34 (the highest
+pair in the matrix) and share a real overlapping drawdown episode in January
+2026, but combining them still produces a strong result (1.06% combined DD)
+and all 4 symbols together remains the single best combination tested
+(0.77%). The effect turned out to be USDCHF's own weaker individual
+diversification contribution, not a specific bad interaction with CADCHF —
+no reason to drop either symbol.
 
 ## What's deliberately NOT changed from the tested configuration
 
@@ -112,16 +119,28 @@ difference between these 7 files).
 commit `793d30a` — InpMaxInitialLot fix applied to the risk-adjusted lot-sizing
 path). **Account**: RoboForex-Pro, Login `52010662`.
 
+## Validation status (SYMBOL_SCREENING_REPORT.md)
+
+- [x] Symbol screening across Market Watch + genetic optimization shortlist (§A/§B)
+- [x] Portfolio correlation / diversification analysis (§C)
+- [x] Wider-window (2024.01-2026.09) + out-of-sample validation (§D)
+- [x] USDCAD drawdown episode — trade-level investigation (§D2)
+- [x] Dense parameter-neighborhood cliff check, all 4 candidates (§D3)
+- [x] Walk-forward rolling-window consistency check (§D4)
+- [x] Monte Carlo trade-resampling bootstrap (§D5)
+- [x] USDCHF-CADCHF co-dependency check (§D6)
+
+**All backtesting/validation items are closed.** What remains is deployment
+execution, not further testing:
+
 ## Deployment checklist (for when you're ready, not done here)
 
 - [x] **USDCAD decision made 2026-09-19**: deploy alongside the other 6,
-      circuit breaker deliberately left off, pending walk-forward/Monte Carlo
+      circuit breaker deliberately left off — reconfirmed by every
+      subsequent validation step above
 - [ ] Decide on the Max Floating Loss circuit breaker threshold before committing
       live capital, given it's currently off
 - [ ] Attach `EA_DCA_CENT_V1.mq5` to charts (one per symbol above), H4,
       loading the matching `.set` file on each
 - [ ] Confirm each chart's Magic Number collision check passes (expected: yes,
       all different symbols)
-- [ ] Re-confirm `SYMBOL_SCREENING_REPORT.md` §E's still-open items before
-      trusting this composition long-term (denser parameter grid, walk-forward,
-      Monte Carlo, USDCHF-CADCHF co-dependency)
