@@ -100,21 +100,41 @@ symbols in this unoptimized, default-parameter comparison — not yet meaningful
 "worth carrying both strategies into the optimization phase," per this study's own
 anti-cherry-picking discipline (§6 of the request).
 
-## 4. Immediate open decision
+## 4. Resolved — re-baselined at the real funded deposit ($15,000)
 
-Before proceeding to the BB/QQE optimization grids (which would otherwise blindly
-repeat this blowup dozens of times across every parameter combination on USDJPY),
-this needs a decision:
+The user reported the RoboForex account (`52010662`) has actually been funded: live
+MT5 client shows Balance=Equity=**15,000**, Free Margin=150,000 (as displayed — this
+project's own earlier RoboForex cent-mechanics finding, `GO_LIVE_VALIDATION_PLAN.md`
+§5.3, established that contract size/margin are not rescaled on this account type,
+only the balance display is; the correct move for backtesting is to match the
+Tester's `Deposit=` to the account's own native displayed units directly, which is
+what following does — not to guess a real-dollar equivalent).
 
-- **(a)** Test USDJPY at a larger starting deposit sized to what its own sequence depth
-  actually requires (would need its own capital-sizing pass first, inverting this
-  study's own planned order — §11 was meant to come *after* strategy/parameter
-  selection, not before).
-- **(b)** Keep the $400 deposit but reduce `InpInitialLot`/position sizing specifically
-  for USDJPY as part of the optimization grid (turns this into a 3rd, symbol-specific
-  sizing variable on top of the BB/QQE parameter grids).
-- **(c)** Exclude USDJPY from the parameter-optimization phase for now, keep it as a
-  documented capital-adequacy finding, and revisit once EURUSD/GBPUSD's own robust
-  regions are established (since USDJPY's optimum parameters can't be meaningfully
-  explored while every run blows the account before generating a useful sample).
-- **(d)** Something else.
+Re-ran all 6 baselines at `Deposit=15000` (same `.set`s, same window, same account/
+symbols). **This changes the picture substantially**:
+
+| | EURUSD BB | EURUSD QQE | GBPUSD BB | GBPUSD QQE | USDJPY BB | USDJPY QQE |
+|---|---:|---:|---:|---:|---:|---:|
+| Net Profit | $550.53 | $1,195.98 | $571.28 | $1,329.52 | **$2,233.25** | **$5,051.87** |
+| Profit Factor | 3.78 | 3.92 | 2.22 | 3.21 | 2.36 | 2.86 |
+| Total Trades | 173 | 315 | 185 | 325 | 238 | 396 |
+| Balance DD Max | $46.02 (0.30%) | $46.02 (0.29%) | $61.94 (0.40%) | $58.48 (0.36%) | $585.80 (3.61%) | $694.73 (4.20%) |
+| **Equity DD Max** | $220.58 (1.45%) | $288.11 (1.83%) | $411.13 (2.71%) | $469.77 (2.88%) | **$2,843.33 (18.42%)** | **$3,409.63 (20.33%)** |
+| Ending Balance | $15,550.53 | $16,195.98 | $15,571.28 | $16,329.52 | $17,233.25 | $20,051.87 |
+| Stop-out? | No | No | No | No | **No** (survived full range) | **No** (survived full range) |
+
+**USDJPY not only survives at this deposit, it's the single most profitable symbol
+tested** — but at a materially higher risk cost: **6-7x the equity drawdown percentage**
+of EURUSD/GBPUSD (18-20% vs 1-3%). This is a real, load-bearing cross-symbol finding
+for §2/§11: USDJPY's default-parameter DCA sequences carry substantially deeper
+floating risk than the EUR/GBP pairs, even though the *realized* (balance) drawdown
+stays comparatively small (3.6-4.2%) — the same balance-vs-equity divergence pattern
+this project has flagged before (`TPSL_EQUITY_BALANCE_ROOT_CAUSE.md`) shows up here
+too, at the cross-symbol level rather than the single-strategy level.
+
+**Superseded, not deleted**: the $400-deposit run in §1-3 above remains valuable —
+it's now the direct empirical demonstration of *why* the required deposit is
+symbol-dependent (a deposit comfortable for EUR/GBP genuinely blows up on USDJPY).
+**Going forward, `Deposit=15000` is the reference baseline** for the rest of this
+study (optimization grids, portfolio tests), since it's the account's actual real
+funded state, not an assumption.
