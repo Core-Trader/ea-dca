@@ -1,0 +1,64 @@
+=== Max EQUITY drawdown (per-bar, H4) and when it occurred ===
+  EURUSD     0.37%  peaked on 2025-07-17 20:00:03
+  GBPUSD     0.67%  peaked on 2025-07-16 00:05:40
+  USDJPY     4.28%  peaked on 2025-04-22 08:00:00
+  AUDUSD     0.57%  peaked on 2025-12-12 12:00:00
+  USDCHF     1.24%  peaked on 2026-02-11 08:00:00
+  USDCAD     1.24%  peaked on 2025-12-26 16:00:00
+  CADCHF     0.38%  peaked on 2026-01-28 00:18:07
+
+=== Pairwise EQUITY-return correlation (H4 bars) ===
+           EURUSD   GBPUSD   USDJPY   AUDUSD   USDCHF   USDCAD   CADCHF
+EURUSD       1.00     0.36     0.21     0.13     0.23     0.14     0.20
+GBPUSD       0.36     1.00     0.06     0.22     0.04     0.07     0.02
+USDJPY       0.21     0.06     1.00     0.06     0.23     0.03     0.10
+AUDUSD       0.13     0.22     0.06     1.00     0.06     0.18     0.04
+USDCHF       0.23     0.04     0.23     0.06     1.00     0.09     0.34
+USDCAD       0.14     0.07     0.03     0.18     0.09     1.00     0.01
+CADCHF       0.20     0.02     0.10     0.04     0.34     0.01     1.00
+
+=== Drawdown episodes >= 0.3% equity DD, per symbol (top 5 by depth) ===
+  EURUSD: 1 episodes >=0.3% DD
+    2025-07-17 to 2025-07-18  peak 0.37% on 2025-07-17
+  GBPUSD: 5 episodes >=0.3% DD
+    2025-07-14 to 2025-07-21  peak 0.67% on 2025-07-16
+    2025-12-16 to 2025-12-17  peak 0.42% on 2025-12-17
+    2025-07-14 to 2025-07-14  peak 0.33% on 2025-07-14
+    2025-12-11 to 2025-12-11  peak 0.32% on 2025-12-11
+    2025-07-22 to 2025-07-22  peak 0.30% on 2025-07-22
+  USDJPY: 6 episodes >=0.3% DD
+    2025-04-10 to 2025-04-25  peak 4.28% on 2025-04-22
+    2025-04-28 to 2025-05-01  peak 1.89% on 2025-04-29
+    2025-04-08 to 2025-04-09  peak 1.14% on 2025-04-09
+    2025-04-03 to 2025-04-07  peak 0.83% on 2025-04-07
+    2025-07-17 to 2025-07-18  peak 0.34% on 2025-07-18
+  AUDUSD: 8 episodes >=0.3% DD
+    2025-12-11 to 2025-12-15  peak 0.57% on 2025-12-12
+    2025-12-10 to 2025-12-11  peak 0.57% on 2025-12-11
+    2025-09-25 to 2025-09-29  peak 0.43% on 2025-09-26
+    2025-12-16 to 2025-12-16  peak 0.35% on 2025-12-16
+    2025-12-09 to 2025-12-10  peak 0.35% on 2025-12-09
+  USDCHF: 11 episodes >=0.3% DD
+    2026-02-09 to 2026-02-18  peak 1.24% on 2026-02-11
+    2026-01-23 to 2026-02-02  peak 1.17% on 2026-01-28
+    2025-04-14 to 2025-04-22  peak 1.16% on 2025-04-21
+    2025-05-23 to 2025-05-27  peak 0.83% on 2025-05-27
+    2025-05-21 to 2025-05-22  peak 0.40% on 2025-05-21
+  USDCAD: 12 episodes >=0.3% DD
+    2025-12-22 to 2026-01-05  peak 1.24% on 2025-12-26
+    2025-10-13 to 2025-10-20  peak 0.64% on 2025-10-17
+    2025-10-20 to 2025-10-22  peak 0.63% on 2025-10-21
+    2025-12-11 to 2025-12-18  peak 0.51% on 2025-12-16
+    2026-01-05 to 2026-01-06  peak 0.43% on 2026-01-05
+  CADCHF: 1 episodes >=0.3% DD
+    2026-01-27 to 2026-01-28  peak 0.38% on 2026-01-28
+
+=== Combined portfolio equity: existing vs existing+candidate ===
+Existing (EUR+GBP+JPY): combined max equity DD = 1.43% on 2025-04-22 08:00:00
+  (avg of individual symbols' own max DD: 1.77% -- combining REDUCED peak DD vs the average single symbol)
+  + AUDUSD   combined max equity DD =  1.08% on 2025-04-22 08:00:00   (candidate's own solo max DD: 0.57%)
+  + USDCHF   combined max equity DD =  1.35% on 2025-04-22 08:00:00   (candidate's own solo max DD: 1.24%)
+  + USDCAD   combined max equity DD =  1.08% on 2025-04-22 08:00:00   (candidate's own solo max DD: 1.24%)
+  + CADCHF   combined max equity DD =  1.05% on 2025-04-22 08:00:00   (candidate's own solo max DD: 0.38%)
+
+All 7 combined: combined max equity DD = 0.77% on 2025-04-22 08:00:00

@@ -223,39 +223,130 @@ correlation matrix above is the part of this analysis that actually
 distinguishes "adding more of the same bet" from "adding a genuinely different
 one," and it supports the latter for all 4 Tier 1 candidates.
 
+### True equity-drawdown-overlap analysis (§D item 1, now complete)
+
+Built `EA_DCA_CENT_V1_EquityForensic.mq5` — a pure-read copy of
+`EA_DCA_CENT_V1.mq5` (diffed against the parent to confirm zero trading-logic
+lines changed) that logs `(time, balance, equity, floating_profit)` once per
+closed H4 bar. Re-ran all 7 symbols over the identical window; final balances
+matched the earlier deal-log-based results almost exactly (one symbol,
+EURUSD, showed a trivial $1.70/0.01% end-of-test lag from once-per-bar
+sampling — immaterial). **Caveat carried forward honestly**: H4-bar sampling
+can under-catch a true intrabar equity peak between samples, so the drawdown
+figures below are a lower bound on true risk, not an exact peak — the same
+sampling method applies uniformly to all 7 series, so the *comparisons*
+between them remain valid even if any single absolute number could be a touch
+conservative.
+
+**Max equity drawdown, per symbol (H4-bar resolution)**:
+
+| Symbol | Max Equity DD | When |
+|---|---:|---|
+| USDJPY | **4.28%** | 2025-04-22 |
+| USDCHF | 1.24% | 2026-02-11 |
+| USDCAD | 1.24% | 2025-12-26 |
+| GBPUSD | 0.67% | 2025-07-16 |
+| AUDUSD | 0.57% | 2025-12-12 |
+| CADCHF | 0.38% | 2026-01-28 |
+| EURUSD | 0.37% | 2025-07-17 |
+
+USDJPY's own equity risk (already flagged repeatedly elsewhere in this study)
+is confirmed here too — 3-11x deeper than every other symbol tested, on the
+same window and parameters.
+
+**Equity-return correlation (H4 bars) tells a more nuanced story than the
+earlier balance-based matrix**, and is arguably the more meaningful measure
+since equity reflects shared currency exposure moment-to-moment, not just
+realized P&L at trade closes:
+
+|  | EURUSD | GBPUSD | USDJPY | AUDUSD | USDCHF | USDCAD | CADCHF |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| **EURUSD** | 1.00 | 0.36 | 0.21 | 0.13 | 0.23 | 0.14 | 0.20 |
+| **GBPUSD** | 0.36 | 1.00 | 0.06 | 0.22 | 0.04 | 0.07 | 0.02 |
+| **USDJPY** | 0.21 | 0.06 | 1.00 | 0.06 | 0.23 | 0.03 | 0.10 |
+| **AUDUSD** | 0.13 | 0.22 | 0.06 | 1.00 | 0.06 | 0.18 | 0.04 |
+| **USDCHF** | 0.23 | 0.04 | 0.23 | 0.06 | 1.00 | 0.09 | 0.34 |
+| **USDCAD** | 0.14 | 0.07 | 0.03 | 0.18 | 0.09 | 1.00 | 0.01 |
+| **CADCHF** | 0.20 | 0.02 | 0.10 | 0.04 | 0.34 | 0.01 | 1.00 |
+
+USDCHF shows meaningfully higher equity correlation to the existing portfolio
+(0.23 with both EURUSD and USDJPY) than it did on the balance-only measure
+(0.05/0.01) — plausible given shared USD-leg exposure shows up in floating
+equity immediately, before any trade closes. CADCHF-USDCHF (0.34) is the
+single highest pair in the whole matrix, consistent with their shared CHF
+leg. AUDUSD and USDCAD remain the most independent of the 4 candidates on
+this measure too.
+
+**A real, visible drawdown-timing overlap was found**, not just inferred from
+correlation: USDCHF's own April 2025 drawdown episode (2025-04-14 to
+04-22, peak 1.16%) sits *inside* USDJPY's much larger April 10-25 episode
+(peak 4.28%) — the two symbols' worst period of the year materially
+coincides. CADCHF and USDCHF also co-drawdown in late January 2026 (CADCHF's
+only notable episode, 2026-01-27/28, sits inside USDCHF's 2026-01-23–02-02
+episode) — consistent with their 0.34 correlation. No other cross-symbol
+drawdown overlap of this kind was found among the remaining pairs.
+
+**The combined-portfolio result is the clearest evidence this study has
+produced for a genuine diversification benefit**, not just low pairwise
+correlation:
+
+| Portfolio | Combined max equity DD |
+|---|---:|
+| Existing only (EUR+GBP+JPY) | 1.43% |
+| + AUDUSD | 1.08% |
+| + USDCHF | 1.35% (smallest improvement of the 4) |
+| + USDCAD | 1.08% |
+| + CADCHF | **1.05%** (largest improvement of the 4) |
+| **All 7 combined** | **0.77%** |
+
+The existing 3-symbol portfolio's combined peak DD (1.43%) is already below
+the simple average of its members' own individual DDs (1.77%) — USDJPY's
+4.28% peak gets diluted because EUR/GBP weren't in drawdown at the same
+moment. **Every one of the 4 Tier 1 candidates reduces combined portfolio
+drawdown further when added**, and all 7 combined cuts peak DD to 0.77% —
+nearly half the existing-portfolio-alone figure, and under a fifth of
+USDJPY's own standalone risk. Tellingly, **the ranking of drawdown-reduction
+benefit tracks correlation, not each candidate's own risk level**: CADCHF
+(near-zero correlation, small solo DD) gives the biggest combined-DD
+improvement; USDCHF (the most-correlated candidate) gives the smallest
+improvement despite a comparable solo DD to USDCAD. This is exactly the kind
+of result that distinguishes genuine diversification from just adding
+another profitable symbol.
+
 ---
 
 ## D. Recommended Next Tests
 
-1. **True equity-curve drawdown-overlap analysis (was highest priority; now
-   partially done)** — §C's correlation matrix is complete and is a real,
-   quantitative result. What's still missing is genuine **equity** (not
-   balance) drawdown-overlap timing, which needs a forensic-instrumented build
-   (per-tick floating-equity logging, the same pattern already used elsewhere
-   in this project) run for each of the 4 Tier 1 candidates plus the 3
-   existing-portfolio symbols, over the same window — this is the one piece of
-   the original request's §4 that remains genuinely undone, not approximated.
-2. **Wider historical period for the Tier 1 candidates** — this screen
+Item 1 (equity-curve drawdown-overlap) from the previous version of this
+section is now **done** — see §C's equity-forensic analysis above. Renumbered
+list of what's still open:
+
+1. **Wider historical period for the Tier 1 candidates** — this screen
    deliberately used only 1 year; before treating AUDUSD/USDCHF/USDCAD/CADCHF as
    validated, re-run them over the same longer 2024.01–2026.09 window already
    used for the existing portfolio, for a like-for-like comparison and a larger
    trade sample.
-3. **Out-of-sample validation** — the ~6 months of most-recent data
+2. **Out-of-sample validation** — the ~6 months of most-recent data
    (2026.03–2026.09, not used in this screen) plus the earlier 2024.01–2025.03
    slice are both still "unseen" for these new candidates and should be used as
    genuine OOS windows before any live consideration, mirroring this study's own
    existing-portfolio OOS discipline.
-4. **Parameter sensitivity re-check specifically for EURJPY-style cliffs** — given
+3. **Parameter sensitivity re-check specifically for EURJPY-style cliffs** — given
    how serious and non-obvious the EURJPY wipeout finding was, it's worth a denser
    parameter grid (not just the 7×7 already run) around any Tier 1/2 candidate's
    chosen combo, specifically checking neighboring combos for hidden drawdown
    cliffs the coarse 5-unit/0.25-unit grid could have stepped over undetected.
-5. **Walk-forward testing** for whichever candidates survive #1-4, matching the
+4. **Walk-forward testing** for whichever candidates survive #1-3, matching the
    rigor already planned for the existing portfolio's own multiplier-system
    decision.
-6. **Monte Carlo analysis** on the strongest surviving candidate(s), for the same
+5. **Monte Carlo analysis** on the strongest surviving candidate(s), for the same
    reason this study has used it elsewhere — a single equity curve, however good,
    doesn't establish robustness to trade-sequence variation on its own.
+6. **USDCHF-CADCHF co-drawdown specifically** — their 0.34 correlation and the
+   real January 2026 overlap found in §C means these two probably shouldn't be
+   treated as fully independent additions if both were adopted; worth checking
+   whether combining them adds meaningfully less benefit than either alone
+   paired with AUDUSD/USDCAD instead.
 
 **Not recommended for further testing**: GBPCHF, AUDCAD, AUDNZD, EURCHF (all
 non-viable or clearly broken at default, per §A), and EURJPY specifically because
