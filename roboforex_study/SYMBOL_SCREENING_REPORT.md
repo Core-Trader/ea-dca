@@ -452,18 +452,55 @@ enabling the circuit breaker before deploying USDCAD, deploying it anyway with
 manual equity monitoring, or holding it back until walk-forward/Monte Carlo
 give more confidence is a decision for the user, not resolved here.
 
+## D3. Dense Parameter-Neighborhood Check for Hidden Cliffs (complete — clean)
+
+**Method**: given how serious and non-obvious both the EURJPY wipeout (§B) and
+the USDCAD time-window finding (§D2) turned out to be, checked whether a
+similar *parameter-space* cliff could be hiding near what's actually deployed.
+Built a denser grid — `InpBBPeriod` ∈ {30..40 step 1} × `InpBBDeviation` ∈
+{2.00..2.50 step 0.05}, 121 combinations, 5x finer than the original
+screening grid's 5-unit/0.25-unit steps — centered directly on the deployed
+default (Period 35, Deviation 2.25), run via fast genetic optimization
+(evaluated the full 121/121 combinations, same as previous grids) for all 4
+Tier 1 candidates over the same 1-year screening window. Raw data:
+`roboforex_study/reports/dense_grid/`.
+
+| Symbol | Equity DD range | PF range | Negative-profit combos | Default combo consistency |
+|---|---|---|---:|---|
+| AUDUSD | 0.26–0.67% | 3.74–8.60 | 0/121 | Exact match to §A Pass 1 ($230.74, PF 4.50, 80 trades) |
+| USDCHF | 1.26–1.49% | 2.31–3.67 | 0/121 | Exact match ($362.14, PF 2.52, 79 trades) |
+| USDCAD | 1.32–1.33% | 2.71–3.24 | 0/121 | Exact match ($201.06, PF 3.03, 69 trades) |
+| CADCHF | 0.42–0.91% | 2.40–5.61 | 0/121 | Exact match ($147.48, PF 5.10, 60 trades) |
+
+**Clean result — no hidden cliffs found near any of the 4 deployed defaults.**
+Every symbol's equity DD stays in a tight, boring band across the entire
+121-combo neighborhood, every combo is profitable (zero negative-profit
+results, unlike EURJPY's grid which had 6), and each default combo's exact
+result reproduces §A's Pass 1 number precisely — confirming both the
+consistency of the data and that these aren't fragile, isolated good-luck
+points the way EURJPY's was.
+
+**USDCAD's own result here is worth calling out specifically**: its Equity DD
+range across all 121 neighboring combos is essentially flat (1.32–1.33%,
+under a hundredth of a percent of spread) — meaning §D2's drawdown episode is
+confirmed to be purely a **time-domain** risk (a specific adverse trend
+period), not a **parameter-domain** fragility. Changing `InpBBPeriod`/
+`InpBBDeviation` anywhere in this neighborhood would not have avoided or
+worsened that episode — it was about *when* the sequences were open, not
+*which* BB settings opened them. This usefully separates the two USDCAD
+findings rather than conflating them: the parameter choice is fine, the
+multi-sequence-under-sustained-trend exposure is the real and separate risk
+already documented in §D2.
+
 ## E. Recommended Next Tests
 
 1. ~~Decide USDCAD's deployment status given D2's findings~~ — **decided
    2026-09-19**: keep the Max Floating Loss circuit breaker disabled for now,
    USDCAD stays in the portfolio as-is, revisit after walk-forward/Monte
    Carlo if either surfaces further concerns. See `CURRENT_PORTFOLIO.md`.
-2. **Parameter sensitivity re-check specifically for EURJPY-style cliffs** —
-   given how serious and non-obvious both that finding and USDCAD's turned out
-   to be, it's worth a denser parameter grid (not just the 7×7 already run)
-   around any Tier 1/2 candidate's chosen combo, specifically checking
-   neighboring combos for hidden drawdown cliffs the coarse grid could have
-   stepped over undetected.
+2. ~~Parameter sensitivity re-check specifically for EURJPY-style cliffs~~ —
+   **done, see §D3**: clean across all 4 Tier 1 candidates, no hidden cliffs
+   near any deployed default.
 3. **Walk-forward testing** for whichever candidates survive #1-2, matching the
    rigor already planned for the existing portfolio's own multiplier-system
    decision.
