@@ -1,0 +1,13 @@
+Combination                                               Combined max Equity DD   Combined profit
+Existing only (baseline)                                                   1.43%           668.99
+Existing + AUDUSD only                                                     1.08%           899.73
+Existing + USDCHF only                                                     1.35%          1031.13
+Existing + CADCHF only                                                     1.05%           816.47
+Existing + USDCAD only                                                     1.08%           870.05
+Existing + USDCHF + CADCHF (the pair in question)                          1.06%          1178.61
+Existing + USDCHF + AUDUSD                                                 1.08%          1261.87
+Existing + CADCHF + AUDUSD                                                 0.85%          1047.21
+Existing + USDCHF + USDCAD                                                 1.08%          1232.19
+Existing + CADCHF + USDCAD                                                 0.85%          1017.53
+Existing + AUDUSD + USDCAD                                                 0.87%          1100.79
+All 4 combined                                                             0.77%          1610.41

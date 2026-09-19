@@ -606,15 +606,57 @@ remains positive.
    net-negative across 20,000 resamples; USDCAD is the clear outlier with
    the widest drawdown range and the only non-trivial chance (0.33%) of a
    net-negative path.
-5. **USDCHF-CADCHF co-drawdown specifically** — their 0.34 correlation and the
-   real January 2026 overlap found in §C means these two probably shouldn't be
-   treated as fully independent additions if both were adopted; worth checking
-   whether combining them adds meaningfully less benefit than either alone
-   paired with AUDUSD instead (USDCAD's own role in the portfolio is now
-   separately in question per item 1 above).
+5. ~~USDCHF-CADCHF co-drawdown specifically~~ — **done, see §D6**: confirmed,
+   but smaller and differently-shaped than the hypothesis suggested — it's
+   USDCHF's own weaker diversification contribution, not a unique bad
+   interaction with CADCHF specifically.
 
 **Not recommended for further testing**: GBPCHF, AUDCAD, AUDNZD, EURCHF (all
 non-viable or clearly broken at default, per §A), and EURJPY specifically because
 of the wipeout finding in §B — this should be treated as a real result, not
 revisited casually without first understanding *why* that parameter region is so
 dangerous.
+
+## D6. USDCHF-CADCHF Co-Dependency Check (complete)
+
+**Method**: using the same per-bar equity data already gathered for §C
+(no new backtests), computed combined portfolio equity drawdown for every
+2-symbol addition to the existing portfolio, to see whether pairing the two
+correlated candidates (USDCHF-CADCHF, 0.34 correlation) together costs more
+than pairing either with the most independent candidate (AUDUSD) instead.
+Re-verified the "Existing only" and single-addition baselines reproduce §C's
+already-published figures exactly (1.43% / 1.08% / 1.35% / 1.05% / 1.08%)
+before trusting the new combinations. Script:
+`roboforex_study/reports/correlation_study/co_dependency_check.py`.
+
+| Combination | Combined max Equity DD | Combined profit |
+|---|---:|---:|
+| Existing only | 1.43% | $668.99 |
+| + CADCHF + AUDUSD | **0.85%** | $1,047.21 |
+| + CADCHF + USDCAD | 0.85% | $1,017.53 |
+| + AUDUSD + USDCAD | 0.87% | $1,100.79 |
+| **+ USDCHF + CADCHF** | **1.06%** | $1,178.61 |
+| + USDCHF + AUDUSD | 1.08% | $1,261.87 |
+| + USDCHF + USDCAD | 1.08% | $1,232.19 |
+| All 4 combined | **0.77%** | $1,610.41 |
+
+**The hypothesis is confirmed, but smaller and differently-shaped than
+expected.** USDCHF+CADCHF together (1.06% DD) is indeed worse than the best
+2-symbol pairing found, CADCHF+AUDUSD (0.85%) — but the gap is modest (0.21
+points), and **the pattern isn't really about USDCHF and CADCHF specifically
+interacting badly together**: USDCHF pairs at 1.06-1.08% with *every* other
+candidate (CADCHF, AUDUSD, or USDCAD alike), because USDCHF's own solo
+addition-DD (1.35%) is already the highest of the 4 — it's simply the
+weakest individual diversifier, and that weakness persists into whichever
+pairing it's part of, not a unique CADCHF-USDCHF correlation effect. CADCHF,
+by contrast, pairs equally well (0.85%) with either AUDUSD or USDCAD,
+confirming CADCHF itself is a strong diversifier regardless of partner.
+
+**Practical implication**: there's no evidence here to specifically avoid
+combining USDCHF and CADCHF — **including all 4 together still produces the
+single best result of everything tested (0.77%)**, better than any 2-symbol
+subset. If capital or risk-budget constraints ever force choosing only 2 of
+the 4 additions, CADCHF+AUDUSD (or CADCHF+USDCAD) would be the marginally
+better pick over any combination involving USDCHF — but this is a
+diminishing-returns observation, not a reason to drop USDCHF from the
+current 4-symbol portfolio.
