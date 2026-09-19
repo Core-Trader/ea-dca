@@ -1,7 +1,17 @@
 # RoboForex Multi-Symbol Study — DCA CENT V1
 
-**Status**: Phase 1 (login/data verification + Strategy A/B individual baselines) complete
-for 3 symbols. One critical finding requires a decision before continuing.
+**Status**: Phase 1 (login/data verification + Strategy A/B individual baselines, all
+3 symbols) complete. Phase 2 (BB Period × Deviation optimization grid) EURUSD complete,
+GBPUSD/USDJPY running.
+
+**Correction on headless optimization**: an earlier note in `GO_LIVE_VALIDATION_PLAN.md`
+claimed headless `Optimization=` mode writes results in a format "awkward to parse back
+out headlessly," recommending the user run optimizations via the GUI instead. Retested
+this directly (2026-09-19): headless optimization runs **do** auto-write a clean,
+structured `<Report>.xml` (Excel-XML format) with one row per parameter combination and
+columns for Profit/Profit Factor/Recovery Factor/Sharpe/Equity DD%/Trades/the swept
+parameters — fully parseable. That earlier note was wrong (or referred to a since-fixed
+limitation); headless optimization is now the primary method for this study's grids.
 
 **Scope note**: per explicit user direction, this study targets **3 symbols** (not the
 originally-proposed 10) on the **RoboForex** account — the actual go-live cent-account
@@ -138,3 +148,50 @@ symbol-dependent (a deposit comfortable for EUR/GBP genuinely blows up on USDJPY
 **Going forward, `Deposit=15000` is the reference baseline** for the rest of this
 study (optimization grids, portfolio tests), since it's the account's actual real
 funded state, not an assumption.
+
+---
+
+## 5. BB Period × Deviation optimization grid — EURUSD (per §4)
+
+**Grid**: `InpBBPeriod` ∈ {20,25,30,35,40,45,50} × `InpBBDeviation` ∈
+{1.50,1.75,2.00,2.25,2.50,2.75,3.00} — 49 combinations, chosen as a structured range
+around the default (35 / 2.25), 5-unit/0.25-unit increments matching the input's own
+precision. `Deposit=15000`, same window/account as §4, `Model=4`, headless
+`Optimization=1` (exhaustive — only 49 combos, no need for genetic search). Full raw
+results: `roboforex_study/reports/bb_optimization/eurusd_bb_grid.csv`.
+
+**Equity DD % is remarkably stable across the entire grid (1.41%–1.65%)** — BB
+parameter choice barely moves the risk profile on EURUSD, a reassuring robustness
+signal in its own right (the strategy's risk character isn't parameter-fragile here).
+
+**Profit declines smoothly and monotonically as Deviation increases, in every single
+Period row tested** — no isolated spike anywhere in the grid. This is the textbook
+"robust region" signature per §6, not a sharp optimum: Deviation 1.50–2.00 consistently
+outperforms 2.50–3.00 regardless of which Period it's paired with.
+
+| Rank | Period | Dev | Profit | PF | Recovery | Sharpe | DD% | Trades |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| 1 | 50 | 1.50 | $874.53 | 3.94 | 4.05 | 1.58 | 1.41% | 233 |
+| 2 | 50 | 1.75 | $812.80 | 3.79 | 3.77 | 1.51 | 1.41% | 222 |
+| 3 | 30 | 1.50 | $791.57 | 3.65 | 3.08 | 1.46 | 1.65% | 258 |
+| 4 | 50 | 2.00 | $774.70 | 3.92 | 3.59 | 1.49 | 1.41% | 200 |
+| 5 | 30 | 1.75 | $769.99 | 3.62 | 3.00 | 1.43 | 1.65% | 247 |
+
+Default (35 / 2.25) placed mid-pack at $551.28 — solidly within the same robust
+low-deviation neighborhood, not an outlier itself, just not the peak.
+
+**A second, distinct pattern worth flagging** — Profit Factor peaks somewhere else
+entirely: `Period=20, Dev=1.75` gives the single highest PF in the grid (4.81, fewer
+but higher-quality trades: 234), while the highest-*profit* combos (Period=50) sit at
+a noticeably lower PF (~3.8-3.9). This is a genuine PF-vs-total-profit tradeoff, not
+noise — smaller Period + low Deviation trades more selectively (higher win quality,
+fewer trades, less capital deployed); larger Period + low Deviation trades more often
+and compounds more total profit at slightly lower quality per trade. Exactly the kind
+of "different objectives, not one best config" distinction §13 asks for: a
+robustness-first pick would lean toward `Period≈20-25, Dev≈1.5-1.75`; a
+profit-focused pick toward `Period≈45-50, Dev≈1.5-2.0`.
+
+**Not yet done**: GBPUSD and USDJPY grids (running), full-metric-set deep dives (win
+rate, consecutive losses, sequence stats — not in the optimizer's own summary columns)
+for the specific robust-region candidates identified here, and out-of-sample
+validation of whichever region holds up across all 3 symbols.
