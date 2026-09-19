@@ -1,5 +1,19 @@
 # Current RoboForex Cent-Account Portfolio — 7 Symbols
 
+> ⚠ **KNOWN ISSUE, found 2026-09-20, not yet re-validated.** Every `.set` file
+> below was built with `InpBBAppliedPrice=3` (PRICE_LOW) instead of the EA's
+> actual default, `PRICE_HIGH` (`=2`) — a stale value inherited from a
+> pre-fix snapshot when this study was set up, not an EA bug. This changes
+> which price series the Bollinger Bands are built from, i.e. the entry/exit
+> signal basis every finding in `SYMBOL_SCREENING_REPORT.md` rests on. **The
+> 7 `.set` files here have been corrected** (`InpBBAppliedPrice=2`), so
+> they're now internally consistent with the EA's own default — but **the
+> Tier 1 selection, the USDCAD risk findings, and every backtest number this
+> portfolio's composition was based on have not been re-run under the
+> corrected value.** Deferred due to usage-budget constraints, not resolved.
+> Full detail: `SYMBOL_SCREENING_REPORT.md`'s own top-of-file warning.
+> Treat this composition as **provisional** until re-validated.
+
 **Status**: first-cut deployment candidate, not a final recommendation. Assembled
 from `SYMBOL_SCREENING_REPORT.md`'s existing portfolio plus its 4 Tier 1
 candidates. **Update 2026-09-19**: the full validation backlog (§D2-§D6 —
@@ -135,9 +149,14 @@ execution, not further testing:
 
 ## Deployment checklist (for when you're ready, not done here)
 
+- [ ] **Re-run the validation stack with the corrected `InpBBAppliedPrice=2`**
+      before trusting this portfolio's composition — see the warning at the
+      top of this file. This should happen before any of the items below,
+      not after.
 - [x] **USDCAD decision made 2026-09-19**: deploy alongside the other 6,
       circuit breaker deliberately left off — reconfirmed by every
-      subsequent validation step above
+      subsequent validation step above (**pending re-validation per the item
+      above**)
 - [ ] Decide on the Max Floating Loss circuit breaker threshold before committing
       live capital, given it's currently off
 - [ ] Attach `EA_DCA_CENT_V1.mq5` to charts (one per symbol above), H4,

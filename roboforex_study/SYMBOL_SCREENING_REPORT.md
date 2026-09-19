@@ -1,5 +1,26 @@
 # Symbol Screening Report — Portfolio Diversification Discovery Pass
 
+> ⚠ **KNOWN ISSUE, found 2026-09-20, not yet re-validated — `InpBBAppliedPrice`
+> was wrong throughout this entire report.** Every backtest below (§A-§E, all
+> ~40+ runs) used `InpBBAppliedPrice=3` (PRICE_LOW). The EA's own actual
+> compiled default is `PRICE_HIGH` (`=2`) — confirmed both in
+> `EA_DCA_CENT_V1.mq5` source and in this project's own git history (commits
+> `5e80cc8`/`7db75df`/`50ea428`, Sep 15-16). Root cause: the `.set` file this
+> study's own defaults were built from
+> (`diagnostics/backtests/cent_v1_baseline/EA_DCA_CENT_V1_baseline.set`) was a
+> snapshot taken *before* those fixes — a process error in how this study was
+> set up, not a bug in the EA and not something the user did. PRICE_HIGH vs
+> PRICE_LOW is not cosmetic: it changes which price series the Bollinger Bands
+> are computed from, and therefore every touch/breach/cross signal this
+> strategy trades on. **All `.set` files have since been corrected to
+> `InpBBAppliedPrice=2`** (`roboforex_study/sets/`, including
+> `cent_portfolio/`), so no further work will compound the error — but **every
+> finding in this report, including the Tier 1 candidate picks and the USDCAD
+> risk profile, was derived under the wrong price basis and has not been
+> re-run under the correct one.** Deferred, not fixed, due to usage-budget
+> constraints at the time this was found (`CURRENT_PORTFOLIO.md` carries the
+> same flag). Treat every number below as **provisional** until re-validated.
+
 **Objective** (per explicit user request): not to find the single most profitable
 symbol, but to identify additional symbols worth deeper investigation as
 **portfolio diversifiers** alongside the existing EURUSD/GBPUSD/USDJPY portfolio —
