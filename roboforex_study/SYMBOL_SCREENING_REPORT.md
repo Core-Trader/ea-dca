@@ -388,15 +388,76 @@ be described as "confirmed robust" alongside AUDUSD and CADCHF. See
 `CURRENT_PORTFOLIO.md` for the corresponding flag on the live deployment
 candidate.
 
+## D2. USDCAD Drawdown Episode — Trade-Level Investigation (complete)
+
+**Method**: re-ran USDCAD OOS-B (2026.03.01–2026.09.19) with
+`EA_DCA_CENT_V1_EquityForensic.mq5` (per-bar equity/balance logging, §C's
+build) to pinpoint the exact drawdown timing, then cross-referenced the
+matching deal log (`wide_USDCAD_oosB.htm`) to trace the specific sequence
+activity. Raw data: `roboforex_study/reports/usdcad_investigation/`.
+
+**Timing**: equity peaked at $15,036 on 2026-05-11, bottomed at $13,507.54 on
+2026-07-06 — a $1,528 (10.17%) floating loss over roughly 8 weeks.
+
+**Mechanism, confirmed from the deal log**: starting 2026-05-11, a SELL
+sequence opens and adds legs as USDCAD *rises* (adverse to the position) —
+by 2026-05-28 a **second** concurrent sell sequence starts alongside it, and
+by 2026-06-12/07-01 a **third** joins too, all within `InpMaxSequencesPerDirection
+=3`'s limit. Each sequence independently averages up its own 7-leg Linear
+multiplier ladder (0.01→0.07 lot) as price keeps climbing — USDCAD rose from
+~1.364 (2026-05-06 entry) to ~1.423 (2026-06-25), roughly **590 pips** against
+every one of the 3 stacked sequences simultaneously, with no fixed stop-loss
+anywhere (by DCA mode's own design). This is structurally identical to the
+mechanism already documented as the cause of USDJPY's earlier $400-account
+stress-test blowup (`ROBOFOREX_MULTI_SYMBOL_STUDY.md` §2) — multiple parallel
+DCA sequences all averaging into the same sustained adverse trend at once —
+just manifesting far less severely here at the real $15,000 deposit.
+
+**Resolution — not a forced stop-out.** On 2026-07-17 20:00:00, price reverted
+from its ~1.423 peak back to ~1.401, and BB Centre Band exit triggered a mass
+close of 11 legs in a single batch (lot sizes 0.07 down to 0.01, spanning all
+3 stacked sequences) — Balance moved from ~$15,439 to $14,986 in that one
+event, a realized loss of about **$453**. This is a real, meaningful loss, but
+nowhere near the full $1,528 unrealized peak — most of the floating loss
+*did* recover before the position was ever forced to close, confirming the
+strategy's own mean-reversion assumption ultimately held here. Trading
+continued normally through August and the account climbed back toward
+breakeven by month-end, consistent with OOS-B's overall near-flat $6.17 net
+result (§D).
+
+**Verdict — a genuine near-miss, not a false alarm and not a catastrophe.**
+Two things are simultaneously true and both matter: (1) the strategy's design
+worked as intended — it survived a genuinely adverse 590-pip, 8-week move
+across 3 concurrent sequences without a forced stop-out or a large realized
+loss, and (2) an account monitoring *only* Balance during those 8 weeks would
+have seen almost nothing wrong (Balance DD stayed 3.14-3.24% throughout) while
+Equity was actually down over 10% — a real, uncomfortable, un-visible-on-Balance
+risk window that a margin call, a nervous manual intervention, or a slightly
+worse continuation of the trend could have turned into a forced loss instead
+of a recovery. **Classification: Logical Design Choice, not an Implementation
+Bug** — DCA mode is designed to average into adverse moves expecting
+reversion, and multiple concurrent sequences compounding that bet during a
+genuine sustained trend is the structural, foreseeable consequence of that
+design, not a coding error. Same classification standard already applied to
+the USDJPY finding.
+
+**Practical implication**: USDCAD isn't disqualified by this — it did what a
+DCA strategy without a stop-loss is expected to do under stress, and it
+recovered. But this is concrete, trade-level evidence that the Max Floating
+Loss circuit breaker (currently disabled in `CURRENT_PORTFOLIO.md`, §
+"deliberately different") is exactly the kind of protection that would have
+mattered here, and that Equity (not Balance) is the number that must be
+watched or automated against for USDCAD specifically. Whether that argues for
+enabling the circuit breaker before deploying USDCAD, deploying it anyway with
+manual equity monitoring, or holding it back until walk-forward/Monte Carlo
+give more confidence is a decision for the user, not resolved here.
+
 ## E. Recommended Next Tests
 
-1. **Investigate the USDCAD OOS-B drawdown episode at trade level** — the same
-   forensic MFE/MAE methodology already used elsewhere in this project
-   (`DCA_EA_TPSL_Forensic.mq5`'s pattern) applied to this specific March-April
-   2026 sequence, to characterize exactly how deep the floating loss got, how
-   long the sequence stayed open, and whether it was a genuine near-miss or a
-   comfortable (if ugly-looking) recovery — this is the single highest-priority
-   open item now, ahead of everything below.
+1. **Decide USDCAD's deployment status given D2's findings** — enable the Max
+   Floating Loss circuit breaker specifically for this symbol before deploying
+   it, deploy as-is with manual equity monitoring, or hold it back pending
+   walk-forward/Monte Carlo. Not a test to run, a decision to make.
 2. **Parameter sensitivity re-check specifically for EURJPY-style cliffs** —
    given how serious and non-obvious both that finding and USDCAD's turned out
    to be, it's worth a denser parameter grid (not just the 7×7 already run)
