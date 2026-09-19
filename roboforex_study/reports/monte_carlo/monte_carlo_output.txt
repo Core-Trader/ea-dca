@@ -1,0 +1,36 @@
+=== AUDUSD (202 trades pooled from full 2024.01-2026.09 window) ===
+  Trade P&L: sum=720.86  min=-29.54  max=56.85
+  Median max DD:      $40.20
+  95th pct max DD:    $70.70
+  99th pct max DD:    $90.60
+  Worst of 20000 paths:  $168.52
+  Worst final equity: $208.41
+  P(path ends net negative): 0/20000 (0.000%)
+
+=== USDCHF (207 trades pooled from full 2024.01-2026.09 window) ===
+  Trade P&L: sum=710.59  min=-43.74  max=55.74
+  Median max DD:      $67.79
+  95th pct max DD:    $122.50
+  99th pct max DD:    $157.38
+  Worst of 20000 paths:  $303.84
+  Worst final equity: $17.59
+  P(path ends net negative): 0/20000 (0.000%)
+
+=== USDCAD (225 trades pooled from full 2024.01-2026.09 window) ===
+  Trade P&L: sum=776.86  min=-78.37  max=109.47
+  Median max DD:      $131.87
+  95th pct max DD:    $251.25
+  99th pct max DD:    $328.31
+  Worst of 20000 paths:  $600.24
+  Worst final equity: $-419.41
+  P(path ends net negative): 66/20000 (0.330%)
+
+=== CADCHF (192 trades pooled from full 2024.01-2026.09 window) ===
+  Trade P&L: sum=470.55  min=-41.13  max=110.83
+  Median max DD:      $43.82
+  95th pct max DD:    $83.27
+  99th pct max DD:    $109.28
+  Worst of 20000 paths:  $194.29
+  Worst final equity: $-11.75
+  P(path ends net negative): 3/20000 (0.015%)
+

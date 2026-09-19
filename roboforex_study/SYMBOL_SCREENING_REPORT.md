@@ -530,21 +530,82 @@ out of five, not just the one already investigated — reinforcing rather than
 contradicting the "kept in, but not confirmed-robust the way AUDUSD/CADCHF
 are" status already recorded in `CURRENT_PORTFOLIO.md`.
 
+## D5. Monte Carlo Trade-Resampling Bootstrap (complete)
+
+**Method**: same approach as `GO_LIVE_VALIDATION_PLAN.md` §4.13 — extract each
+closed leg's net realized P&L (the Profit column on every `out`-type deal)
+directly from real backtest deal logs (no synthetic data), then resample
+**with replacement** to build 20,000 simulated equity paths of the same
+length as the original trade count, measuring how much historical trade
+*ordering* matters independent of the strategy's average edge. Reused the
+full 2024.01–2026.09 deal logs already gathered for §D (no new backtests
+needed). Script and full output: `roboforex_study/reports/monte_carlo/`.
+
+| Symbol | Trades | Median max DD | 95th pct | 99th pct | Worst of 20,000 | P(net negative) |
+|---|---:|---:|---:|---:|---:|---:|
+| AUDUSD | 202 | $40.20 | $70.70 | $90.60 | $168.52 (1.12%) | **0.000%** |
+| USDCHF | 207 | $67.79 | $122.50 | $157.38 | $303.84 (2.03%) | **0.000%** |
+| **USDCAD** | 225 | **$131.87** | **$251.25** | **$328.31** | **$600.24 (4.00%)** | **0.330%** (66/20,000) |
+| CADCHF | 192 | $43.82 | $83.27 | $109.28 | $194.29 (1.30%) | 0.015% (3/20,000) |
+
+(Percentages are the worst-of-20,000 max drawdown against the $15,000
+deposit, for scale.)
+
+**AUDUSD and USDCHF never produced a net-negative simulated path across
+20,000 reshuffles** — the strongest possible result this method can give.
+**CADCHF is very close behind** (3 negative paths out of 20,000, 0.015%).
+
+**USDCAD is the clear outlier on a fifth independent method now**: its
+worst-of-20,000 drawdown (4.00% of deposit) is roughly 2-3x any other
+candidate's, its 99th-percentile drawdown alone ($328.31) exceeds every other
+symbol's *worst-case*, and it's the only one with a non-trivial chance
+(0.33%, roughly 1 in 300) of a simulated path ending net negative. This is
+directly explained by its own trade distribution: its pooled P&L set
+includes the -$78.37 single-leg loss from the stacked-sequence unwind
+investigated in §D2, and several other double-digit losses from that same
+episode's mass close — real, already-understood outcomes, not new tail
+risk, but resampling correctly surfaces that they make USDCAD's *ordering*
+risk measurably higher than the other three.
+
+**A methodological caveat specific to this DCA architecture, not present in
+the original single-symbol Monte Carlo**: bootstrap resampling treats each
+closed leg as an independent draw, but §D2 showed multiple legs from the
+same stacked sequence often close together in a single correlated event
+(the 11-leg mass close on 2026-07-17). Reshuffling independently can
+therefore either under- or over-represent how often several large losses
+actually land together in reality, compared to drawing them into the same
+simulated path purely by chance. This doesn't invalidate the result — the
+same "can't invent a worse loss than observed" limitation already noted in
+`GO_LIVE_VALIDATION_PLAN.md` §4.13 still applies — but it's a real reason not
+to treat USDCAD's 0.33% figure as a precise tail-risk estimate, only as
+further confirmation (now via a fifth method) that it carries more
+sequencing risk than AUDUSD, USDCHF, or CADCHF.
+
+**Consistent with, not contradicting, every other USDCAD finding in this
+report** (§B, §D2, §D4): kept in the portfolio per the user's decision, not
+disqualified, but this is now the fifth independent line of evidence
+(screening grid, OOS validation, trade-level investigation, walk-forward,
+Monte Carlo) all pointing the same direction — USDCAD is structurally the
+riskiest of the 4 Tier 1 candidates, even though its overall expectancy
+remains positive.
+
 ## E. Recommended Next Tests
 
 1. ~~Decide USDCAD's deployment status given D2's findings~~ — **decided
    2026-09-19**: keep the Max Floating Loss circuit breaker disabled for now,
-   USDCAD stays in the portfolio as-is. §D4's walk-forward result (a second
-   losing window found) doesn't change this decision but is worth knowing.
+   USDCAD stays in the portfolio as-is. §D4/§D5's results (a second losing
+   window, the weakest Monte Carlo profile) don't change this decision but
+   are worth knowing.
 2. ~~Parameter sensitivity re-check specifically for EURJPY-style cliffs~~ —
    **done, see §D3**: clean across all 4 Tier 1 candidates, no hidden cliffs
    near any deployed default.
 3. ~~Walk-forward testing~~ — **done, see §D4**: AUDUSD/USDCHF/CADCHF clean
    across all 5 rolling windows; USDCAD showed a second losing window
    (2025 H2, distinct from the already-investigated 2026 episode).
-4. **Monte Carlo analysis** on the strongest surviving candidate(s), for the same
-   reason this study has used it elsewhere — a single equity curve, however good,
-   doesn't establish robustness to trade-sequence variation on its own.
+4. ~~Monte Carlo analysis~~ — **done, see §D5**: AUDUSD/USDCHF never went
+   net-negative across 20,000 resamples; USDCAD is the clear outlier with
+   the widest drawdown range and the only non-trivial chance (0.33%) of a
+   net-negative path.
 5. **USDCHF-CADCHF co-drawdown specifically** — their 0.34 correlation and the
    real January 2026 overlap found in §C means these two probably shouldn't be
    treated as fully independent additions if both were adopted; worth checking
