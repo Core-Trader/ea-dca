@@ -86,6 +86,7 @@ candidates.
 | `ROBOFOREX_MULTI_SYMBOL_STUDY.md` | BB/QQE optimization grids for the original EURUSD/GBPUSD/USDJPY portfolio at the account's real $15,000 deposit |
 | `SYMBOL_SCREENING_REPORT.md` | The full diversification screening study — Market Watch-wide default-parameter pass, genetic optimization shortlist, correlation/drawdown-overlap analysis, wider-window/OOS validation, trade-level investigation, dense parameter-cliff check, walk-forward, Monte Carlo, and the resulting Tier 1 candidate picks (AUDUSD/USDCHF/USDCAD/CADCHF) |
 | `CURRENT_PORTFOLIO.md` | **The live-facing summary** — the current 7-symbol portfolio, what's deliberately different from the tested configuration (per-symbol magic numbers) and why, and the deployment checklist |
+| `BACKTEST_VIABILITY_CHECKLIST.md` | Manual, no-budget-needed checklist for re-running the 7 portfolio symbols in the MT5 GUI after the `InpBBAppliedPrice` fix, with the exact pre-fix numbers to compare against |
 | `sets/cent_portfolio/<SYMBOL>.set` | The actual `.set` file to load per symbol for the current portfolio |
 | `sets/*.set` | Other named configs used across the study (defaults, optimization sweep definitions) |
 | `reports/*/` | Raw backtest/optimization output (XML/HTM/CSV) and the Python analysis scripts, one subfolder per study phase — kept for reproducibility, not meant to be read directly unless verifying a specific number |
