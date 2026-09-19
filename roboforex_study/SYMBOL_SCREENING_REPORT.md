@@ -100,7 +100,11 @@ with the existing EUR/GBP/JPY-weighted portfolio.
 - **USDCAD** — similarly clean and stable (DD 1.32–2.08%, max grid PF only 4.05,
   no artifacts). New currency (CAD), modest but genuine default profitability, and
   optimization improves without degrading risk-adjusted quality (Recovery
-  1.00→1.23).
+  1.00→1.23). **Update, §D**: the wider-window/OOS validation done after this
+  section was first written found a real 10%+ equity drawdown episode entirely
+  inside the previously-untested 2026.03-2026.09 window — this symbol's Tier 1
+  status here reflects the 1-year screening window only and should be read
+  alongside §D's downgrade, not on its own.
 - **CADCHF** — tight, stable DD band (0.27–1.00%) across the whole grid, no
   cliffs, two new currencies (CAD+CHF) simultaneously — the largest currency-space
   diversification jump of any single-symbol candidate in this screen.
@@ -315,38 +319,102 @@ another profitable symbol.
 
 ---
 
-## D. Recommended Next Tests
+## D. Wider-Window and Out-of-Sample Validation (complete)
 
-Item 1 (equity-curve drawdown-overlap) from the previous version of this
-section is now **done** — see §C's equity-forensic analysis above. Renumbered
-list of what's still open:
+**Method**: all 4 Tier 1 candidates, using the actual finalized portfolio `.set`
+files (`roboforex_study/sets/cent_portfolio/`, with their final per-symbol magic
+numbers), each run over 3 windows: the **full** 2024.01.01–2026.09.19 period
+(matching the existing portfolio's own already-tested window, for direct
+comparison against EURUSD/GBPUSD/USDJPY's known numbers), **OOS-A**
+(2024.01.01–2025.03.01, before the original 1-year screen) and **OOS-B**
+(2026.03.01–2026.09.19, after it — the most recent, previously-untouched data).
+12 single-parameter backtests total; raw reports in
+`roboforex_study/reports/wider_window_oos/`.
 
-1. **Wider historical period for the Tier 1 candidates** — this screen
-   deliberately used only 1 year; before treating AUDUSD/USDCHF/USDCAD/CADCHF as
-   validated, re-run them over the same longer 2024.01–2026.09 window already
-   used for the existing portfolio, for a like-for-like comparison and a larger
-   trade sample.
-2. **Out-of-sample validation** — the ~6 months of most-recent data
-   (2026.03–2026.09, not used in this screen) plus the earlier 2024.01–2025.03
-   slice are both still "unseen" for these new candidates and should be used as
-   genuine OOS windows before any live consideration, mirroring this study's own
-   existing-portfolio OOS discipline.
-3. **Parameter sensitivity re-check specifically for EURJPY-style cliffs** — given
-   how serious and non-obvious the EURJPY wipeout finding was, it's worth a denser
-   parameter grid (not just the 7×7 already run) around any Tier 1/2 candidate's
-   chosen combo, specifically checking neighboring combos for hidden drawdown
-   cliffs the coarse 5-unit/0.25-unit grid could have stepped over undetected.
-4. **Walk-forward testing** for whichever candidates survive #1-3, matching the
+| Symbol | Window | Profit | PF | Recovery | Sharpe | Balance DD | Equity DD | Trades |
+|---|---|---:|---:|---:|---:|---:|---:|---:|
+| AUDUSD | Full | $691.15 | 3.31 | 2.32 | 1.19 | 0.34% | 1.97% | 202 |
+| AUDUSD | OOS-A | $334.68 | 3.29 | 1.13 | 1.13 | 0.32% | 1.97% | 79 |
+| AUDUSD | OOS-B | $125.73 | 2.46 | 0.78 | 0.88 | 0.35% | 1.07% | 43 |
+| USDCHF | Full | $586.23 | 2.06 | 1.24 | 0.69 | 0.65% | 3.14% | 207 |
+| USDCHF | OOS-A | $155.24 | 1.55 | 0.33 | 0.34 | 0.65% | 3.14% | 94 |
+| USDCHF | OOS-B | $68.85 | 3.09 | 1.64 | 2.14 | 0.06% | 0.28% | 34 |
+| **USDCAD** | Full | $490.36 | 1.50 | 0.32 | 0.33 | 3.14% | **10.02%** | 225 |
+| USDCAD | OOS-A | $276.14 | 2.48 | 1.43 | 0.94 | 0.32% | 1.27% | 91 |
+| **USDCAD** | **OOS-B** | **$6.17** | **1.01** | **0.00** | 0.01 | 3.24% | **10.35%** | 65 |
+| CADCHF | Full | $471.85 | 3.26 | 1.03 | 1.10 | 0.66% | 3.04% | 192 |
+| CADCHF | OOS-A | $255.69 | 2.59 | 0.56 | 0.86 | 0.66% | 3.04% | 97 |
+| CADCHF | OOS-B | $72.90 | 7.00 | 2.94 | 3.38 | 0.03% | 0.16% | 36 |
+
+**AUDUSD holds up across every window** — consistently the strongest of the 4,
+positive and reasonably stable in all three periods. No new concerns.
+
+**CADCHF holds up reasonably well** — no blowups anywhere, strong in the
+freshest OOS-B window (though only 36 trades there — small-sample caution, not
+a red flag on its own).
+
+**USDCHF is inconsistent but not alarming** — meaningfully weaker Recovery
+Factor in OOS-A (0.33) than elsewhere, but never negative, and its 1-year
+screening-window numbers (§A) sit within the range shown here.
+
+**USDCAD: a serious finding.** The Full-window and OOS-B rows share an
+**identical $1,555.81 Equity Drawdown Maximal figure** (10.02% vs 10.35% —
+the small percentage difference is just a different denominator, same dollar
+peak-to-trough) — proof this is *one single episode*, entirely contained
+within the window the original 1-year screen never touched (that screen ended
+2026.03.01, right as this episode began). Balance DD stayed a modest
+3.14-3.24% throughout while Equity DD reached over 10% — the same
+"Balance hides the real risk" pattern this project has now documented
+repeatedly (`TPSL_EQUITY_BALANCE_ROOT_CAUSE.md`, the BB/QQE optimization
+grids' own USDJPY findings) recurring here on a genuinely new symbol. OOS-B's
+overall result is barely breakeven (Profit $6.17, PF 1.01, Recovery Factor
+**0.00** on 65 trades) — six and a half months of trading netting to
+essentially nothing while carrying a double-digit equity drawdown somewhere
+inside it. Confirmed via the deal log: a DCA sell-sequence adding multiple
+legs (lot sizes 0.01→0.04, matching the Linear multiplier system) against a
+rising USDCAD through March-April 2026, the same no-stop-loss averaging
+mechanism already documented as the cause of USDJPY's earlier $400-account
+stress-test blowup, just far less severe here at the real $15,000 deposit
+level.
+
+**This changes USDCAD's status.** It was elevated to Tier 1 based on a 1-year
+screening window that, in hindsight, simply didn't contain this risk episode
+— precisely the scenario out-of-sample testing exists to catch, and it did.
+**Downgraded from Tier 1 pending further investigation** — not automatically
+disqualified (full-window profit is still solidly positive at $490.36, and
+one adverse episode isn't inherently fatal, the same standard already applied
+to EURJPY's cliff rather than blanket-rejecting it), but it should no longer
+be described as "confirmed robust" alongside AUDUSD and CADCHF. See
+`CURRENT_PORTFOLIO.md` for the corresponding flag on the live deployment
+candidate.
+
+## E. Recommended Next Tests
+
+1. **Investigate the USDCAD OOS-B drawdown episode at trade level** — the same
+   forensic MFE/MAE methodology already used elsewhere in this project
+   (`DCA_EA_TPSL_Forensic.mq5`'s pattern) applied to this specific March-April
+   2026 sequence, to characterize exactly how deep the floating loss got, how
+   long the sequence stayed open, and whether it was a genuine near-miss or a
+   comfortable (if ugly-looking) recovery — this is the single highest-priority
+   open item now, ahead of everything below.
+2. **Parameter sensitivity re-check specifically for EURJPY-style cliffs** —
+   given how serious and non-obvious both that finding and USDCAD's turned out
+   to be, it's worth a denser parameter grid (not just the 7×7 already run)
+   around any Tier 1/2 candidate's chosen combo, specifically checking
+   neighboring combos for hidden drawdown cliffs the coarse grid could have
+   stepped over undetected.
+3. **Walk-forward testing** for whichever candidates survive #1-2, matching the
    rigor already planned for the existing portfolio's own multiplier-system
    decision.
-5. **Monte Carlo analysis** on the strongest surviving candidate(s), for the same
+4. **Monte Carlo analysis** on the strongest surviving candidate(s), for the same
    reason this study has used it elsewhere — a single equity curve, however good,
    doesn't establish robustness to trade-sequence variation on its own.
-6. **USDCHF-CADCHF co-drawdown specifically** — their 0.34 correlation and the
+5. **USDCHF-CADCHF co-drawdown specifically** — their 0.34 correlation and the
    real January 2026 overlap found in §C means these two probably shouldn't be
    treated as fully independent additions if both were adopted; worth checking
    whether combining them adds meaningfully less benefit than either alone
-   paired with AUDUSD/USDCAD instead.
+   paired with AUDUSD instead (USDCAD's own role in the portfolio is now
+   separately in question per item 1 above).
 
 **Not recommended for further testing**: GBPCHF, AUDCAD, AUDNZD, EURCHF (all
 non-viable or clearly broken at default, per §A), and EURJPY specifically because

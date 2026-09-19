@@ -2,10 +2,23 @@
 
 **Status**: first-cut deployment candidate, not a final recommendation. Assembled
 from `SYMBOL_SCREENING_REPORT.md`'s existing portfolio plus its 4 Tier 1
-candidates, all still pending the further validation listed in that report's §D
-(wider historical window, out-of-sample testing, denser parameter-sensitivity
-check, walk-forward, Monte Carlo). **This is a working baseline to continue
-adjusting, not a go-live sign-off.**
+candidates. **Update 2026-09-19**: wider-window/out-of-sample validation (report
+§D) has since run and found a real, serious issue with USDCAD specifically —
+see the flag right below before treating this composition as settled. Denser
+parameter-sensitivity check, walk-forward, and Monte Carlo are still open.
+**This is a working baseline to continue adjusting, not a go-live sign-off.**
+
+> ⚠ **USDCAD downgraded from Tier 1, pending investigation.** Out-of-sample
+> testing on the 2026.03-2026.09 window (never seen during the original 1-year
+> screen) found a real 10.35% equity drawdown episode — Balance dropped only
+> 3.24% at the same time, so this was invisible on the metric that's easiest to
+> glance at. The whole 6.5-month OOS window netted to essentially breakeven
+> (Recovery Factor 0.00). Full detail: `SYMBOL_SCREENING_REPORT.md` §D. Not
+> automatically disqualifying (full-window profit is still positive), but this
+> symbol should not be treated as "confirmed robust" until §E item 1
+> (trade-level investigation of that specific episode) is done. Consider
+> whether to hold off deploying the USDCAD leg until that investigation
+> completes, independent of the other 6 symbols.
 
 ## Composition
 
@@ -16,7 +29,7 @@ adjusting, not a go-live sign-off.**
 | USDJPY | Existing portfolio | Same — carries known elevated equity DD (4.2-4.7% across every test run so far), kept in per this study's own finding that it's also the single most profitable symbol tested; risk/reward tradeoff, not an oversight |
 | AUDUSD | Tier 1 candidate | `SYMBOL_SCREENING_REPORT.md` §B — most structurally robust symbol in the whole screen (tightest DD band, 0.13-0.69% across the full 49-combo grid, zero losing combinations), lowest correlation to the existing 3 (0.03-0.22) |
 | USDCHF | Tier 1 candidate | Same §B — clean, stable grid, meaningful optimization improvement without degrading risk-adjusted quality. Highest correlation to the existing portfolio of the 4 candidates (0.23 vs EUR/JPY on the equity measure) and co-drawdows with USDJPY in Apr 2025 — kept in, but see the note below |
-| USDCAD | Tier 1 candidate | Same §B — tight DD range, no PF-inflation artifacts, new currency (CAD), low correlation everywhere |
+| USDCAD | **Downgraded, see warning above** | Same §B screening looked clean (tight DD, no artifacts, low correlation) — but the 1-year screening window happened to miss a real 10.35% equity DD episode later found in the untested 2026.03-2026.09 slice. Not yet removed, but no longer "confirmed" |
 | CADCHF | Tier 1 candidate | Same §B — tightest DD band alongside AUDUSD, near-zero correlation to the existing portfolio, gave the single largest combined-portfolio drawdown reduction of the 4 candidates in §C's equity analysis |
 
 **Quantitative diversification evidence** (`SYMBOL_SCREENING_REPORT.md` §C):
@@ -95,12 +108,16 @@ path). **Account**: RoboForex-Pro, Login `52010662`.
 
 ## Deployment checklist (for when you're ready, not done here)
 
+- [ ] **Decide on USDCAD specifically** — deploy alongside the other 6 anyway,
+      hold it back pending the trade-level investigation
+      (`SYMBOL_SCREENING_REPORT.md` §E item 1), or drop it and consider a
+      replacement from Tier 2
 - [ ] Decide on the Max Floating Loss circuit breaker threshold before committing
       live capital, given it's currently off
-- [ ] Attach `EA_DCA_CENT_V1.mq5` to 7 charts (one per symbol above), H4,
+- [ ] Attach `EA_DCA_CENT_V1.mq5` to charts (one per symbol above), H4,
       loading the matching `.set` file on each
 - [ ] Confirm each chart's Magic Number collision check passes (expected: yes,
       all different symbols)
-- [ ] Re-confirm `SYMBOL_SCREENING_REPORT.md` §D's still-open items before
-      trusting this composition long-term, especially the wider-window and
-      out-of-sample checks for the 4 newer candidates
+- [ ] Re-confirm `SYMBOL_SCREENING_REPORT.md` §E's still-open items before
+      trusting this composition long-term (denser parameter grid, walk-forward,
+      Monte Carlo, USDCHF-CADCHF co-dependency)
