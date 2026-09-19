@@ -90,6 +90,14 @@ candidates.
 | `sets/*.set` | Other named configs used across the study (defaults, optimization sweep definitions) |
 | `reports/*/` | Raw backtest/optimization output (XML/HTM/CSV) and the Python analysis scripts, one subfolder per study phase — kept for reproducibility, not meant to be read directly unless verifying a specific number |
 
+## Tooling — `scripts/`
+
+`verify_set_against_defaults.py` — diffs any `.set` file against an EA's own
+compiled `input` defaults (parsed straight from the `.mq5` source). **Run
+this before starting any new study or building a new "default" `.set` from
+an existing reference file** — see `CLAUDE.md`'s own section on why this
+exists (a real incident, not a hypothetical).
+
 ## Everything else
 
 - `default.set` — the original baseline `.set` for `DCA_EA.mq5`, matches the

@@ -31,6 +31,36 @@ against silently losing or overwriting work — treat it accordingly:
   request to commit that unit of work once it's done and verified (compiles
   clean at minimum), not a separate ask each time.
 
+## Verify a new study's "default" `.set` before running anything on it
+
+**Found 2026-09-20**: an entire RoboForex study (~40+ backtests, its whole
+Tier-1-candidate/portfolio conclusion) was built on a `.set` file
+(`strategyA_bb_default.set`) copied from an old reference
+(`diagnostics/backtests/cent_v1_baseline/EA_DCA_CENT_V1_baseline.set`) that
+predated a later fix to the EA's own compiled default (`InpBBAppliedPrice`,
+commits `5e80cc8`/`7db75df`/`50ea428`). Nothing caught the mismatch until the
+user spotted it independently — by then it had propagated into 13 different
+`.set` files across the whole study.
+
+**Before starting a new study, or building a new "default" `.set` from any
+existing reference file, run:**
+```
+python scripts/verify_set_against_defaults.py <path-to-ea.mq5> <path-to-new.set>
+```
+This diffs every field in the `.set` against the EA's own compiled `input`
+defaults (parsed directly from the `.mq5` source, resolving custom and
+common native enums to their integer values) and prints every difference —
+it does not judge which differences are intentional (e.g. a deliberately
+lower `InpMaxSequencesPerDirection` for cent-account risk control is fine),
+it just makes every one of them **visible** so a human/AI consciously
+accepts or rejects each one, instead of silently inheriting whatever an old
+copy-pasted reference file happened to contain. Exits non-zero if anything
+differs — treat that as informational, not necessarily a failure, but never
+skip reading the output.
+
+Re-run it any time a `.set` file that serves as a study's baseline is
+created or copied from an older one, not just once at project start.
+
 ## Indicator resolution — `iCustom()` uses the Indicators ROOT, not the `EA-DCA-V1.0` subfolder
 
 `DCA_EA.mq5`/`EA_DCA_CENT_V1.mq5` load `QMP Filter`, `QQE Adv`, and (via QMP Filter
