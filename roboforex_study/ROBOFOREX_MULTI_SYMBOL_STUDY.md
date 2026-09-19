@@ -1,8 +1,11 @@
 # RoboForex Multi-Symbol Study — DCA CENT V1
 
 **Status**: Phase 1 (login/data verification + Strategy A/B individual baselines, all
-3 symbols) complete. Phase 2 (BB Period × Deviation optimization grid) EURUSD complete,
-GBPUSD/USDJPY running.
+3 symbols) complete. Phase 2 (BB Period × Deviation optimization grid, all 3 symbols)
+complete. Phase 3 (QQE Oversold/Overbought optimization grid, all 3 symbols) complete.
+The QQE SF/WP multiplier grid (indicator-internal smoothing constants, not the
+Oversold/Overbought signal levels) is explicitly deprioritized for now per user
+direction — the levels sweep was the one that mattered; revisit only if asked.
 
 **Correction on headless optimization**: an earlier note in `GO_LIVE_VALIDATION_PLAN.md`
 claimed headless `Optimization=` mode writes results in a format "awkward to parse back
@@ -262,21 +265,23 @@ stats — not in the optimizer's own summary columns) for the specific robust-re
 candidates identified here; out-of-sample validation of whichever region holds up
 across symbols.
 
-## 8. QQE Oversold/Overbought optimization grid — EURUSD and GBPUSD (partial — USDJPY and the SF/WP grid interrupted)
+## 8. QQE Oversold/Overbought optimization grid — EURUSD, GBPUSD, USDJPY (complete)
 
 **Grid**: `InpQQEOversold` ∈ {20,25,30,35,40,45} × `InpQQEOverbought` ∈
 {55,60,65,70,75,80} — 36 combinations, 5-unit increments per §5's own instruction,
 built outward from the default (40/60). Same `Deposit=15000`/window/`Model=4` as the
 BB grids. Raw results: `roboforex_study/reports/qqe_optimization/`.
 
-**Status**: only 2 of the planned 6 QQE optimization jobs completed before the
-background batch was terminated by the harness for a system memory issue unrelated to
-this study (not a bug in the run itself). EURUSD and GBPUSD oversold/overbought grids
-are done and analyzed below. **USDJPY's oversold/overbought grid was killed mid-run**
-(no report produced) and **the SF/WP "multiplier" grid (§5's other half) has not run
-for any symbol yet**. This section will be updated once those resume.
+**Status**: EURUSD and GBPUSD completed first; USDJPY's job was killed mid-run by a
+background-batch memory-pressure interruption unrelated to this study, then re-run
+cleanly (confirmed: correct account/symbol/deposit in the report header, 36/36 combos
+present) once the harness had headroom again. All 3 symbols' oversold/overbought grids
+are now complete and analyzed below. Per explicit user direction, the SF/WP multiplier
+grid (§5's other half — the QQE indicator's own internal smoothing/Wilders-period
+constants, not the signal threshold levels) is deprioritized for now, not run for any
+symbol.
 
-### Findings (EURUSD + GBPUSD, both complete)
+### Findings (EURUSD + GBPUSD)
 
 Both symbols show the **same clean, monotonic, cross-symbol-consistent direction**:
 profit increases steadily as `Oversold` rises toward 50 and `Overbought` falls toward
@@ -311,7 +316,53 @@ computed as 0.00, meaningless at n=1). **Flagged as small-sample artifacts, not
 validated edges** — consistent with this study's own rule to investigate rather than
 celebrate unusual results.
 
-**Not yet done**: USDJPY's oversold/overbought grid (interrupted, needs a clean
-re-run); the SF/WP multiplier grid for all 3 symbols; extending the oversold/overbought
-range closer to 50 given the edge-of-range result above; full-metric deep dives and
-out-of-sample validation, same as the BB grid's own open items.
+### USDJPY — same directional pattern, structurally different risk (consistent with §6)
+
+| | EURUSD | GBPUSD | USDJPY |
+|---|---|---|---|
+| Best profit combo | OS=45, OB=55: **$1,623.17**, PF 4.20 | OS=45, OB=55: **$1,662.60**, PF 2.98 | OS=45, OB=55: **$5,512.15**, PF 2.70 |
+| Best combo's DD% | 1.80% | 2.82% | **19.83%** |
+| Best combo's trades | 422 | 440 | 498 |
+| Default (40/60) profit | $1,195.98 | $1,329.52 | $5,051.87 |
+| Equity DD% range across grid | 0.33%–1.90% | 0.06%–2.94% | **9.01%–21.86%** |
+
+**The direction is identical across all 3 symbols**: `Oversold=45, Overbought=55` — the
+same edge-of-tested-range corner closest to 50 — is the single best-profit combination
+on USDJPY too, reinforcing (not just repeating) the "looser filter, more signals, more
+total profit" pattern already seen on EURUSD/GBPUSD, and the same "this is a range-edge
+result, not a confirmed interior optimum" caution applies with 3-symbol weight behind
+it now rather than 2.
+
+**The risk magnitude is not identical — USDJPY carries the same structurally deeper
+equity drawdown found in the BB grid (§6), independently reconfirmed here on a
+different indicator (QQE vs. BB) driving the same underlying DCA position-sizing/
+averaging mechanics.** Equity DD% across this entire grid never drops below 9%
+anywhere, vs. sub-3% for EURUSD/GBPUSD across their entire grids — this isn't
+confined to one corner, it's the whole USDJPY oversold/overbought surface running at
+roughly an order of magnitude more floating risk than the other two symbols, for every
+parameter combination tested, not just the default.
+
+**Same sparsest-corner PF-inflation artifact recurs on USDJPY too, and more
+sharply**: `Oversold=20-25, Overbought=75-80` reaches PF 8.6–11.6 (vs. the grid's
+otherwise-typical 2.4–3.5) on the grid's lowest trade counts (26–68 of the ~26–498
+range) — the same "investigate, don't celebrate" pattern flagged for EURUSD/GBPUSD's
+own corners and the earlier BB-grid USDJPY corner, now a fourth independent
+occurrence of the same artifact shape. **Flagged, not validated.**
+
+## 9. Summary — QQE Oversold/Overbought grid, all 3 symbols
+
+The profit-maximizing direction (loosen the filter toward 50/50) is now a **confirmed
+cross-symbol pattern across all 3 tested symbols**, holding independently across two
+different indicator families (BB and QQE, §7/§8) — the strongest robustness signal
+this study has produced so far. USDJPY's structurally elevated equity drawdown is
+likewise now confirmed independently across both indicator families, not a BB-specific
+or single-grid artifact — this should weigh heavily in any capital-adequacy or
+parameter-selection decision for USDJPY specifically (§2/§4's original finding), on
+top of the earlier finding that USDJPY needs a fundamentally larger deposit than
+EUR/GBP just to survive.
+
+**Not yet done**: the SF/WP multiplier grid (deprioritized per user direction, not
+abandoned — revisit if asked); extending the oversold/overbought range closer to 50
+given the edge-of-range result confirmed on all 3 symbols now; full-metric deep dives
+(win rate, consecutive losses, sequence stats) and out-of-sample validation for
+whichever region ultimately gets selected, same open items as the BB grid.
