@@ -492,18 +492,56 @@ findings rather than conflating them: the parameter choice is fine, the
 multi-sequence-under-sustained-trend exposure is the real and separate risk
 already documented in §D2.
 
+## D4. Walk-Forward (Rolling-Window) Consistency Check (complete)
+
+**Method**: the actual deployment uses fixed, non-reoptimized parameters, so
+the meaningful walk-forward question here isn't "does re-optimizing each
+period help" but "does the fixed default configuration hold up across every
+sequential slice of time, not just the Full/OOS-A/OOS-B split already done
+(§D)." Split the full 2024.01.01–2026.09.19 history into 5 sequential
+~6-month windows and ran all 4 Tier 1 candidates (deployed `.set` files)
+through each — 20 single-parameter backtests. Raw data:
+`roboforex_study/reports/walk_forward/`.
+
+| Symbol | 2024 H1 | 2024 H2 | 2025 H1 | 2025 H2 | 2026 (partial) | Negative windows |
+|---|---:|---:|---:|---:|---:|---:|
+| AUDUSD | $92.84 (PF 9.08) | $55.49 (PF 1.31) | $110.28 (PF 9.17) | $120.56 (PF 3.31) | $156.05 (PF 2.76) | **0/5** |
+| USDCHF | $35.17 (PF 1.25) | $61.01 (PF 1.53) | $165.43 (PF 2.68) | $113.10 (PF 3.17) | $99.89 (PF 3.07) | **0/5** |
+| USDCAD | $49.35 (PF 2.19) | $94.85 (PF 1.69) | $128.26 (PF 6.02) | **-$49.91 (PF 0.65)** | $34.32 (PF 1.05, DD 10.33%) | **1/5** |
+| CADCHF | $89.79 (PF 5.22) | $108.79 (PF 2.00) | $65.66 (PF 2.46) | $70.39 (PF 24.23†) | $99.20 (PF 4.30) | **0/5** |
+
+†CADCHF's 2025 H2 PF of 24.23 sits on only 26 trades — flagged per this
+study's own recurring small-sample-inflation caution, not treated as a
+genuine edge; its Equity DD in that same window is tiny (0.12%) so it isn't a
+risk concern, just a statistic not to over-read.
+
+**AUDUSD, USDCHF, and CADCHF are clean across every single window** — zero
+negative half-year periods in 2.7 years of history for any of the three, the
+strongest consistency evidence this study has produced for any candidate.
+
+**USDCAD is the one exception, and this adds a new data point to its already-
+flagged profile**: 2025 H2 (2025.07–2026.01) was a genuine losing half-year
+(-$49.91, PF 0.65, Recovery Factor -0.25) — a *different* period from the
+major drawdown episode already investigated in §D2 (which fell in the 2026
+partial window, and the identical $1,555.81 Equity DD figure confirms it's
+the same episode, now cross-validated a third time across three different
+report runs). So USDCAD has now shown weakness in **two separate windows**
+out of five, not just the one already investigated — reinforcing rather than
+contradicting the "kept in, but not confirmed-robust the way AUDUSD/CADCHF
+are" status already recorded in `CURRENT_PORTFOLIO.md`.
+
 ## E. Recommended Next Tests
 
 1. ~~Decide USDCAD's deployment status given D2's findings~~ — **decided
    2026-09-19**: keep the Max Floating Loss circuit breaker disabled for now,
-   USDCAD stays in the portfolio as-is, revisit after walk-forward/Monte
-   Carlo if either surfaces further concerns. See `CURRENT_PORTFOLIO.md`.
+   USDCAD stays in the portfolio as-is. §D4's walk-forward result (a second
+   losing window found) doesn't change this decision but is worth knowing.
 2. ~~Parameter sensitivity re-check specifically for EURJPY-style cliffs~~ —
    **done, see §D3**: clean across all 4 Tier 1 candidates, no hidden cliffs
    near any deployed default.
-3. **Walk-forward testing** for whichever candidates survive #1-2, matching the
-   rigor already planned for the existing portfolio's own multiplier-system
-   decision.
+3. ~~Walk-forward testing~~ — **done, see §D4**: AUDUSD/USDCHF/CADCHF clean
+   across all 5 rolling windows; USDCAD showed a second losing window
+   (2025 H2, distinct from the already-investigated 2026 episode).
 4. **Monte Carlo analysis** on the strongest surviving candidate(s), for the same
    reason this study has used it elsewhere — a single equity curve, however good,
    doesn't establish robustness to trade-sequence variation on its own.
