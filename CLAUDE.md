@@ -144,6 +144,31 @@ conversation carries forward to the next run.
   superficially like a successful run. **Always verify the report file was
   actually created under the name you passed** (`Report=` in the `.ini`)
   before trusting any result — don't infer success from the log alone.
+  **Reconfirmed 2026-09-19, a MIXED path is just as broken as a pure
+  forward-slash one**: building the config argument as
+  `"$SCRATCH/$name.ini"` in a bash loop — where `$SCRATCH` itself is a
+  correct Windows backslash path (`C:\Users\...\claude`) but gets joined to
+  the filename with a literal `/` — reproduces the exact same silent
+  failure. The terminal launches, authorizes, and idles with **no** Tester/
+  AutoTesting activity at all (worse than the stale-simulation symptom
+  above — this time nothing runs, not even something old), and the log's
+  own `Terminal: launched with ...` line shows the giveaway: it prints only
+  up to the last all-backslash segment (e.g. `launched with
+  C:\Users\vasco\AppData\Local\Temp\claude`, filename silently dropped) —
+  **check that this exact log line includes your full intended filename**
+  before assuming a launch worked, not just that `terminal64.exe` returned
+  or that the process is running. Build the whole config path as one
+  literal, fully-backslash string (no shell-side path joining with `/` at
+  all, even for one segment) — e.g. write out each `.ini`'s full path
+  explicitly rather than concatenating a variable with a `/`.
+  **Also**: if you kill a `terminal64.exe` that was launched from inside a
+  still-running shell loop (e.g. via `run_in_background`), the loop's next
+  iteration will immediately relaunch a new instance — this can look
+  exactly like unexplained "auto-restart" behavior (new PID appears within
+  seconds no matter how the old one was terminated) and wastes time being
+  investigated as a Windows/MT5 crash-recovery mechanism. Before chasing
+  that theory, check whether one of your own background tasks is still
+  mid-loop and simply launching the next iteration.
 - **"Cloud servers switched off" in the log is benign, not a failure.** It's
   followed immediately by "cloud network mode is off" and the run proceeding
   normally on local agents — this appears on essentially every headless run
