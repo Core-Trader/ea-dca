@@ -31,6 +31,38 @@ against silently losing or overwriting work — treat it accordingly:
   request to commit that unit of work once it's done and verified (compiles
   clean at minimum), not a separate ask each time.
 
+## Indicator resolution — `iCustom()` uses the Indicators ROOT, not the `EA-DCA-V1.0` subfolder
+
+`DCA_EA.mq5`/`EA_DCA_CENT_V1.mq5` load `QMP Filter`, `QQE Adv`, and (via QMP Filter
+internally) `MACD_Platinum` via `iCustom(_Symbol, tf, "QMP Filter", ...)` with a bare
+name. MT5 resolves a bare `iCustom()` name against the **root** of `MQL5\Indicators\`,
+not recursively into the `EA-DCA-V1.0` subfolder — confirmed on the RoboForex terminal
+(`GO_LIVE_VALIDATION_PLAN.md` §5.4) and reconfirmed 2026-09-19. Both the FTMO and
+RoboForex terminals keep a **second, separate copy** of these three indicator files
+sitting directly at `MQL5\Indicators\` root (space-containing names — `QMP Filter.mq5`,
+`QQE Adv.mq5`, `MACD_Platinum.mq5` — matching the exact `iCustom()` call strings), in
+addition to the repo-synced copies inside `EA-DCA-V1.0\` (underscore names —
+`QMP_Filter.mq5`, `QQE_Adv.mq5` — matching the repo's own `src/indicators/` filenames).
+
+**These root-level copies are NOT kept in sync automatically** — unlike
+`src/experts/`/`src/indicators/`, the Indicators root isn't a symlink into the repo, so
+a change committed to `src/indicators/` has zero effect on what the EA actually loads
+until the root-level copy is separately updated and recompiled. Confirmed drifted in
+practice: the FTMO terminal's root-level `QQE Adv.mq5` had different default `input`
+values (`SF`/`RSI_Period`/`WP`) than the repo-tracked `QQE_Adv.mq5` — benign here only
+because the EA always passes its own `.set`-driven parameters explicitly to every
+`iCustom()` call, so the indicator's own compiled-in defaults are never actually read;
+a future drift in the indicator's *calculation logic* (not just its defaults) would not
+be so harmless. Fixed by re-copying all three `src/indicators/` files to both
+terminals' Indicators root (under the spaced names) and recompiling.
+
+**Whenever `src/indicators/` changes, re-sync and recompile the root-level copy on
+every terminal you intend to test with** — don't assume the repo/symlink sync alone
+covers it, and don't assume compiling inside `EA-DCA-V1.0\` did anything for runtime
+behavior; that subfolder copy is effectively documentation-only for indicators, unlike
+for the EA files themselves (which load directly, not via a bare-name `iCustom()` from
+elsewhere).
+
 ## Compiled artifacts
 
 Never commit `.ex5`/`.ex4` binaries — only `.mq5` source. The repo-root
