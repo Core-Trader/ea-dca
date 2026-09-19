@@ -169,6 +169,24 @@ conversation carries forward to the next run.
   investigated as a Windows/MT5 crash-recovery mechanism. Before chasing
   that theory, check whether one of your own background tasks is still
   mid-loop and simply launching the next iteration.
+- **`pgrep` does not exist in this project's Bash tool environment (Git
+  Bash/MSYS) — it returns `command not found`, exit 127.** Confirmed
+  2026-09-19: a wait-loop written as `while pgrep -f "terminal64.exe" >
+  /dev/null 2>&1; do sleep 10; done` before each sequential launch in a
+  multi-job batch silently did **nothing** — a nonexistent command exits
+  127 (non-zero → "false"), so the loop treated "terminal still running" as
+  immediately false every time and launched the next job with **zero**
+  actual waiting. Since MT5 allows only one instance and a second launch
+  while one is already open silently no-ops (see above), this meant only
+  the *first* job in a 6-job batch actually ran — the other 5 each fired
+  into an already-busy terminal and did nothing, producing no report and no
+  error either. **Use `ps aux | grep -q "[t]erminal64"` instead** (the
+  bracket trick avoids grep matching its own process) — confirmed working
+  in this environment. Whenever chaining sequential headless launches,
+  verify the wait mechanism actually blocks (e.g. by checking elapsed time
+  or watching the log advance) rather than trusting that a loop "looks
+  right" — an always-false condition produces no error, just silent,
+  instant fall-through.
 - **"Cloud servers switched off" in the log is benign, not a failure.** It's
   followed immediately by "cloud network mode is off" and the run proceeding
   normally on local agents — this appears on essentially every headless run
