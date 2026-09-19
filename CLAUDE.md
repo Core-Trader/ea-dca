@@ -37,7 +37,7 @@ against silently losing or overwriting work — treat it accordingly:
 internally) `MACD_Platinum` via `iCustom(_Symbol, tf, "QMP Filter", ...)` with a bare
 name. MT5 resolves a bare `iCustom()` name against the **root** of `MQL5\Indicators\`,
 not recursively into the `EA-DCA-V1.0` subfolder — confirmed on the RoboForex terminal
-(`GO_LIVE_VALIDATION_PLAN.md` §5.4) and reconfirmed 2026-09-19. Both the FTMO and
+(`go_live/GO_LIVE_VALIDATION_PLAN.md` §5.4) and reconfirmed 2026-09-19. Both the FTMO and
 RoboForex terminals keep a **second, separate copy** of these three indicator files
 sitting directly at `MQL5\Indicators\` root (space-containing names — `QMP Filter.mq5`,
 `QQE Adv.mq5`, `MACD_Platinum.mq5` — matching the exact `iCustom()` call strings), in
