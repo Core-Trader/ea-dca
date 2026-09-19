@@ -260,4 +260,58 @@ in a way that should weigh heavily against simply porting EURUSD's or GBPUSD's
 **Not yet done**: full-metric-set deep dives (win rate, consecutive losses, sequence
 stats — not in the optimizer's own summary columns) for the specific robust-region
 candidates identified here; out-of-sample validation of whichever region holds up
-across symbols; the QQE-strategy optimization grid (Task pending).
+across symbols.
+
+## 8. QQE Oversold/Overbought optimization grid — EURUSD and GBPUSD (partial — USDJPY and the SF/WP grid interrupted)
+
+**Grid**: `InpQQEOversold` ∈ {20,25,30,35,40,45} × `InpQQEOverbought` ∈
+{55,60,65,70,75,80} — 36 combinations, 5-unit increments per §5's own instruction,
+built outward from the default (40/60). Same `Deposit=15000`/window/`Model=4` as the
+BB grids. Raw results: `roboforex_study/reports/qqe_optimization/`.
+
+**Status**: only 2 of the planned 6 QQE optimization jobs completed before the
+background batch was terminated by the harness for a system memory issue unrelated to
+this study (not a bug in the run itself). EURUSD and GBPUSD oversold/overbought grids
+are done and analyzed below. **USDJPY's oversold/overbought grid was killed mid-run**
+(no report produced) and **the SF/WP "multiplier" grid (§5's other half) has not run
+for any symbol yet**. This section will be updated once those resume.
+
+### Findings (EURUSD + GBPUSD, both complete)
+
+Both symbols show the **same clean, monotonic, cross-symbol-consistent direction**:
+profit increases steadily as `Oversold` rises toward 50 and `Overbought` falls toward
+50 (i.e., a *looser* QQE filter, more signals). This tracks directly with trade count
+(4 trades in the tightest/most-selective corner up to 400+ in the loosest) — more
+signals compounding into more total profit in an overall-profitable strategy, not a
+free lunch.
+
+| | EURUSD | GBPUSD |
+|---|---|---|
+| Best profit combo | OS=45, OB=55: **$1,623.17**, PF 4.20 | OS=45, OB=55: **$1,662.60**, PF 2.98 |
+| Best combo's DD% | 1.80% | 2.82% |
+| Best combo's trades | 422 | 440 |
+| Default (40/60) profit | $1,195.98 | $1,329.52 |
+| Equity DD% range across grid | 0.33%–1.90% | 0.06%–2.94% |
+
+**Important limitation, not a result to hide**: the best combination on *both* symbols
+sits at `Oversold=45, Overbought=55` — the **edge of the tested range**, on the side
+closest to 50. This means the grid as tested cannot rule out an even better (or
+differently-shaped) result just outside it — §6's own rule against "arbitrarily
+restricting the range" applies to this finding itself. The range was built symmetrically
+outward from the default per §5's instruction, but the result suggests it should be
+widened further toward 50 before treating 45/55 as a genuine optimum rather than a
+boundary artifact.
+
+**A second, distinct finding needing caution — same pattern as USDJPY's BB grid
+corner**: the sparsest-trade corners show wildly inflated Profit Factor that should
+NOT be read as edge quality. EURUSD's `Oversold=20-25, Overbought=80` shows PF
+7.01–8.01 on just 4–10 trades; GBPUSD's `Oversold=20, Overbought=70` shows PF 5.90 on
+49 trades, and `Oversold=20, Overbought=80` degenerates to a single trade (PF
+computed as 0.00, meaningless at n=1). **Flagged as small-sample artifacts, not
+validated edges** — consistent with this study's own rule to investigate rather than
+celebrate unusual results.
+
+**Not yet done**: USDJPY's oversold/overbought grid (interrupted, needs a clean
+re-run); the SF/WP multiplier grid for all 3 symbols; extending the oversold/overbought
+range closer to 50 given the edge-of-range result above; full-metric deep dives and
+out-of-sample validation, same as the BB grid's own open items.
