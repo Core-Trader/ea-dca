@@ -49,25 +49,45 @@ paired with AUDUSD/USDCAD alone.
   that should be revisited before any live capital is committed, once a
   threshold has been deliberately chosen and tested for this specific
   multi-symbol context — not silently inherited from a single-symbol study.
-- **Magic Number `123456` shared across all 7 symbols.** Safe per the EA's own
-  `CheckMagicNumberCollision()` logic (keyed by Symbol+Magic together, not Magic
-  alone — confirmed by code inspection) and matches every test run in this
-  entire study exactly. Not split into per-symbol magic numbers; if per-symbol
-  trade-history filtering in the account statement becomes useful later, this
-  is a one-line change per `.set` file, not a structural one.
 - **Lot sizing (`InpInitialLot=0.01`, `LOT_FIXED`) and account-currency handling
   unchanged** — per this study's own earlier finding
   (`GO_LIVE_VALIDATION_PLAN.md` §5.3), RoboForex cent-account contract size and
   per-lot risk are not rescaled, only the balance display is, so no cent-specific
   adjustment to lot sizing is needed here.
 
+## What's deliberately different from the tested configuration
+
+- **Magic Number — distinct per symbol, not the shared `123456` every backtest
+  in this study actually used.** User preference ("just in case", 2026-09-19),
+  confirmed to cost nothing: magic number isn't read by any trading-decision
+  logic anywhere in the EA (verified by inspecting every place it's used —
+  `CheckMagicNumberCollision()`'s lock and `GetStateFilePath()`'s state-file
+  name are both already keyed by Symbol+Magic *together*, not Magic alone, and
+  every position/sequence re-validation checks Symbol and Magic together too —
+  see `EA_DCA_CENT_V1.mq5:1922-1924`). Changing the number doesn't change
+  trading behavior, so every backtest result in `SYMBOL_SCREENING_REPORT.md`
+  still applies unchanged to these `.set` files despite the different numbers.
+  Sequential from the project's original default, so EURUSD keeps the exact
+  value (`123456`) every prior test used, and the rest increment by 1 in the
+  order above:
+
+  | Symbol | Magic Number |
+  |---|---:|
+  | EURUSD | 123456 |
+  | GBPUSD | 123457 |
+  | USDJPY | 123458 |
+  | AUDUSD | 123459 |
+  | USDCHF | 123460 |
+  | USDCAD | 123461 |
+  | CADCHF | 123462 |
+
 ## Files
 
-`roboforex_study/sets/cent_portfolio/<SYMBOL>.set` — one file per symbol, content
-currently identical (MT5 `.set` files don't encode which symbol to trade; that's
-determined by which chart the EA is attached to). Provided per-symbol for
-clarity when loading each chart, and so future per-symbol tuning has a natural
-home without touching the others.
+`roboforex_study/sets/cent_portfolio/<SYMBOL>.set` — one file per symbol.
+Content is identical **except** `InpMagicNumber`, per the table above (MT5
+`.set` files don't encode which symbol to trade; that's determined by which
+chart the EA is attached to — the magic number is the only per-symbol
+difference between these 7 files).
 
 **Target EA**: `EA_DCA_CENT_V1.mq5` (the cent-account track build, currently at
 commit `793d30a` — InpMaxInitialLot fix applied to the risk-adjusted lot-sizing
