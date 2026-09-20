@@ -19,9 +19,11 @@ not a replacement for it.
 | `src/experts/DCA_EA_V1.mq5` / `_V2.mq5` / `_V3.mq5` | Earlier build-phase snapshots, kept for history |
 | `src/indicators/` | `QMP_Filter.mq5` (entry dots), `QQE_Adv.mq5`, `MACD_Platinum.mq5`, `BB.mq5` — supporting custom indicators |
 
-Compiled `.ex5` binaries are never committed (`.gitignore`) — this folder is
-symlinked into the live MT5 terminal(s), so `git status`/`git diff` here can
-reflect changes made outside this repo's own workflow; check before editing.
+Compiled `.ex5` binaries are never committed (`.gitignore`). As of 2026-09-20
+neither MT5 terminal is symlinked to this folder — both hold plain,
+independently-maintained copies, pushed out via `scripts/sync_to_terminals.ps1`.
+Run that script after any change here, before compiling or backtesting on
+either terminal — see `CLAUDE.md`'s "Sync to terminals" section.
 
 ## Documentation — `docs/`
 
@@ -98,6 +100,11 @@ compiled `input` defaults (parsed straight from the `.mq5` source). **Run
 this before starting any new study or building a new "default" `.set` from
 an existing reference file** — see `CLAUDE.md`'s own section on why this
 exists (a real incident, not a hypothetical).
+
+`sync_to_terminals.ps1` — pushes `src/experts/*.mq5` and `src/indicators/*.mq5`
+out to both MT5 terminals' plain (non-symlinked) copies, including the
+bare-named root-level indicator files. **Run this after any change to `src/`**
+— see `CLAUDE.md`'s "Sync to terminals" section.
 
 ## Everything else
 

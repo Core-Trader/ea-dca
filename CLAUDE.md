@@ -2,22 +2,32 @@
 
 ## Git discipline (non-negotiable)
 
-This project's `src/experts/` and `src/indicators/` folders are symlinked into a
-live, shared MetaTrader 5 environment (`MQL5\Experts\EA-DCA-V1.0` and
-`MQL5\Indicators\EA-DCA-V1.0`) that other AI tools and manual MetaEditor edits
-also touch. Changes made outside this repo's own workflow land directly in
-these tracked files with no warning. Git history is the only real safety net
-against silently losing or overwriting work — treat it accordingly:
+**As of 2026-09-20**, `src/experts/` and `src/indicators/` are **plain,
+independently-maintained copies** on both the FTMO and RoboForex terminals —
+`scripts/sync_to_terminals.ps1` pushes source out to both after any change
+(see "Sync to terminals" below). This replaced an earlier live-symlink setup
+on the FTMO terminal specifically, deliberately, to match RoboForex's own
+already-established plain-copy convention. Because it's now a manual push
+rather than an automatic link, the risk direction is the opposite of what it
+used to be: **a terminal's copy can silently go stale** if a source change
+isn't synced, rather than an outside edit silently landing in the repo. Git
+history remains the safety net either way — treat it accordingly:
 
 - **Commit after every meaningful unit of work** — a completed build phase, a
   bug fix, a refactor, a resolved design decision. Do not let more than one
   logical unit of work sit uncommitted. A long session with zero commits until
   the very end is exactly the failure mode this file exists to prevent.
-- **Check `git status` and `git diff` before starting a significant edit**,
-  especially to anything under `src/experts/` or `src/indicators/` — those
-  files can drift from outside this session (see above). If something
-  unexpected shows up, surface it to the user before folding it into a
-  commit; don't silently absorb someone else's change into your own.
+- **Check `git status` and `git diff` before starting a significant edit** —
+  the repo itself is no longer symlink-exposed to outside edits (see above),
+  but if a manual MetaEditor session or another AI tool ever does edit a file
+  directly under this path, the same rule applies: surface it to the user
+  before folding it into a commit, don't silently absorb someone else's
+  change into your own.
+- **After any change to `src/experts/` or `src/indicators/`, run
+  `scripts\sync_to_terminals.ps1` before compiling or backtesting on either
+  terminal** — neither one reads from the repo automatically anymore. This is
+  the new failure mode to watch for, replacing the old symlink-drift one: a
+  terminal silently running stale code because the push step was skipped.
 - **Never** force-push, `reset --hard`, amend a commit, or run any other
   history-rewriting command without the user explicitly asking for that
   specific action in that specific moment. Always create a new commit rather
@@ -61,37 +71,48 @@ skip reading the output.
 Re-run it any time a `.set` file that serves as a study's baseline is
 created or copied from an older one, not just once at project start.
 
-## Indicator resolution — `iCustom()` uses the Indicators ROOT, not the `EA-DCA-V1.0` subfolder
+## Sync to terminals — nothing is symlinked, everything is a manual push
+
+**As of 2026-09-20, both the FTMO and RoboForex terminals are plain, manually-synced
+copies of this repo's `src/` — there is no symlink anywhere in this project any
+more.** (The FTMO terminal used to be symlinked; it was deliberately converted to a
+plain copy to match RoboForex's own long-standing convention and remove the
+directory-symlink fragility that came with moving the repo itself.) Run
+```
+powershell -File scripts\sync_to_terminals.ps1
+```
+after **any** change to `src/experts/` or `src/indicators/`, before compiling or
+backtesting on either terminal. It copies `.mq5` source only (never `.ex5` —
+each terminal compiles its own binary locally) to four destinations per terminal:
+the `EA-DCA-V1.0` subfolder under both `Experts\` and `Indicators\`, plus two of the
+three indicators' **bare-named root-level copies** (see below). Skipping this step
+means a terminal silently keeps running whatever it last had — no error, no warning.
+
+### The root-level indicator copies specifically
 
 `DCA_EA.mq5`/`EA_DCA_CENT_V1.mq5` load `QMP Filter`, `QQE Adv`, and (via QMP Filter
 internally) `MACD_Platinum` via `iCustom(_Symbol, tf, "QMP Filter", ...)` with a bare
 name. MT5 resolves a bare `iCustom()` name against the **root** of `MQL5\Indicators\`,
 not recursively into the `EA-DCA-V1.0` subfolder — confirmed on the RoboForex terminal
-(`go_live/GO_LIVE_VALIDATION_PLAN.md` §5.4) and reconfirmed 2026-09-19. Both the FTMO and
-RoboForex terminals keep a **second, separate copy** of these three indicator files
-sitting directly at `MQL5\Indicators\` root (space-containing names — `QMP Filter.mq5`,
-`QQE Adv.mq5`, `MACD_Platinum.mq5` — matching the exact `iCustom()` call strings), in
-addition to the repo-synced copies inside `EA-DCA-V1.0\` (underscore names —
-`QMP_Filter.mq5`, `QQE_Adv.mq5` — matching the repo's own `src/indicators/` filenames).
+(`go_live/GO_LIVE_VALIDATION_PLAN.md` §5.4) and reconfirmed 2026-09-19. So each terminal
+needs a **second, separate copy** of these three files sitting directly at
+`MQL5\Indicators\` root (space-containing names for two of them — `QMP Filter.mq5`,
+`QQE Adv.mq5`; `MACD_Platinum.mq5` keeps its underscore even at root — all three
+matching the exact `iCustom()` call strings), independent of the `EA-DCA-V1.0\`
+subfolder copies (repo's own underscore names — `QMP_Filter.mq5`, `QQE_Adv.mq5`).
+`sync_to_terminals.ps1` handles this renaming automatically; don't assume a plain
+subfolder copy alone covers indicator changes.
 
-**These root-level copies are NOT kept in sync automatically** — unlike
-`src/experts/`/`src/indicators/`, the Indicators root isn't a symlink into the repo, so
-a change committed to `src/indicators/` has zero effect on what the EA actually loads
-until the root-level copy is separately updated and recompiled. Confirmed drifted in
-practice: the FTMO terminal's root-level `QQE Adv.mq5` had different default `input`
-values (`SF`/`RSI_Period`/`WP`) than the repo-tracked `QQE_Adv.mq5` — benign here only
-because the EA always passes its own `.set`-driven parameters explicitly to every
-`iCustom()` call, so the indicator's own compiled-in defaults are never actually read;
-a future drift in the indicator's *calculation logic* (not just its defaults) would not
-be so harmless. Fixed by re-copying all three `src/indicators/` files to both
-terminals' Indicators root (under the spaced names) and recompiling.
+Confirmed drifted in practice before the sync script existed: the FTMO terminal's
+root-level `QQE Adv.mq5` had different default `input` values (`SF`/`RSI_Period`/`WP`)
+than the repo-tracked `QQE_Adv.mq5` — benign only because the EA always passes its own
+`.set`-driven parameters explicitly to every `iCustom()` call, so the indicator's own
+compiled-in defaults are never actually read; a future drift in the indicator's
+*calculation logic* (not just its defaults) would not be so harmless.
 
-**Whenever `src/indicators/` changes, re-sync and recompile the root-level copy on
-every terminal you intend to test with** — don't assume the repo/symlink sync alone
-covers it, and don't assume compiling inside `EA-DCA-V1.0\` did anything for runtime
-behavior; that subfolder copy is effectively documentation-only for indicators, unlike
-for the EA files themselves (which load directly, not via a bare-name `iCustom()` from
-elsewhere).
+**`BB.mq5` does NOT need a root-level copy** — the EA uses the native `iBands()`
+function for Bollinger Bands, not `iCustom()`; `BB.mq5` in `src/indicators/` is unused
+reference material, not a live dependency.
 
 ## Compiled artifacts
 
