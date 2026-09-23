@@ -1,0 +1,8 @@
+=== USDCAD OOS-B refix (50 trades, 2026.03.01-2026.09.19, InpBBAppliedPrice=2) ===
+  Trade P&L: sum=194.94  min=-78.37  max=109.47
+  Median max DD:      $176.34
+  95th pct max DD:    $379.97
+  99th pct max DD:    $503.30
+  Worst of 20000 paths:  $960.43
+  Worst final equity: $-876.17
+  P(path ends net negative): 4516/20000 (22.580%)

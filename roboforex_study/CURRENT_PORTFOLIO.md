@@ -54,6 +54,29 @@ honest next step, not just remaining deployment decisions.
 > price basis. The 2026-09-19 decision was made without this — worth
 > deciding again, not assuming it still stands. See
 > `BACKTEST_VIABILITY_CHECKLIST.md` §4 for the full comparison.
+>
+> **Update 2026-09-23, OOS-B specifically re-run**: the exact OOS-B window
+> from §D2 (2026.03.01–2026.09.19) was re-run with the corrected
+> `InpBBAppliedPrice=2`. The dollar-value drawdown episode is essentially
+> unchanged (~$1,554, confirming it's the same structural event — 3
+> concurrent SELL sequences into the same USDCAD uptrend), but the window's
+> **overall result flips from breakeven to a real net loss**: Net Profit
+> $6.17→**-$34.20**, Profit Factor 1.01→**0.95**, Recovery Factor
+> 0.00→**-0.02** (50 trades, down from 65 pre-fix — same signal-timing
+> shift seen across the rest of the study). This is the first re-validated
+> USDCAD window to show an outright loss, not just a weak-but-positive
+> result. A trade-resampling Monte Carlo (20,000 paths, pooled from this
+> window's own 50 closed legs) puts **P(net-negative path) at 22.58%**
+> (4,516/20,000) — not directly comparable to §D5's original 0.33% figure
+> (that pooled all 225 trades across 2.7 years; this pools only the
+> adverse window itself), but a real, seventh independent data point, and
+> the most unambiguous one yet. One caveat: this resampling (inherited
+> unmodified from `monte_carlo_bootstrap.py`) pools only the deal-level
+> Profit column, excluding Swap — a real ~$229 drag here from multi-week-held
+> DCA legs during the trend, which resampling can't capture since it accrues
+> with holding time, not per-trade luck, so the true negative-outcome
+> probability in live trading likely runs somewhat higher than 22.58%. Full
+> data: `roboforex_study/reports/usdcad_oosb_refix/`.
 
 ## Composition
 

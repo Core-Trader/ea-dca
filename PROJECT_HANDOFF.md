@@ -1,6 +1,6 @@
 # EA-DCA-V1.0 — Project Handoff
 
-**Last updated**: 2026-09-23, as of commit `f3014d1` (the commit adding this
+**Last updated**: 2026-09-23, as of commit `754e837` (the commit adding this
 update will be one ahead of that by the time you read it).
 
 > **Maintenance note**: this is a living document, not a snapshot. Update it
@@ -94,11 +94,26 @@ breakdown: `INDEX.md`.
     checklist's own decision framework, a full re-validation is now more
     justified than a spot-check-and-move-on.
 
+- **2026-09-23, USDCAD OOS-B re-run specifically**: given the choice between
+  running the full battery again or a scoped USDCAD-focused check first, ran
+  the latter — the exact §D2 OOS-B window (2026.03.01–2026.09.19)
+  re-executed with the corrected `.set`. Result: the window **flips from
+  breakeven to a real net loss** (Net Profit $6.17→-$34.20, Profit Factor
+  1.01→0.95, Recovery Factor 0.00→-0.02), while the dollar-value drawdown
+  episode itself is essentially unchanged (~$1,554, same structural event).
+  A resampling Monte Carlo on this window's own 50 trades puts P(net-negative
+  path) at 22.58%. This is the seventh independent line of evidence against
+  USDCAD, and the first to show an outright loss rather than a
+  weak-but-positive result. Full detail: `CURRENT_PORTFOLIO.md`'s USDCAD
+  warning block, data in `roboforex_study/reports/usdcad_oosb_refix/`.
+
 - **Next action, not yet decided**: whether to run the full
-  OOS/walk-forward/Monte Carlo battery again given this outcome, and
-  whether the USDCAD circuit-breaker-off decision should be revisited
-  given its reinforced risk profile. Both are scope/budget calls for the
-  user, not resolved here.
+  OOS/walk-forward/Monte Carlo battery again for all 4 Tier-1 candidates
+  given the checklist's spot-check outcome, and whether the USDCAD
+  circuit-breaker-off decision should be revisited given its now
+  substantially reinforced risk profile (see above). Both remain scope/
+  budget calls for the user, not resolved here — but the USDCAD evidence in
+  particular is no longer marginal.
 
 - **Explicitly not started, and shouldn't be until the above resolves**:
   testing alternate multiplier systems (only Linear has ever been tried
@@ -132,17 +147,23 @@ breakdown: `INDEX.md`.
    materially different, not a clean pass (USDJPY's risk profile
    overturned, USDCAD's reinforced, AUDUSD's softened). Warnings updated in
    `SYMBOL_SCREENING_REPORT.md`, `CURRENT_PORTFOLIO.md`, and here.
-2. **Decide whether to run the full validation stack again** (OOS,
-   walk-forward, Monte Carlo) given the spot-check's outcome — the
-   checklist's own framework says this is now more justified than before,
-   but it's a scope/budget call, not decided here.
+2. ~~Scoped USDCAD OOS-B + Monte Carlo re-check~~ — **done 2026-09-23**.
+   Result: the OOS-B window flips from breakeven to a real net loss
+   post-fix, with a 22.58% resampled chance of a net-negative path. Seventh
+   independent line of evidence against USDCAD, and the most unambiguous
+   yet. Detail: §2C above, `CURRENT_PORTFOLIO.md`'s USDCAD warning block.
 3. **Decide whether to revisit the USDCAD circuit-breaker-off decision**
-   specifically — it was made 2026-09-19, before the spot-check showed
-   USDCAD's risk profile is worse under the corrected price basis, not
-   better.
-4. Delete the old OneDrive project folder once satisfied the new location
+   specifically — it was made 2026-09-19, before either the checklist
+   spot-check or the OOS-B re-check showed USDCAD's risk profile is worse
+   under the corrected price basis, not better. This evidence is no longer
+   marginal; worth an explicit decision, not silent carry-forward.
+4. **Decide whether to run the full validation stack again** (OOS,
+   walk-forward, Monte Carlo) for AUDUSD/USDCHF/CADCHF too, given the
+   checklist's overall "materially different" spot-check outcome — still a
+   scope/budget call, not decided here.
+5. Delete the old OneDrive project folder once satisfied the new location
    works (user's own manual step, not blocking anything).
-5. Lower priority, pick up whenever there's appetite: the Safe-vs-Linear
+6. Lower priority, pick up whenever there's appetite: the Safe-vs-Linear
    multiplier decision (§2B), porting TP/SL mode into `EA_DCA_CENT_V1.mq5`
    (§2A), and the explicitly-deferred multiplier/BB-range/exit-strategy
    expansion for RoboForex symbols (§2C) — the last of these still
