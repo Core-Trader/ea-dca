@@ -1,5 +1,9 @@
 # EA-DCA-V1.0 — Working Rules
 
+> These are the durable *rules* for working in this repo. For current
+> *status* — what's done, what's decided, what's still open — read
+> `PROJECT_HANDOFF.md` first, and keep it updated when that status changes.
+
 ## Git discipline (non-negotiable)
 
 **As of 2026-09-20**, `src/experts/` and `src/indicators/` are **plain,

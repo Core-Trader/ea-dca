@@ -2,10 +2,14 @@
 
 A Bollinger-Band/QQE-driven DCA (dollar-cost-averaging) MetaTrader 5 Expert
 Advisor, its cent-account variant, a TP/SL single-position trading mode, and
-the go-live/multi-symbol research built around them. **Start with
-`CLAUDE.md`** for the non-negotiable working rules (git discipline, compiling,
-Strategy Tester gotchas) before touching anything here — this file is a map,
-not a replacement for it.
+the go-live/multi-symbol research built around them.
+
+**For current project status** — what's done, what's decided, what's open,
+what to do next — read `PROJECT_HANDOFF.md` first, not this file. This file
+is a structural map ("what's where"); it doesn't change often and won't tell
+you whether a given workstream's conclusions are still trusted. Then read
+`CLAUDE.md` for the non-negotiable working rules (git discipline, compiling,
+Strategy Tester gotchas) before touching anything.
 
 ## Source code — `src/`
 
