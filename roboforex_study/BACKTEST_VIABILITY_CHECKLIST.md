@@ -56,19 +56,23 @@ Open Strategy Tester in the RoboForex terminal (portable install) and set:
       the report tab) shows the symbol, date range, and `InpBBAppliedPrice=2`
       you intended — don't just trust the run "looked" successful.
 
-## 2. Record these 5 numbers per symbol
+## 2. Record these 5 numbers per symbol — DONE 2026-09-23
 
-From the report's **Results** tab:
+Run by Claude Code directly (headless, RoboForex-Pro, Login `52010662`,
+verified via each report's own Settings section: correct window
+`2025.03.01-2026.03.01`, correct account, and `InpBBAppliedPrice=2`
+confirmed present — not just assumed from the `.set` file on disk). Raw
+reports: `roboforex_study/reports/viability_recheck/`.
 
 | Symbol | Net Profit | Profit Factor | Recovery Factor | Equity DD Maximal | Total Trades |
 |---|---:|---:|---:|---:|---:|
-| EURUSD | | | | | |
-| GBPUSD | | | | | |
-| USDJPY | | | | | |
-| AUDUSD | | | | | |
-| USDCHF | | | | | |
-| USDCAD | | | | | |
-| CADCHF | | | | | |
+| EURUSD | $220.01 | 2.66 | 0.87 | 1.66% | 76 |
+| GBPUSD | $251.84 | 2.87 | 2.27 | 0.74% | 73 |
+| USDJPY | $253.13 | 5.99 | 2.81 | 0.60% | 62 |
+| AUDUSD | $154.84 | 4.11 | 1.53 | 0.67% | 64 |
+| USDCHF | $305.93 | 3.28 | 1.56 | 1.30% | 75 |
+| USDCAD | $240.99 | 2.42 | 0.47 | 3.38% | 79 |
+| CADCHF | $160.81 | 4.68 | 1.88 | 0.56% | 71 |
 
 ## 3. Compare against the pre-fix numbers (same window, wrong price basis)
 
@@ -86,46 +90,77 @@ the same table for direct comparison:
 | USDCAD | $201.06 | 3.03 | 1.00 | 1.33% | 69 |
 | CADCHF | $147.48 | 5.10 | 2.31 | 0.42% | 60 |
 
-## 4. Viability read per symbol
+## 4. Viability read per symbol — RESULT: materially different, not a clean pass
 
-For each symbol, ask in this order — a "no" earlier in the list matters more
-than one later:
+Delta table (post-fix minus pre-fix):
 
-- [ ] **Still net profitable?** If a symbol flips to a net loss under the
-      corrected price basis, that's a real, not cosmetic, change — flag it,
-      don't average it away.
-- [ ] **Profit Factor still meaningfully above 1?** (PF 1.0-1.3 is fragile —
-      look at trade count too before trusting/distrusting it on a small
-      sample.)
-- [ ] **Recovery Factor still positive and not collapsed?** A drop from e.g.
-      2.3 to 0.3 is a real degradation even if profit stayed positive.
-- [ ] **Equity DD in the same ballpark, not suddenly much worse?** Watch
-      specifically for anything jumping past ~3-5% for a non-USDJPY symbol —
-      USDJPY's own elevated DD is already known/accepted, the other 6
-      shouldn't suddenly resemble it.
-- [ ] **Trade count still in a similar range?** A big change (e.g. 79 → 30)
-      means the signal timing shifted meaningfully under the new price basis
-      — expected to some degree (that's the whole point of the fix) but worth
-      noting how much.
-- [ ] **Directionally consistent with the pre-fix ranking?** You don't need
-      exact numbers to match — the interesting question is whether AUDUSD/
-      CADCHF are still the strongest, whether USDCAD still looks like the
-      relative outlier, or whether the ranking actually reshuffles.
+| Symbol | ΔProfit | ΔPF | ΔRecovery | ΔEquity DD | ΔTrades |
+|---|---:|---:|---:|---:|---:|
+| EURUSD | +$42.74 | -1.42 | -1.59 | +1.18% | +20 |
+| GBPUSD | +$37.42 | +0.16 | +0.34 | +0.00% | +14 |
+| **USDJPY** | -$24.16 | **+3.69** | **+2.42** | **-4.09%** | -7 |
+| AUDUSD | -$75.90 | -0.39 | -0.81 | +0.02% | -16 |
+| USDCHF | -$56.21 | +0.76 | -0.08 | -0.14% | -4 |
+| **USDCAD** | +$39.93 | -0.61 | **-0.53** | **+2.05%** | +10 |
+| CADCHF | +$13.33 | -0.42 | -0.43 | +0.14% | +11 |
+
+Going through the checklist's own questions:
+
+- [x] **Still net profitable?** Yes, all 7 — no flips to net loss.
+- [x] **Profit Factor still meaningfully above 1?** Yes, all 7 stay well
+      above 1 (lowest is USDCAD at 2.42).
+- [x] **Recovery Factor still positive?** Yes, but **EURUSD's dropped from
+      2.46 to 0.87** (a real degradation, still positive) and **USDCAD's
+      dropped from 1.00 to 0.47** (also real, and USDCAD was already the
+      weakest here).
+- [ ] **Equity DD in the same ballpark?** **No — two symbols moved a lot, in
+      opposite directions.** USDJPY's dropped from 4.69% to **0.60%** (an
+      8x improvement). USDCAD's rose from 1.33% to **3.38%** (2.5x worse).
+- [x] **Trade count in a similar range?** Mostly yes (±20 max), confirming
+      the fix changed signal *timing* meaningfully but not catastrophically.
+- [ ] **Directionally consistent with the pre-fix ranking?** **No.** Two
+      genuine reshuffles:
+
+**Finding 1 — USDJPY's "known elevated risk" was largely an artifact of the
+bug.** This project has repeatedly cited USDJPY's 4.2-4.7% equity DD as an
+accepted risk/reward tradeoff (`CURRENT_PORTFOLIO.md`, multiple BB/QQE
+optimization grids, `PROJECT_HANDOFF.md`) — confirmed independently several
+times, but always under the wrong price basis. Corrected, USDJPY's DD drops
+to **0.60%**, making it one of the *safest* symbols in the portfolio, not the
+riskiest, while its Profit Factor (5.99) and Recovery Factor (2.81) are now
+the best or near-best of all 7. The "USDJPY carries more risk, kept in for
+the profit" framing needs to be retired, not just footnoted.
+
+**Finding 2 — USDCAD's risk-outlier status is reinforced, not resolved.**
+Already flagged by five independent methods pre-fix (screening grid, OOS,
+trade-level investigation, walk-forward, Monte Carlo). Post-fix, its Recovery
+Factor is now the *worst* of the 7 (0.47) and its Equity DD is the *highest*
+of the 7 (3.38%, more than double USDCHF's 1.30%, its nearest rival). The
+prior "kept in, not disqualified" decision was made without this data point
+— worth revisiting specifically for USDCAD in light of it.
+
+**Secondary observation**: AUDUSD's Recovery Factor dropped from 2.34 to
+1.53 and profit dropped 33% ($230.74 → $154.84) — still solid, no longer
+clearly "the standout." It's not the strongest candidate by these numbers
+alone anymore; GBPUSD and USDJPY both look more attractive post-fix on a
+risk-adjusted basis.
 
 ## 5. What to do with the result
 
-- **If the picture looks broadly similar** (same rough ranking, no symbol
-  flips to a loss, no dramatic DD blowup): the existing Tier 1
-  picks/USDCAD-kept-in decision probably still holds, and the full
-  OOS/walk-forward/Monte Carlo re-run can wait until budget allows — update
-  the warning banners in `SYMBOL_SCREENING_REPORT.md`/`CURRENT_PORTFOLIO.md`
-  to note "spot-checked on the 1-year window, looks consistent" rather than
-  leaving them as fully unresolved.
-- **If something looks materially different** (a symbol flips negative, DD
-  jumps a lot, ranking reshuffles): that's worth a fuller re-validation
-  before trusting the portfolio as-is — flag which symbol(s) specifically,
-  and we can prioritize just those for the deeper OOS/walk-forward/Monte
-  Carlo work rather than redoing all 7 from scratch.
-- Either way, **share the filled-in table from §2** and I'll update the
-  reports' warning banners to reflect the actual outcome instead of leaving
-  them generically "provisional."
+Per the checklist's own decision framework — this is the "materially
+different" branch, not "looks broadly similar":
+
+- **USDJPY**: re-frame, don't just re-test. Its risk profile changed enough
+  that this project's own repeated characterization of it needs correcting
+  in every document that cites it, independent of whether a fuller
+  OOS/walk-forward/Monte Carlo re-run happens.
+- **USDCAD**: the case for keeping it in without the circuit breaker is
+  weaker now than when that decision was made (§D2/§E item 1 in
+  `SYMBOL_SCREENING_REPORT.md`) — worth deciding again with this data point
+  in hand, not treating the earlier decision as still settled.
+- **AUDUSD**: no longer clearly the single best candidate — still fine, just
+  not obviously the standout the original (buggy) study made it look like.
+- **Full OOS/walk-forward/Monte Carlo re-run**: given two symbols moved this
+  much, a full re-validation is more justified now than a spot-check would
+  have supported — but that's a scope/budget decision for the user, not
+  decided here.

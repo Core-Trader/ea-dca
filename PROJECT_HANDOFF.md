@@ -1,6 +1,7 @@
 # EA-DCA-V1.0 — Project Handoff
 
-**Last updated**: 2026-09-20, as of commit `7ed93c3`.
+**Last updated**: 2026-09-23, as of commit `f3014d1` (the commit adding this
+update will be one ahead of that by the time you read it).
 
 > **Maintenance note**: this is a living document, not a snapshot. Update it
 > whenever a workstream's status changes, a decision gets made, or a major
@@ -57,7 +58,7 @@ breakdown: `INDEX.md`.
   urgent, but also not forgotten — pick this up whenever the RoboForex
   track (below) isn't the priority.
 
-### C. RoboForex multi-symbol study — portfolio defined, ⚠ pending re-validation
+### C. RoboForex multi-symbol study — portfolio defined, ⚠ spot-check found real reshuffling
 
 - Real funded cent account (RoboForex-Pro, Login `52010662`). Screened the
   full Market Watch universe for portfolio-diversification candidates,
@@ -69,34 +70,42 @@ breakdown: `INDEX.md`.
   `roboforex_study/SYMBOL_SCREENING_REPORT.md`. Live-facing summary:
   `roboforex_study/CURRENT_PORTFOLIO.md`.
 
-- **⚠ CRITICAL, found 2026-09-20**: `InpBBAppliedPrice` was wrong
-  (`3`/PRICE_LOW instead of the EA's actual default, `2`/PRICE_HIGH)
-  throughout the **entire study** — traced to a stale reference `.set` file
-  used when the study was set up, predating an earlier fix to the EA's own
-  compiled default. Confirmed via an actual generated report's own Settings
-  section, not just the `.set` file on disk. **Fixed in all 13 source `.set`
-  files** (`roboforex_study/sets/`), but **not yet re-validated** — every
-  finding in `SYMBOL_SCREENING_REPORT.md`/`CURRENT_PORTFOLIO.md` (the Tier 1
-  picks, the USDCAD risk profile, all of it) was derived under the wrong
-  price basis and is marked **provisional** in both documents' own top-of-
-  file warnings until re-run.
+- **⚠ Found 2026-09-20, spot-checked 2026-09-23**: `InpBBAppliedPrice` was
+  wrong (`3`/PRICE_LOW instead of the EA's actual default, `2`/PRICE_HIGH)
+  throughout the entire study — traced to a stale reference `.set` file used
+  when the study was set up. Fixed in all 13 source `.set` files. A 1-year
+  spot-check (all 7 portfolio symbols, headless, corrected value confirmed
+  via each report's own Settings section — full delta table:
+  `roboforex_study/BACKTEST_VIABILITY_CHECKLIST.md` §4) found this was not
+  cosmetic:
+  - **USDJPY's long-cited "elevated equity DD" (4.2-4.7%) drops to 0.60%**
+    under the corrected price basis — largely a bug artifact, not a real
+    property of the symbol. Its PF (5.99) and Recovery Factor (2.81) are
+    now among the best of the 7, not the reason it needed a risk/reward
+    justification to stay in the portfolio.
+  - **USDCAD's Equity DD worsens (1.33%→3.38%) and Recovery Factor
+    collapses further (1.00→0.47)** — its already-flagged risk-outlier
+    status is reinforced, not resolved. The 2026-09-19 decision to keep it
+    in with the circuit breaker off was made without this data point.
+  - **AUDUSD's profit dropped 33%** and Recovery Factor dropped
+    meaningfully — no longer clearly *the* standout candidate.
+  - No symbol flipped to a net loss; nothing catastrophic. But this is the
+    "materially different" outcome, not "looks broadly similar" — per the
+    checklist's own decision framework, a full re-validation is now more
+    justified than a spot-check-and-move-on.
 
-- **Immediate next action, in progress**: user is running
-  `roboforex_study/BACKTEST_VIABILITY_CHECKLIST.md` manually (usage-budget
-  constrained — this doesn't need Claude Code credits) to spot-check
-  whether the corrected price basis changes the picture a little or a lot,
-  before deciding whether the full OOS/walk-forward/Monte Carlo battery
-  needs repeating. **When those 7 numbers come back, update this section
-  and the two reports' warning banners** — don't leave them generically
-  "provisional" once there's an actual answer.
+- **Next action, not yet decided**: whether to run the full
+  OOS/walk-forward/Monte Carlo battery again given this outcome, and
+  whether the USDCAD circuit-breaker-off decision should be revisited
+  given its reinforced risk profile. Both are scope/budget calls for the
+  user, not resolved here.
 
 - **Explicitly not started, and shouldn't be until the above resolves**:
   testing alternate multiplier systems (only Linear has ever been tried
   here), a wider BB parameter range (only 20-50/1.5-3.0 tested), or exit
   strategies other than BB Centre Band. Starting any of these before the
-  price-basis re-validation risks building on the same stale foundation
-  twice — see the forensic audit discussion that established this
-  sequencing.
+  full re-validation risks building on a foundation that just proved
+  unstable once already.
 
 ### D. Repo infrastructure — just migrated, convention changed
 
@@ -119,18 +128,25 @@ breakdown: `INDEX.md`.
 
 ## 3. Immediate next steps, in priority order
 
-1. **Get the §2C checklist results back** and update the provisional
-   warnings in `SYMBOL_SCREENING_REPORT.md`/`CURRENT_PORTFOLIO.md` (and this
-   file) with the actual outcome.
-2. Based on #1, decide whether the RoboForex portfolio's full validation
-   stack (OOS, walk-forward, Monte Carlo) needs repeating, or whether a
-   spot-check confirms the existing conclusions still hold.
-3. Delete the old OneDrive project folder once satisfied the new location
+1. ~~Get the §2C checklist results back~~ — **done 2026-09-23**. Result:
+   materially different, not a clean pass (USDJPY's risk profile
+   overturned, USDCAD's reinforced, AUDUSD's softened). Warnings updated in
+   `SYMBOL_SCREENING_REPORT.md`, `CURRENT_PORTFOLIO.md`, and here.
+2. **Decide whether to run the full validation stack again** (OOS,
+   walk-forward, Monte Carlo) given the spot-check's outcome — the
+   checklist's own framework says this is now more justified than before,
+   but it's a scope/budget call, not decided here.
+3. **Decide whether to revisit the USDCAD circuit-breaker-off decision**
+   specifically — it was made 2026-09-19, before the spot-check showed
+   USDCAD's risk profile is worse under the corrected price basis, not
+   better.
+4. Delete the old OneDrive project folder once satisfied the new location
    works (user's own manual step, not blocking anything).
-4. Lower priority, pick up whenever there's appetite: the Safe-vs-Linear
+5. Lower priority, pick up whenever there's appetite: the Safe-vs-Linear
    multiplier decision (§2B), porting TP/SL mode into `EA_DCA_CENT_V1.mq5`
    (§2A), and the explicitly-deferred multiplier/BB-range/exit-strategy
-   expansion for RoboForex symbols (§2C).
+   expansion for RoboForex symbols (§2C) — the last of these still
+   shouldn't start before #2 resolves.
 
 ## 4. Where the durable rules live (not duplicated here)
 

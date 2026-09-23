@@ -1,25 +1,31 @@
 # Symbol Screening Report — Portfolio Diversification Discovery Pass
 
-> ⚠ **KNOWN ISSUE, found 2026-09-20, not yet re-validated — `InpBBAppliedPrice`
-> was wrong throughout this entire report.** Every backtest below (§A-§E, all
-> ~40+ runs) used `InpBBAppliedPrice=3` (PRICE_LOW). The EA's own actual
-> compiled default is `PRICE_HIGH` (`=2`) — confirmed both in
-> `EA_DCA_CENT_V1.mq5` source and in this project's own git history (commits
-> `5e80cc8`/`7db75df`/`50ea428`, Sep 15-16). Root cause: the `.set` file this
-> study's own defaults were built from
-> (`diagnostics/backtests/cent_v1_baseline/EA_DCA_CENT_V1_baseline.set`) was a
-> snapshot taken *before* those fixes — a process error in how this study was
-> set up, not a bug in the EA and not something the user did. PRICE_HIGH vs
-> PRICE_LOW is not cosmetic: it changes which price series the Bollinger Bands
-> are computed from, and therefore every touch/breach/cross signal this
-> strategy trades on. **All `.set` files have since been corrected to
-> `InpBBAppliedPrice=2`** (`roboforex_study/sets/`, including
-> `cent_portfolio/`), so no further work will compound the error — but **every
-> finding in this report, including the Tier 1 candidate picks and the USDCAD
-> risk profile, was derived under the wrong price basis and has not been
-> re-run under the correct one.** Deferred, not fixed, due to usage-budget
-> constraints at the time this was found (`CURRENT_PORTFOLIO.md` carries the
-> same flag). Treat every number below as **provisional** until re-validated.
+> ⚠ **`InpBBAppliedPrice` was wrong throughout this entire report (found
+> 2026-09-20) — spot-checked 2026-09-23, and the impact is real, not
+> cosmetic.** Every backtest below (§A-§E, all ~40+ runs) used
+> `InpBBAppliedPrice=3` (PRICE_LOW) instead of the EA's actual compiled
+> default, `PRICE_HIGH` (`=2`) — root cause: a stale reference `.set` file
+> used when this study was set up, predating an earlier fix to the EA's own
+> default (commits `5e80cc8`/`7db75df`/`50ea428`). All `.set` files have
+> since been corrected. A 1-year single-window spot-check (all 7 portfolio
+> symbols, corrected `InpBBAppliedPrice=2`, verified via each report's own
+> Settings section — full detail and delta table:
+> `BACKTEST_VIABILITY_CHECKLIST.md` §4) found **two material reshuffles**:
+> **USDJPY's long-cited "elevated equity DD" (4.2-4.7% throughout this
+> report) drops to 0.60% under the corrected price basis** — largely an
+> artifact of the bug, not a genuine structural property of the symbol —
+> while **USDCAD's Equity DD worsens (1.33%→3.38%) and Recovery Factor
+> collapses further (1.00→0.47)**, reinforcing rather than resolving its
+> already-flagged risk-outlier status. AUDUSD's profit and Recovery Factor
+> both dropped meaningfully too — it's no longer clearly *the* standout
+> candidate the way §B describes it below. **Every specific number, ranking,
+> and characterization below (Tier 1 picks, "USDJPY carries known elevated
+> risk," AUDUSD as "the single most structurally robust symbol") predates
+> this spot-check and should be read with that in mind** — not retracted
+> outright (the spot-check was one window, not the full OOS/walk-forward/
+> Monte Carlo battery), but no longer taken at face value either. A full
+> re-validation is more justified now than before the spot-check, pending a
+> scope/budget decision.
 
 **Objective** (per explicit user request): not to find the single most profitable
 symbol, but to identify additional symbols worth deeper investigation as

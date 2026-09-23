@@ -1,29 +1,35 @@
 # Current RoboForex Cent-Account Portfolio — 7 Symbols
 
-> ⚠ **KNOWN ISSUE, found 2026-09-20, not yet re-validated.** Every `.set` file
-> below was built with `InpBBAppliedPrice=3` (PRICE_LOW) instead of the EA's
-> actual default, `PRICE_HIGH` (`=2`) — a stale value inherited from a
-> pre-fix snapshot when this study was set up, not an EA bug. This changes
-> which price series the Bollinger Bands are built from, i.e. the entry/exit
-> signal basis every finding in `SYMBOL_SCREENING_REPORT.md` rests on. **The
-> 7 `.set` files here have been corrected** (`InpBBAppliedPrice=2`), so
-> they're now internally consistent with the EA's own default — but **the
-> Tier 1 selection, the USDCAD risk findings, and every backtest number this
-> portfolio's composition was based on have not been re-run under the
-> corrected value.** Deferred due to usage-budget constraints, not resolved.
-> Full detail: `SYMBOL_SCREENING_REPORT.md`'s own top-of-file warning.
-> Treat this composition as **provisional** until re-validated.
+> ⚠ **`InpBBAppliedPrice` fix spot-checked 2026-09-23 — two symbols'
+> standing genuinely changed, not just their exact numbers.** All 7 `.set`
+> files below are corrected (`InpBBAppliedPrice=2`). A 1-year spot-check
+> (`BACKTEST_VIABILITY_CHECKLIST.md`) found: **USDJPY's equity DD drops from
+> 4.69% to 0.60%** — its long-standing "elevated risk, kept in for the
+> profit" framing (see the composition table below) turns out to have been
+> largely a symptom of the bug, not a real property of the symbol. **USDCAD's
+> equity DD worsens (1.33%→3.38%) and Recovery Factor collapses further
+> (1.00→0.47)** — its already-flagged risk-outlier status is reinforced, not
+> resolved, by the correction. AUDUSD's profit and Recovery Factor both
+> dropped meaningfully (-33% profit) — no longer clearly *the* standout
+> candidate. This was one window, not the full OOS/walk-forward/Monte Carlo
+> battery this portfolio's composition originally rested on — **that full
+> re-validation is more justified now than before the spot-check**, and the
+> USDCAD circuit-breaker-off decision specifically (below) was made without
+> this data point. Full detail and delta table:
+> `BACKTEST_VIABILITY_CHECKLIST.md` §4.
 
 **Status**: first-cut deployment candidate, not a final recommendation. Assembled
 from `SYMBOL_SCREENING_REPORT.md`'s existing portfolio plus its 4 Tier 1
 candidates. **Update 2026-09-19**: the full validation backlog (§D2-§D6 —
 wider-window/OOS, trade-level investigation, dense parameter-cliff check,
-walk-forward, Monte Carlo, USDCHF/CADCHF co-dependency) is now **complete**.
-One real issue was found and investigated on USDCAD (resolved as a genuine,
-self-recovering near-miss); everything else came back clean. **This is a
-working baseline to continue adjusting, not a go-live sign-off** — the
-remaining open items are deployment decisions (circuit breaker threshold),
-not further backtesting.
+walk-forward, Monte Carlo, USDCHF/CADCHF co-dependency) is complete. **Update
+2026-09-23**: that entire backlog ran under the `InpBBAppliedPrice` bug (see
+warning above) — a spot-check under the corrected value found USDJPY's risk
+profile and AUDUSD's standout status were both largely artifacts of the bug,
+and USDCAD's risk-outlier status got worse, not better. **This is a working
+baseline to continue adjusting, not a go-live sign-off**, and less settled
+than the 2026-09-19 update implied — a full re-validation is now the more
+honest next step, not just remaining deployment decisions.
 
 > ⚠ **USDCAD downgraded from Tier 1 — investigated, a genuine near-miss, not
 > disqualifying but not risk-free.** Out-of-sample testing found a real 10.17%
@@ -39,11 +45,15 @@ not further backtesting.
 > real risk window invisible on the easy-to-glance-at metric. **Decided
 > 2026-09-19**: keep the Max Floating Loss circuit breaker disabled for now
 > (not deploying it yet) — USDCAD stays in the portfolio as-is, matching its
-> tested (breaker-off) configuration. **Since this decision, walk-forward
-> (§D4) found a second losing window and Monte Carlo (§D5) confirmed USDCAD
-> as the outlier on a fifth independent method** — neither changes the
-> decision, but both are consistent with, not contradicting, this risk
-> profile. See §D2/§D4/§D5 for full detail.
+> tested (breaker-off) configuration. Walk-forward (§D4) and Monte Carlo
+> (§D5) both reinforced this risk profile afterward (a second losing window,
+> outlier status on a fifth method) without changing the decision. **Update
+> 2026-09-23**: the `InpBBAppliedPrice` spot-check adds a sixth data point,
+> and it's the least ambiguous one yet — Recovery Factor collapses further
+> (1.00→0.47) and Equity DD worsens (1.33%→3.38%) under the *corrected*
+> price basis. The 2026-09-19 decision was made without this — worth
+> deciding again, not assuming it still stands. See
+> `BACKTEST_VIABILITY_CHECKLIST.md` §4 for the full comparison.
 
 ## Composition
 
@@ -51,8 +61,8 @@ not further backtesting.
 |---|---|---|
 | EURUSD | Existing portfolio | `GO_LIVE_VALIDATION_PLAN.md` Phase 1-3, `ROBOFOREX_MULTI_SYMBOL_STUDY.md` |
 | GBPUSD | Existing portfolio | Same |
-| USDJPY | Existing portfolio | Same — carries known elevated equity DD (4.2-4.7% across every test run so far), kept in per this study's own finding that it's also the single most profitable symbol tested; risk/reward tradeoff, not an oversight |
-| AUDUSD | Tier 1 candidate | `SYMBOL_SCREENING_REPORT.md` §B — most structurally robust symbol in the whole screen (tightest DD band, 0.13-0.69% across the full 49-combo grid, zero losing combinations), lowest correlation to the existing 3 (0.03-0.22) |
+| USDJPY | Existing portfolio | Same. Previously characterized as carrying elevated equity DD (4.2-4.7%) as a risk/reward tradeoff for its profitability — **the 2026-09-23 spot-check found this was largely an `InpBBAppliedPrice`-bug artifact: under the corrected value, DD drops to 0.60% and PF/Recovery Factor are among the best of the 7**. See the top-of-file warning; this row's original framing is now considered unreliable pending full re-validation. |
+| AUDUSD | Tier 1 candidate | `SYMBOL_SCREENING_REPORT.md` §B — most structurally robust symbol in the whole screen (tightest DD band, 0.13-0.69% across the full 49-combo grid, zero losing combinations), lowest correlation to the existing 3 (0.03-0.22). **2026-09-23 spot-check**: profit and Recovery Factor both dropped meaningfully under the corrected price basis (-33% profit) — still solid, no longer clearly *the* standout. |
 | USDCHF | Tier 1 candidate | Same §B — clean, stable grid, meaningful optimization improvement without degrading risk-adjusted quality. Highest correlation to the existing portfolio of the 4 candidates (0.23 vs EUR/JPY on the equity measure) and co-drawdows with USDJPY in Apr 2025 — kept in, but see the note below |
 | USDCAD | Investigated, kept in as-is | Same §B screening looked clean, but the 1-year window missed a real 10.17% equity DD episode; trade-level investigation (§D2) found it was a genuine but ultimately self-resolving near-miss (~$453 realized loss, not a stop-out). Circuit breaker deliberately left off for now (see warning above) |
 | CADCHF | Tier 1 candidate | Same §B — tightest DD band alongside AUDUSD, near-zero correlation to the existing portfolio, gave the single largest combined-portfolio drawdown reduction of the 4 candidates in §C's equity analysis |
