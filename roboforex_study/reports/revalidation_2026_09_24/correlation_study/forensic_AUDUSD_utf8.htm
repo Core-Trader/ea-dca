@@ -1,0 +1,1244 @@
+﻿<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+  <head>
+    <title>Strategy Tester Report</title>
+    <meta name="generator" content="strategy tester">
+    <style type="text/css">
+    <!--
+    @media screen {
+      td { font: 8pt  Tahoma,Arial; }
+      th { font: 10pt Tahoma,Arial; }
+    }
+    @media print {
+      td { font: 7pt Tahoma,Arial; }
+      th { font: 9pt Tahoma,Arial; }
+    }
+    .msdate { mso-number-format:"General Date"; }
+    .mspt   { mso-number-format:\#\,\#\#0\.00;  }
+    body {margin:1px;}
+    //-->
+    </style>
+  </head>
+<body>
+<div align="center">
+<table cellspacing="1" cellpadding="3" border="0">
+   <tr align="center">
+      <td colspan="13"><div style="font: 14pt Tahoma"><b>Strategy Tester Report</b><br></div></td>
+   </tr>
+   <tr align="center">
+      <td colspan="13"><div style="font: 10pt Tahoma"><b>RoboForex-Pro (Build 6202)</b><br></div></td>
+   </tr>
+   <tr>
+      <td nowrap style="height: 10px"></td>
+    </tr>
+   <tr>
+      <td colspan="13" align="center"><div style="font: 10pt Tahoma"><b>Settings</b></div></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3">Expert:</td>
+      <td nowrap colspan="10" align="left"><b>EA_DCA_CENT_V1_EquityForensic</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3">Symbol:</td>
+      <td nowrap colspan="10" align="left"><b>AUDUSD</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3">Period:</td>
+      <td nowrap colspan="10" align="left"><b>H4 (2025.03.01 - 2026.03.01)</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3">Inputs:</td>
+      <td nowrap colspan="10" align="left"><b>Trade Mode=</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpTradeMode=0</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>Position Sizing=</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpMultiplierSystem=1</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpFibSequence=1,3,5,8,13,21,34</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpInitialLot=0.01</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpLotSizeMode=0</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpLotPercent=15.0</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpStepAmount=1000.0</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpLotPerStep=0.01</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpMaxInitialLot=1.0</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>Trading Parameters=</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpMagicNumber=123456</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpSlippage=3</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpMaxSpread=40</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpMaxTradesPerSequence=0</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpMaxSequencesPerDirection=3</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpTradeDirection=0</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpAllowBuySellAtSameTime=true</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpUserComment=DCA-EA-V1.0</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>Indicator Mode=</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpIndicatorMode=0</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>QMP Filter Settings=</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpQMPFast=12</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpQMPSlow=26</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpQMPSmooth=9</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpQMPSF=1</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpQMPRSI_Period=8</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpQMPWP=3</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>Bollinger Band Settings=</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpBBPeriod=35</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpBBDeviation=2.25</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpBBAppliedPrice=2</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpUseBBWidthFilter=false</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpBBMinWidthPercent=0.5</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpRequireCenterBandCross=true</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpNoTriggerOnCentralBandBreach=true</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpBBEntryOnBreach=true</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpRequireBBBandTouchForReentry=false</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpBBExitOnBreach=true</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpAlwaysCloseOnOppositeBand=false</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>QQE Settings=</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpQQEOverbought=60.0</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpQQEOversold=40.0</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpQQESmoothingPeriod=7</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpQQERSIPeriod=14</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpQQEMultiplier=1</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpRequireQQEScenarioBForReentry=false</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>Exit Strategy=</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpExitStrategy=0</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpUseDynamicStop=false</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpDynamicStopDistancePips=20.0</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>Recovery Mode Settings=</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpBreakevenBufferPips=10.0</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>TP/SL Mode - Stop Loss=</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpTPSL_SL_Info=Info only: this whole group only applies when Trade Mode = Take Profit & Stop Loss. No effect in DCA mode.</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpSLType=0</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpSLDistancePips=50.0</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpSLRiskPercent=1.0</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpSLRiskCurrency=100.0</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpSLATRMultiplier=1.5</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpSLQMPOffsetPips=20.0</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>TP/SL Mode - Take Profit=</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpTPSL_TP_Info=Info only: only used if Exit Strategy = Balance % Target. No effect otherwise or in DCA mode.</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpTPBalancePercent=0.1</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>Exit Parameters - Fixed Target=</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpFixedTargetType=1</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpProfitTargetCurrency=50.0</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpProfitTargetPips=50.0</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpATRPeriod=14</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpATRMultiplier=2.0</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpShowTakeProfitLine=true</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpTakeProfitLineColor=16748574</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>Exit Parameters - Trailing Stop=</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>TRAILING_START_INFO=Info only: whichever of Trailing Start (pips) or Trailing Start ($) triggers first drives the trail; the other is then ignored.</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpTrailingStartPips=50</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpTrailingStartDollars=50.0</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpTrailingStepPips=40.0</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpUseATRForTrailingStart=false</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpTrailingStartATRMultiplier=1.5</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpUseATRForTrailingDistance=false</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpTrailingDistanceATRMultiplier=1.0</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpTrailingStepBlockPips=1</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>Risk Reduction=</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpUseRiskReduction=false</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpRiskReductionMinTrades=5</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpRiskReductionBufferPips=10.0</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>Trading Session Times=</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpUseTimeFilter=false</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpTimeReference=0</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpGMTOffset=0</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpTradingStartTime=08:00</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpTradingEndTime=20:00</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpTradeMonday=true</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpTradeTuesday=true</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpTradeWednesday=true</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpTradeThursday=true</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpTradeFriday=true</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpTradeSaturday=true</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpTradeSunday=true</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>End of Day=</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpUseEOD=false</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpEODTime=20:00</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpEODAction=0</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>End of Week=</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpUseEOW=false</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpEOWTime=22:00</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpEOWAction=0</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>Advanced - Partial Close Management=</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpPartialClose_Info=Info only: this closes all but one trade in the sequence. Only works with Exit Strategy = BB Centre Band or QQE 50 + Recovery. Not compatible with Dynamic Stop.</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpUsePartialClose=false</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpPartialClosePercent=50</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpPartialCloseBreakevenStepPips=10.0</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>Advanced - Signal Distance Filter=</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpUseMinimumSignalDistance=false</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpMinDistancePips=10.0</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpUseATRForMinDistance=false</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpMinDistanceATRMultiplier=1.5</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>SIGNAL_DISTANCE_ATR_INFO=Info only: ATR Period is taken from the Exit Parameters - Fixed Target section (InpATRPeriod).</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>Advanced - Session Profit Limit=</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpStopAfterProfitPerSession=0.0</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>Advanced - Equity Protection=</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpUseEquityProtection=false</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpEquityProtectionMode=0</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpEquityProtectionPercent=0.6</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpEquityProtectionAmount=500.0</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>Advanced - Max Floating Loss (Circuit Breaker)=</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpMaxFloatingLoss_Info=Info only: unlike Equity Protection above (a profit lock — closes on combined floating PROFIT), this is a real loss-based circuit breaker. Percent-of-balance is currency-denomination-agnostic by construction, so it applies correctl</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpUseMaxFloatingLoss=false</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpMaxFloatingLossPercent=15.0</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>Advanced - Entry Options=</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpAllDCA_SignalsMatchEntry_Info=Info only: if enabled, only one sequence per direction runs, and every add-on trade must match the same entry rules (not just a QMP dot).</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpAllSignalsMatchEntryCriteria=false</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>Advanced - Higher Timeframe Direction Filter=</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpTradeInHigherTFDirection=false</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpHigherTimeframe=16388</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>Advanced - MA Filter (First Trade Only)=</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpUseMAFilter=false</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpMAFilterBehaviour=0</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpMAPeriod=50</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpMAMethod=1</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpMAAppliedPrice=0</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>On Screen Displays=</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpShowTrailingStops=true</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpBuyTrailingColor=65280</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpSellTrailingColor=255</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpTrailingLineStyle=1</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpTrailingLineWidth=1</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpShowBreakevenBufferLine=true</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpBreakevenBufferColor=42495</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpShowBreakevenLine=true</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpBreakevenLineColor=65535</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpShowRiskReductionLine=true</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpRiskReductionColor=16776960</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpShowSequenceStartEndLines=true</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpSequenceStartColor=16748574</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpSequenceEndColor=16711935</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpSequenceLineStyle=2</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpSequenceLineWidth=1</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>Display Panel=</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpShowDisplayPanel=false</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpPanelX=12</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpPanelY=24</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpPanelHeaderColor=55295</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpPanelProfitColor=65280</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpPanelLossColor=4678655</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpPanelInfoColor=12632256</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpPanelBgColor=2103830</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="10" align="left"><b>InpPanelBorderColor=5916220</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3" >Company:</td>
+      <td nowrap colspan="10" align="left"><b>RoboForex Ltd</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3" >Currency:</td>
+      <td nowrap colspan="10" align="left"><b>USD</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3" >Initial Deposit:</td>
+      <td nowrap colspan="10" align="left"><b>15 000.00</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3" >Leverage:</td>
+      <td nowrap colspan="10" align="left"><b>1:1000</b></td>
+   </tr>
+   <tr>
+      <td nowrap style="height: 10px"></td>
+    </tr>
+   <tr>
+      <td colspan="13" align="center"><div style="font: 10pt Tahoma"><b>Results</b></div></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3">History Quality:</td>
+      <td nowrap><b>100%</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3">Bars:</td>
+      <td nowrap><b>1544</b></td>
+      <td nowrap colspan="3">Ticks:</td>
+      <td nowrap><b>1416096</b></td>
+      <td nowrap colspan="3">Symbols:</td>
+      <td nowrap colspan="2"><b>1</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3">Total Net Profit:</td>
+      <td nowrap><b>161.51</b></td>
+      <td nowrap colspan="3">Balance Drawdown Absolute:</td>
+      <td nowrap><b>0.86</b></td>
+      <td nowrap colspan="3">Equity Drawdown Absolute:</td>
+      <td nowrap colspan="2"><b>4.76</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3">Gross Profit:</td>
+      <td nowrap><b>210.71</b></td>
+      <td nowrap colspan="3">Balance Drawdown Maximal:</td>
+      <td nowrap><b>25.85 (0.17%)</b></td>
+      <td nowrap colspan="3">Equity Drawdown Maximal:</td>
+      <td nowrap colspan="2"><b>101.57 (0.67%)</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3">Gross Loss:</td>
+      <td nowrap><b>-49.20</b></td>
+      <td nowrap colspan="3">Balance Drawdown Relative:</td>
+      <td nowrap><b>0.17% (25.85)</b></td>
+      <td nowrap colspan="3">Equity Drawdown Relative:</td>
+      <td nowrap colspan="2"><b>0.67% (101.57)</b></td>
+   </tr>
+   <tr>
+      <td nowrap style="height: 10px"></td>
+    </tr>
+   <tr align="right">
+      <td nowrap colspan="3">Profit Factor:</td>
+      <td nowrap><b>4.28</b></td>
+      <td nowrap colspan="3">Expected Payoff:</td>
+      <td nowrap><b>2.48</b></td>
+      <td nowrap colspan="3">Margin Level:</td>
+      <td nowrap colspan="2"><b>103666.67%</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3">Recovery Factor:</td>
+      <td nowrap><b>1.59</b></td>
+      <td nowrap colspan="3">Sharpe Ratio:</td>
+      <td nowrap><b>2.09</b></td>
+      <td nowrap colspan="3">Z-Score:</td>
+      <td nowrap colspan="2"><b>0.81 (58.21%)</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3">AHPR:</td>
+      <td nowrap><b>1.0002 (0.02%)</b></td>
+      <td nowrap colspan="3">LR Correlation:</td>
+      <td nowrap><b>0.99</b></td>
+      <td nowrap colspan="3">OnTester result:</td>
+      <td nowrap colspan="2"><b>101.3199999999997</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3">GHPR:</td>
+      <td nowrap><b>1.0002 (0.02%)</b></td>
+      <td nowrap colspan="3">LR Standard Error:</td>
+      <td nowrap><b>7.76</b></td>
+      <td nowrap colspan="3"></td>
+      <td nowrap colspan="2"><b></b></td>
+   </tr>
+   <tr>
+      <td nowrap style="height: 10px"></td>
+    </tr>
+   <tr align="right">
+      <td nowrap colspan="3">Total Trades:</td>
+      <td nowrap><b>65</b></td>
+      <td nowrap colspan="3">Short Trades (won %):</td>
+      <td nowrap><b>38 (73.68%)</b></td>
+      <td nowrap colspan="3">Long Trades (won %):</td>
+      <td nowrap colspan="2"><b>27 (92.59%)</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3">Total Deals:</td>
+      <td nowrap><b>130</b></td>
+      <td nowrap colspan="3">Profit Trades (% of total):</td>
+      <td nowrap><b>53 (81.54%)</b></td>
+      <td nowrap colspan="3">Loss Trades (% of total):</td>
+      <td nowrap colspan="2"><b>12 (18.46%)</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="4"></td>
+      <td nowrap colspan="3">Largest profit trade:</td>
+      <td nowrap><b>24.15</b></td>
+      <td nowrap colspan="3">Largest loss trade:</td>
+      <td nowrap colspan="2"><b>-16.48</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="4"></td>
+      <td nowrap colspan="3">Average profit trade:</td>
+      <td nowrap><b>3.98</b></td>
+      <td nowrap colspan="3">Average loss trade:</td>
+      <td nowrap colspan="2"><b>-4.10</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="4"></td>
+      <td nowrap colspan="3">Maximum consecutive wins ($):</td>
+      <td nowrap><b>17 (73.72)</b></td>
+      <td nowrap colspan="3">Maximum consecutive losses ($):</td>
+      <td nowrap colspan="2"><b>2 (-25.85)</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="4"></td>
+      <td nowrap colspan="3">Maximal consecutive profit (count):</td>
+      <td nowrap><b>73.72 (17)</b></td>
+      <td nowrap colspan="3">Maximal consecutive loss (count):</td>
+      <td nowrap colspan="2"><b>-25.85 (2)</b></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="4"></td>
+      <td nowrap colspan="3">Average consecutive wins:</td>
+      <td nowrap><b>5</b></td>
+      <td nowrap colspan="3">Average consecutive losses:</td>
+      <td nowrap colspan="2"><b>1</b></td>
+   </tr>
+   <tr align="right">
+      <td colspan="13" style="height: 10px"></td>
+   </tr>
+   <tr align="center">
+      <th colspan="13"><img src="forensic_AUDUSD.png" title="Balance graph" width=820 height=200 border=0 alt="Graph"></th>
+   </tr>
+   <tr align="right">
+      <td colspan="13" style="height: 10px"></td>
+   </tr>
+   <tr align="center">
+      <th colspan="13"><img src="forensic_AUDUSD-hst.png" width=860 height=400 border=0 alt="Graph"></th>
+   </tr>
+   <tr align="right">
+      <td colspan="13" style="height: 10px"></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3">Correlation (Profits,MFE):</td>
+      <td nowrap><b>0.88</b></td>
+      <td nowrap colspan="3">Correlation (Profits,MAE):</td>
+      <td nowrap><b>0.15</b></td>
+      <td nowrap colspan="3">Correlation (MFE,MAE):</td>
+      <td nowrap colspan="2"><b>-0.1987</b></td>
+   </tr>
+   <tr align="center">
+      <th colspan="13"><img src="forensic_AUDUSD-mfemae.png" width=860 height=400 border=0 alt="Graph"></th>
+   </tr>
+   <tr align="right">
+      <td colspan="13" style="height: 10px"></td>
+   </tr>
+   <tr align="right">
+      <td nowrap colspan="3">Minimal position holding time:</td>
+      <td nowrap><b>0:00:20</b></td>
+      <td nowrap colspan="3">Maximal position holding time:</td>
+      <td nowrap><b>368:00:20</b></td>
+      <td nowrap colspan="3">Average position holding time:</td>
+      <td nowrap colspan="2"><b>58:02:50</b></td>
+   </tr>
+   <tr align="center">
+      <th colspan="13"><img src="forensic_AUDUSD-holding.png" width=860 height=200 border=0 alt="Graph"></th>
+   </tr>
+   <tr align="right">
+      <td colspan="13" style="height: 10px"></td>
+   </tr>
+</table>
+<table cellspacing="1" cellpadding="3" border="0">
+   <tr>
+      <td style="width: 90px;height: 10px"></td>
+      <td style="width: 40px;"></td>
+      <td style="width: 60px;"></td>
+      <td style="width: 60px;"></td>
+      <td style="width: 60px;"></td>
+      <td style="width: 60px;"></td>
+      <td style="width: 60px;"></td>
+      <td style="width: 70px;"></td>
+      <td style="width: 70px;"></td>
+      <td style="width: 60px;"></td>
+      <td style="width: 60px;"></td>
+      <td style="width: 60px;"></td>
+      <td style="width: 100px;"></td>
+   </tr>
+   <tr align="center">
+      <th colspan="13" style="height: 25px"><div style="font: 10pt Tahoma"><b>Orders</b></div></th>
+   </tr>
+   <tr align="center" bgcolor="#E5F0FC">
+      <td nowrap style="height: 30px"><b>Open Time</b></td>
+      <td nowrap><b>Order</b></td>
+      <td nowrap><b>Symbol</b></td>
+      <td nowrap><b>Type</b></td>
+      <td nowrap colspan="2"><b>Volume</b></td>
+      <td nowrap><b>Price</b></td>
+      <td nowrap><b>S / L</b></td>
+      <td nowrap><b>T / P</b></td>
+      <td nowrap colspan="2"><b>Time</b></td>
+      <td nowrap><b>State</b></td>
+      <td nowrap><b>Comment</b></td>
+   </tr>
+   <tr bgcolor="#FFFFFF" align=right><td>2025.03.03 04:00:00</td><td>2</td><td>AUDUSD</td><td>buy</td><td colspan="2">0.01 / 0.01</td><td>0.00000</td><td></td><td></td><td colspan="2">2025.03.03 04:00:00</td><td>filled</td><td>DCA-EA-V1.0</td></tr>
+   <tr bgcolor="#F7F7F7" align=right><td>2025.03.05 00:05:00</td><td>3</td><td>AUDUSD</td><td>buy</td><td colspan="2">0.02 / 0.02</td><td>0.00000</td><td></td><td></td><td colspan="2">2025.03.05 00:05:00</td><td>filled</td><td>DCA-EA-V1.0</td></tr>
+   <tr bgcolor="#FFFFFF" align=right><td>2025.03.05 00:05:30</td><td>4</td><td>AUDUSD</td><td>sell</td><td colspan="2">0.02 / 0.02</td><td>0.00000</td><td></td><td></td><td colspan="2">2025.03.05 00:05:30</td><td>filled</td><td></td></tr>
+   <tr bgcolor="#F7F7F7" align=right><td>2025.03.05 00:05:30</td><td>5</td><td>AUDUSD</td><td>sell</td><td colspan="2">0.01 / 0.01</td><td>0.00000</td><td></td><td></td><td colspan="2">2025.03.05 00:05:30</td><td>filled</td><td></td></tr>
+   <tr bgcolor="#FFFFFF" align=right><td>2025.03.07 04:00:00</td><td>6</td><td>AUDUSD</td><td>sell</td><td colspan="2">0.01 / 0.01</td><td>0.00000</td><td></td><td></td><td colspan="2">2025.03.07 04:00:00</td><td>filled</td><td>DCA-EA-V1.0</td></tr>
+   <tr bgcolor="#F7F7F7" align=right><td>2025.03.10 20:00:00</td><td>7</td><td>AUDUSD</td><td>sell</td><td colspan="2">0.02 / 0.02</td><td>0.00000</td><td></td><td></td><td colspan="2">2025.03.10 20:00:00</td><td>filled</td><td>DCA-EA-V1.0</td></tr>
+   <tr bgcolor="#FFFFFF" align=right><td>2025.03.11 00:05:00</td><td>8</td><td>AUDUSD</td><td>buy</td><td colspan="2">0.02 / 0.02</td><td>0.00000</td><td></td><td></td><td colspan="2">2025.03.11 00:05:00</td><td>filled</td><td></td></tr>
+   <tr bgcolor="#F7F7F7" align=right><td>2025.03.11 00:05:00</td><td>9</td><td>AUDUSD</td><td>buy</td><td colspan="2">0.01 / 0.01</td><td>0.00000</td><td></td><td></td><td colspan="2">2025.03.11 00:05:00</td><td>filled</td><td></td></tr>
+   <tr bgcolor="#FFFFFF" align=right><td>2025.03.18 16:00:00</td><td>10</td><td>AUDUSD</td><td>sell</td><td colspan="2">0.01 / 0.01</td><td>0.00000</td><td></td><td></td><td colspan="2">2025.03.18 16:00:00</td><td>filled</td><td>DCA-EA-V1.0</td></tr>
+   <tr bgcolor="#F7F7F7" align=right><td>2025.03.19 12:00:20</td><td>11</td><td>AUDUSD</td><td>buy</td><td colspan="2">0.01 / 0.01</td><td>0.00000</td><td></td><td></td><td colspan="2">2025.03.19 12:00:20</td><td>filled</td><td></td></tr>
+   <tr bgcolor="#FFFFFF" align=right><td>2025.04.01 08:00:00</td><td>12</td><td>AUDUSD</td><td>buy</td><td colspan="2">0.01 / 0.01</td><td>0.00000</td><td></td><td></td><td colspan="2">2025.04.01 08:00:00</td><td>filled</td><td>DCA-EA-V1.0</td></tr>
+   <tr bgcolor="#F7F7F7" align=right><td>2025.04.02 04:00:20</td><td>13</td><td>AUDUSD</td><td>sell</td><td colspan="2">0.01 / 0.01</td><td>0.00000</td><td></td><td></td><td colspan="2">2025.04.02 04:00:20</td><td>filled</td><td></td></tr>
+   <tr bgcolor="#FFFFFF" align=right><td>2025.04.07 16:00:00</td><td>14</td><td>AUDUSD</td><td>buy</td><td colspan="2">0.01 / 0.01</td><td>0.00000</td><td></td><td></td><td colspan="2">2025.04.07 16:00:00</td><td>filled</td><td>DCA-EA-V1.0</td></tr>
+   <tr bgcolor="#F7F7F7" align=right><td>2025.04.10 00:06:30</td><td>15</td><td>AUDUSD</td><td>sell</td><td colspan="2">0.01 / 0.01</td><td>0.00000</td><td></td><td></td><td colspan="2">2025.04.10 00:06:30</td><td>filled</td><td></td></tr>
+   <tr bgcolor="#FFFFFF" align=right><td>2025.04.14 16:00:00</td><td>16</td><td>AUDUSD</td><td>sell</td><td colspan="2">0.01 / 0.01</td><td>0.00000</td><td></td><td></td><td colspan="2">2025.04.14 16:00:00</td><td>filled</td><td>DCA-EA-V1.0</td></tr>
+   <tr bgcolor="#F7F7F7" align=right><td>2025.04.17 16:00:00</td><td>17</td><td>AUDUSD</td><td>buy</td><td colspan="2">0.01 / 0.01</td><td>0.00000</td><td></td><td></td><td colspan="2">2025.04.17 16:00:00</td><td>filled</td><td>DCA-EA-V1.0</td></tr>
+   <tr bgcolor="#FFFFFF" align=right><td>2025.04.21 08:00:20</td><td>18</td><td>AUDUSD</td><td>sell</td><td colspan="2">0.01 / 0.01</td><td>0.00000</td><td></td><td></td><td colspan="2">2025.04.21 08:00:20</td><td>filled</td><td></td></tr>
+   <tr bgcolor="#F7F7F7" align=right><td>2025.04.22 12:00:00</td><td>19</td><td>AUDUSD</td><td>sell</td><td colspan="2">0.02 / 0.02</td><td>0.00000</td><td></td><td></td><td colspan="2">2025.04.22 12:00:00</td><td>filled</td><td>DCA-EA-V1.0</td></tr>
+   <tr bgcolor="#FFFFFF" align=right><td>2025.04.23 00:08:20</td><td>20</td><td>AUDUSD</td><td>buy</td><td colspan="2">0.02 / 0.02</td><td>0.00000</td><td></td><td></td><td colspan="2">2025.04.23 00:08:20</td><td>filled</td><td></td></tr>
+   <tr bgcolor="#F7F7F7" align=right><td>2025.04.23 00:08:20</td><td>21</td><td>AUDUSD</td><td>buy</td><td colspan="2">0.01 / 0.01</td><td>0.00000</td><td></td><td></td><td colspan="2">2025.04.23 00:08:20</td><td>filled</td><td></td></tr>
+   <tr bgcolor="#FFFFFF" align=right><td>2025.04.23 04:00:00</td><td>22</td><td>AUDUSD</td><td>sell</td><td colspan="2">0.01 / 0.01</td><td>0.00000</td><td></td><td></td><td colspan="2">2025.04.23 04:00:00</td><td>filled</td><td>DCA-EA-V1.0</td></tr>
+   <tr bgcolor="#F7F7F7" align=right><td>2025.04.23 20:00:20</td><td>23</td><td>AUDUSD</td><td>buy</td><td colspan="2">0.01 / 0.01</td><td>0.00000</td><td></td><td></td><td colspan="2">2025.04.23 20:00:20</td><td>filled</td><td></td></tr>
+   <tr bgcolor="#FFFFFF" align=right><td>2025.05.05 20:00:00</td><td>24</td><td>AUDUSD</td><td>sell</td><td colspan="2">0.01 / 0.01</td><td>0.00000</td><td></td><td></td><td colspan="2">2025.05.05 20:00:00</td><td>filled</td><td>DCA-EA-V1.0</td></tr>
+   <tr bgcolor="#F7F7F7" align=right><td>2025.05.07 20:00:00</td><td>25</td><td>AUDUSD</td><td>sell</td><td colspan="2">0.02 / 0.02</td><td>0.00000</td><td></td><td></td><td colspan="2">2025.05.07 20:00:00</td><td>filled</td><td>DCA-EA-V1.0</td></tr>
+   <tr bgcolor="#FFFFFF" align=right><td>2025.05.08 00:07:30</td><td>26</td><td>AUDUSD</td><td>buy</td><td colspan="2">0.02 / 0.02</td><td>0.00000</td><td></td><td></td><td colspan="2">2025.05.08 00:07:30</td><td>filled</td><td></td></tr>
+   <tr bgcolor="#F7F7F7" align=right><td>2025.05.08 00:07:30</td><td>27</td><td>AUDUSD</td><td>buy</td><td colspan="2">0.01 / 0.01</td><td>0.00000</td><td></td><td></td><td colspan="2">2025.05.08 00:07:30</td><td>filled</td><td></td></tr>
+   <tr bgcolor="#FFFFFF" align=right><td>2025.05.08 04:00:00</td><td>28</td><td>AUDUSD</td><td>sell</td><td colspan="2">0.01 / 0.01</td><td>0.00000</td><td></td><td></td><td colspan="2">2025.05.08 04:00:00</td><td>filled</td><td>DCA-EA-V1.0</td></tr>
+   <tr bgcolor="#F7F7F7" align=right><td>2025.05.08 04:00:20</td><td>29</td><td>AUDUSD</td><td>buy</td><td colspan="2">0.01 / 0.01</td><td>0.00000</td><td></td><td></td><td colspan="2">2025.05.08 04:00:20</td><td>filled</td><td></td></tr>
+   <tr bgcolor="#FFFFFF" align=right><td>2025.05.13 08:00:00</td><td>30</td><td>AUDUSD</td><td>buy</td><td colspan="2">0.01 / 0.01</td><td>0.00000</td><td></td><td></td><td colspan="2">2025.05.13 08:00:00</td><td>filled</td><td>DCA-EA-V1.0</td></tr>
+   <tr bgcolor="#F7F7F7" align=right><td>2025.05.13 20:00:20</td><td>31</td><td>AUDUSD</td><td>sell</td><td colspan="2">0.01 / 0.01</td><td>0.00000</td><td></td><td></td><td colspan="2">2025.05.13 20:00:20</td><td>filled</td><td></td></tr>
+   <tr bgcolor="#FFFFFF" align=right><td>2025.05.26 20:00:00</td><td>32</td><td>AUDUSD</td><td>sell</td><td colspan="2">0.01 / 0.01</td><td>0.00000</td><td></td><td></td><td colspan="2">2025.05.26 20:00:00</td><td>filled</td><td>DCA-EA-V1.0</td></tr>
+   <tr bgcolor="#F7F7F7" align=right><td>2025.05.27 12:00:20</td><td>33</td><td>AUDUSD</td><td>buy</td><td colspan="2">0.01 / 0.01</td><td>0.00000</td><td></td><td></td><td colspan="2">2025.05.27 12:00:20</td><td>filled</td><td></td></tr>
+   <tr bgcolor="#FFFFFF" align=right><td>2025.06.06 12:00:00</td><td>34</td><td>AUDUSD</td><td>sell</td><td colspan="2">0.01 / 0.01</td><td>0.00000</td><td></td><td></td><td colspan="2">2025.06.06 12:00:00</td><td>filled</td><td>DCA-EA-V1.0</td></tr>
+   <tr bgcolor="#F7F7F7" align=right><td>2025.06.11 04:00:00</td><td>35</td><td>AUDUSD</td><td>sell</td><td colspan="2">0.02 / 0.02</td><td>0.00000</td><td></td><td></td><td colspan="2">2025.06.11 04:00:00</td><td>filled</td><td>DCA-EA-V1.0</td></tr>
+   <tr bgcolor="#FFFFFF" align=right><td>2025.06.12 08:00:20</td><td>36</td><td>AUDUSD</td><td>buy</td><td colspan="2">0.02 / 0.02</td><td>0.00000</td><td></td><td></td><td colspan="2">2025.06.12 08:00:20</td><td>filled</td><td></td></tr>
+   <tr bgcolor="#F7F7F7" align=right><td>2025.06.12 08:00:20</td><td>37</td><td>AUDUSD</td><td>buy</td><td colspan="2">0.01 / 0.01</td><td>0.00000</td><td></td><td></td><td colspan="2">2025.06.12 08:00:20</td><td>filled</td><td></td></tr>
+   <tr bgcolor="#FFFFFF" align=right><td>2025.06.20 04:00:00</td><td>38</td><td>AUDUSD</td><td>buy</td><td colspan="2">0.01 / 0.01</td><td>0.00000</td><td></td><td></td><td colspan="2">2025.06.20 04:00:00</td><td>filled</td><td>DCA-EA-V1.0</td></tr>
+   <tr bgcolor="#F7F7F7" align=right><td>2025.06.23 04:00:00</td><td>39</td><td>AUDUSD</td><td>sell</td><td colspan="2">0.01 / 0.01</td><td>0.00000</td><td></td><td></td><td colspan="2">2025.06.23 04:00:00</td><td>filled</td><td>DCA-EA-V1.0</td></tr>
+   <tr bgcolor="#FFFFFF" align=right><td>2025.06.23 08:00:20</td><td>40</td><td>AUDUSD</td><td>buy</td><td colspan="2">0.01 / 0.01</td><td>0.00000</td><td></td><td></td><td colspan="2">2025.06.23 08:00:20</td><td>filled</td><td></td></tr>
+   <tr bgcolor="#F7F7F7" align=right><td>2025.06.24 12:00:20</td><td>41</td><td>AUDUSD</td><td>sell</td><td colspan="2">0.01 / 0.01</td><td>0.00000</td><td></td><td></td><td colspan="2">2025.06.24 12:00:20</td><td>filled</td><td></td></tr>
+   <tr bgcolor="#FFFFFF" align=right><td>2025.06.27 08:00:00</td><td>42</td><td>AUDUSD</td><td>sell</td><td colspan="2">0.01 / 0.01</td><td>0.00000</td><td></td><td></td><td colspan="2">2025.06.27 08:00:00</td><td>filled</td><td>DCA-EA-V1.0</td></tr>
+   <tr bgcolor="#F7F7F7" align=right><td>2025.07.01 20:00:00</td><td>43</td><td>AUDUSD</td><td>sell</td><td colspan="2">0.02 / 0.02</td><td>0.00000</td><td></td><td></td><td colspan="2">2025.07.01 20:00:00</td><td>filled</td><td>DCA-EA-V1.0</td></tr>
+   <tr bgcolor="#FFFFFF" align=right><td>2025.07.03 16:00:00</td><td>44</td><td>AUDUSD</td><td>sell</td><td colspan="2">0.03 / 0.03</td><td>0.00000</td><td></td><td></td><td colspan="2">2025.07.03 16:00:00</td><td>filled</td><td>DCA-EA-V1.0</td></tr>
+   <tr bgcolor="#F7F7F7" align=right><td>2025.07.03 16:00:20</td><td>45</td><td>AUDUSD</td><td>buy</td><td colspan="2">0.03 / 0.03</td><td>0.00000</td><td></td><td></td><td colspan="2">2025.07.03 16:00:20</td><td>filled</td><td></td></tr>
+   <tr bgcolor="#FFFFFF" align=right><td>2025.07.03 16:00:20</td><td>46</td><td>AUDUSD</td><td>buy</td><td colspan="2">0.02 / 0.02</td><td>0.00000</td><td></td><td></td><td colspan="2">2025.07.03 16:00:20</td><td>filled</td><td></td></tr>
+   <tr bgcolor="#F7F7F7" align=right><td>2025.07.03 16:00:20</td><td>47</td><td>AUDUSD</td><td>buy</td><td colspan="2">0.01 / 0.01</td><td>0.00000</td><td></td><td></td><td colspan="2">2025.07.03 16:00:20</td><td>filled</td><td></td></tr>
+   <tr bgcolor="#FFFFFF" align=right><td>2025.07.08 04:00:00</td><td>48</td><td>AUDUSD</td><td>buy</td><td colspan="2">0.01 / 0.01</td><td>0.00000</td><td></td><td></td><td colspan="2">2025.07.08 04:00:00</td><td>filled</td><td>DCA-EA-V1.0</td></tr>
+   <tr bgcolor="#F7F7F7" align=right><td>2025.07.08 08:00:20</td><td>49</td><td>AUDUSD</td><td>sell</td><td colspan="2">0.01 / 0.01</td><td>0.00000</td><td></td><td></td><td colspan="2">2025.07.08 08:00:20</td><td>filled</td><td></td></tr>
+   <tr bgcolor="#FFFFFF" align=right><td>2025.07.18 04:00:00</td><td>50</td><td>AUDUSD</td><td>buy</td><td colspan="2">0.01 / 0.01</td><td>0.00000</td><td></td><td></td><td colspan="2">2025.07.18 04:00:00</td><td>filled</td><td>DCA-EA-V1.0</td></tr>
+   <tr bgcolor="#F7F7F7" align=right><td>2025.07.18 20:00:20</td><td>51</td><td>AUDUSD</td><td>sell</td><td colspan="2">0.01 / 0.01</td><td>0.00000</td><td></td><td></td><td colspan="2">2025.07.18 20:00:20</td><td>filled</td><td></td></tr>
+   <tr bgcolor="#FFFFFF" align=right><td>2025.07.24 16:00:00</td><td>52</td><td>AUDUSD</td><td>sell</td><td colspan="2">0.01 / 0.01</td><td>0.00000</td><td></td><td></td><td colspan="2">2025.07.24 16:00:00</td><td>filled</td><td>DCA-EA-V1.0</td></tr>
+   <tr bgcolor="#F7F7F7" align=right><td>2025.07.28 12:00:00</td><td>53</td><td>AUDUSD</td><td>sell</td><td colspan="2">0.02 / 0.02</td><td>0.00000</td><td></td><td></td><td colspan="2">2025.07.28 12:00:00</td><td>filled</td><td>DCA-EA-V1.0</td></tr>
+   <tr bgcolor="#FFFFFF" align=right><td>2025.07.28 12:00:20</td><td>54</td><td>AUDUSD</td><td>buy</td><td colspan="2">0.02 / 0.02</td><td>0.00000</td><td></td><td></td><td colspan="2">2025.07.28 12:00:20</td><td>filled</td><td></td></tr>
+   <tr bgcolor="#F7F7F7" align=right><td>2025.07.28 12:00:20</td><td>55</td><td>AUDUSD</td><td>buy</td><td colspan="2">0.01 / 0.01</td><td>0.00000</td><td></td><td></td><td colspan="2">2025.07.28 12:00:20</td><td>filled</td><td></td></tr>
+   <tr bgcolor="#FFFFFF" align=right><td>2025.07.30 16:00:00</td><td>56</td><td>AUDUSD</td><td>buy</td><td colspan="2">0.01 / 0.01</td><td>0.00000</td><td></td><td></td><td colspan="2">2025.07.30 16:00:00</td><td>filled</td><td>DCA-EA-V1.0</td></tr>
+   <tr bgcolor="#F7F7F7" align=right><td>2025.07.31 08:00:00</td><td>57</td><td>AUDUSD</td><td>buy</td><td colspan="2">0.02 / 0.02</td><td>0.00000</td><td></td><td></td><td colspan="2">2025.07.31 08:00:00</td><td>filled</td><td>DCA-EA-V1.0</td></tr>
+   <tr bgcolor="#FFFFFF" align=right><td>2025.08.06 08:00:20</td><td>58</td><td>AUDUSD</td><td>sell</td><td colspan="2">0.02 / 0.02</td><td>0.00000</td><td></td><td></td><td colspan="2">2025.08.06 08:00:20</td><td>filled</td><td></td></tr>
+   <tr bgcolor="#F7F7F7" align=right><td>2025.08.06 08:00:20</td><td>59</td><td>AUDUSD</td><td>sell</td><td colspan="2">0.01 / 0.01</td><td>0.00000</td><td></td><td></td><td colspan="2">2025.08.06 08:00:20</td><td>filled</td><td></td></tr>
+   <tr bgcolor="#FFFFFF" align=right><td>2025.08.07 20:00:00</td><td>60</td><td>AUDUSD</td><td>sell</td><td colspan="2">0.01 / 0.01</td><td>0.00000</td><td></td><td></td><td colspan="2">2025.08.07 20:00:00</td><td>filled</td><td>DCA-EA-V1.0</td></tr>
+   <tr bgcolor="#F7F7F7" align=right><td>2025.08.12 12:00:20</td><td>61</td><td>AUDUSD</td><td>buy</td><td colspan="2">0.01 / 0.01</td><td>0.00000</td><td></td><td></td><td colspan="2">2025.08.12 12:00:20</td><td>filled</td><td></td></tr>
+   <tr bgcolor="#FFFFFF" align=right><td>2025.08.14 12:00:00</td><td>62</td><td>AUDUSD</td><td>sell</td><td colspan="2">0.01 / 0.01</td><td>0.00000</td><td></td><td></td><td colspan="2">2025.08.14 12:00:00</td><td>filled</td><td>DCA-EA-V1.0</td></tr>
+   <tr bgcolor="#F7F7F7" align=right><td>2025.08.14 16:00:20</td><td>63</td><td>AUDUSD</td><td>buy</td><td colspan="2">0.01 / 0.01</td><td>0.00000</td><td></td><td></td><td colspan="2">2025.08.14 16:00:20</td><td>filled</td><td></td></tr>
+   <tr bgcolor="#FFFFFF" align=right><td>2025.08.15 16:00:00</td><td>64</td><td>AUDUSD</td><td>buy</td><td colspan="2">0.01 / 0.01</td><td>0.00000</td><td></td><td></td><td colspan="2">2025.08.15 16:00:00</td><td>filled</td><td>DCA-EA-V1.0</td></tr>
+   <tr bgcolor="#F7F7F7" align=right><td>2025.08.22 04:00:00</td><td>65</td><td>AUDUSD</td><td>buy</td><td colspan="2">0.02 / 0.02</td><td>0.00000</td><td></td><td></td><td colspan="2">2025.08.22 04:00:00</td><td>filled</td><td>DCA-EA-V1.0</td></tr>
+   <tr bgcolor="#FFFFFF" align=right><td>2025.08.22 04:00:00</td><td>66</td><td>AUDUSD</td><td>buy</td><td colspan="2">0.01 / 0.01</td><td>0.00000</td><td></td><td></td><td colspan="2">2025.08.22 04:00:00</td><td>filled</td><td>DCA-EA-V1.0</td></tr>
+   <tr bgcolor="#F7F7F7" align=right><td>2025.08.22 20:00:20</td><td>67</td><td>AUDUSD</td><td>sell</td><td colspan="2">0.01 / 0.01</td><td>0.00000</td><td></td><td></td><td colspan="2">2025.08.22 20:00:20</td><td>filled</td><td></td></tr>
+   <tr bgcolor="#FFFFFF" align=right><td>2025.08.22 20:00:20</td><td>68</td><td>AUDUSD</td><td>sell</td><td colspan="2">0.02 / 0.02</td><td>0.00000</td><td></td><td></td><td colspan="2">2025.08.22 20:00:20</td><td>filled</td><td></td></tr>
+   <tr bgcolor="#F7F7F7" align=right><td>2025.08.22 20:00:20</td><td>69</td><td>AUDUSD</td><td>sell</td><td colspan="2">0.01 / 0.01</td><td>0.00000</td><td></td><td></td><td colspan="2">2025.08.22 20:00:20</td><td>filled</td><td></td></tr>
+   <tr bgcolor="#FFFFFF" align=right><td>2025.09.09 20:00:00</td><td>70</td><td>AUDUSD</td><td>sell</td><td colspan="2">0.01 / 0.01</td><td>0.00000</td><td></td><td></td><td colspan="2">2025.09.09 20:00:00</td><td>filled</td><td>DCA-EA-V1.0</td></tr>
+   <tr bgcolor="#F7F7F7" align=right><td>2025.09.12 12:00:00</td><td>71</td><td>AUDUSD</td><td>sell</td><td colspan="2">0.02 / 0.02</td><td>0.00000</td><td></td><td></td><td colspan="2">2025.09.12 12:00:00</td><td>filled</td><td>DCA-EA-V1.0</td></tr>
+   <tr bgcolor="#FFFFFF" align=right><td>2025.09.17 12:00:00</td><td>72</td><td>AUDUSD</td><td>sell</td><td colspan="2">0.03 / 0.03</td><td>0.00000</td><td></td><td></td><td colspan="2">2025.09.17 12:00:00</td><td>filled</td><td>DCA-EA-V1.0</td></tr>
+   <tr bgcolor="#F7F7F7" align=right><td>2025.09.18 08:00:20</td><td>73</td><td>AUDUSD</td><td>buy</td><td colspan="2">0.03 / 0.03</td><td>0.00000</td><td></td><td></td><td colspan="2">2025.09.18 08:00:20</td><td>filled</td><td></td></tr>
+   <tr bgcolor="#FFFFFF" align=right><td>2025.09.18 08:00:20</td><td>74</td><td>AUDUSD</td><td>buy</td><td colspan="2">0.02 / 0.02</td><td>0.00000</td><td></td><td></td><td colspan="2">2025.09.18 08:00:20</td><td>filled</td><td></td></tr>
+   <tr bgcolor="#F7F7F7" align=right><td>2025.09.18 08:00:20</td><td>75</td><td>AUDUSD</td><td>buy</td><td colspan="2">0.01 / 0.01</td><td>0.00000</td><td></td><td></td><td colspan="2">2025.09.18 08:00:20</td><td>filled</td><td></td></tr>
+   <tr bgcolor="#FFFFFF" align=right><td>2025.09.22 16:00:00</td><td>76</td><td>AUDUSD</td><td>buy</td><td colspan="2">0.01 / 0.01</td><td>0.00000</td><td></td><td></td><td colspan="2">2025.09.22 16:00:00</td><td>filled</td><td>DCA-EA-V1.0</td></tr>
+   <tr bgcolor="#F7F7F7" align=right><td>2025.09.24 12:00:20</td><td>77</td><td>AUDUSD</td><td>sell</td><td colspan="2">0.01 / 0.01</td><td>0.00000</td><td></td><td></td><td colspan="2">2025.09.24 12:00:20</td><td>filled</td><td></td></tr>
+   <tr bgcolor="#FFFFFF" align=right><td>2025.10.01 04:00:00</td><td>78</td><td>AUDUSD</td><td>sell</td><td colspan="2">0.01 / 0.01</td><td>0.00000</td><td></td><td></td><td colspan="2">2025.10.01 04:00:00</td><td>filled</td><td>DCA-EA-V1.0</td></tr>
+   <tr bgcolor="#F7F7F7" align=right><td>2025.10.02 20:00:20</td><td>79</td><td>AUDUSD</td><td>buy</td><td colspan="2">0.01 / 0.01</td><td>0.00000</td><td></td><td></td><td colspan="2">2025.10.02 20:00:20</td><td>filled</td><td></td></tr>
+   <tr bgcolor="#FFFFFF" align=right><td>2025.10.08 16:00:00</td><td>80</td><td>AUDUSD</td><td>buy</td><td colspan="2">0.01 / 0.01</td><td>0.00000</td><td></td><td></td><td colspan="2">2025.10.08 16:00:00</td><td>filled</td><td>DCA-EA-V1.0</td></tr>
+   <tr bgcolor="#F7F7F7" align=right><td>2025.10.09 08:00:20</td><td>81</td><td>AUDUSD</td><td>sell</td><td colspan="2">0.01 / 0.01</td><td>0.00000</td><td></td><td></td><td colspan="2">2025.10.09 08:00:20</td><td>filled</td><td></td></tr>
+   <tr bgcolor="#FFFFFF" align=right><td>2025.10.13 20:00:00</td><td>82</td><td>AUDUSD</td><td>buy</td><td colspan="2">0.01 / 0.01</td><td>0.00000</td><td></td><td></td><td colspan="2">2025.10.13 20:00:00</td><td>filled</td><td>DCA-EA-V1.0</td></tr>
+   <tr bgcolor="#F7F7F7" align=right><td>2025.10.20 16:00:00</td><td>83</td><td>AUDUSD</td><td>buy</td><td colspan="2">0.01 / 0.01</td><td>0.00000</td><td></td><td></td><td colspan="2">2025.10.20 16:00:00</td><td>filled</td><td>DCA-EA-V1.0</td></tr>
+   <tr bgcolor="#FFFFFF" align=right><td>2025.10.20 20:00:20</td><td>84</td><td>AUDUSD</td><td>sell</td><td colspan="2">0.01 / 0.01</td><td>0.00000</td><td></td><td></td><td colspan="2">2025.10.20 20:00:20</td><td>filled</td><td></td></tr>
+   <tr bgcolor="#F7F7F7" align=right><td>2025.10.23 12:00:00</td><td>85</td><td>AUDUSD</td><td>buy</td><td colspan="2">0.02 / 0.02</td><td>0.00000</td><td></td><td></td><td colspan="2">2025.10.23 12:00:00</td><td>filled</td><td>DCA-EA-V1.0</td></tr>
+   <tr bgcolor="#FFFFFF" align=right><td>2025.10.27 04:00:00</td><td>86</td><td>AUDUSD</td><td>buy</td><td colspan="2">0.03 / 0.03</td><td>0.00000</td><td></td><td></td><td colspan="2">2025.10.27 04:00:00</td><td>filled</td><td>DCA-EA-V1.0</td></tr>
+   <tr bgcolor="#F7F7F7" align=right><td>2025.10.27 08:00:20</td><td>87</td><td>AUDUSD</td><td>sell</td><td colspan="2">0.03 / 0.03</td><td>0.00000</td><td></td><td></td><td colspan="2">2025.10.27 08:00:20</td><td>filled</td><td></td></tr>
+   <tr bgcolor="#FFFFFF" align=right><td>2025.10.27 08:00:20</td><td>88</td><td>AUDUSD</td><td>sell</td><td colspan="2">0.02 / 0.02</td><td>0.00000</td><td></td><td></td><td colspan="2">2025.10.27 08:00:20</td><td>filled</td><td></td></tr>
+   <tr bgcolor="#F7F7F7" align=right><td>2025.10.27 08:00:20</td><td>89</td><td>AUDUSD</td><td>sell</td><td colspan="2">0.01 / 0.01</td><td>0.00000</td><td></td><td></td><td colspan="2">2025.10.27 08:00:20</td><td>filled</td><td></td></tr>
+   <tr bgcolor="#FFFFFF" align=right><td>2025.10.30 04:00:00</td><td>90</td><td>AUDUSD</td><td>sell</td><td colspan="2">0.01 / 0.01</td><td>0.00000</td><td></td><td></td><td colspan="2">2025.10.30 04:00:00</td><td>filled</td><td>DCA-EA-V1.0</td></tr>
+   <tr bgcolor="#F7F7F7" align=right><td>2025.10.30 16:00:20</td><td>91</td><td>AUDUSD</td><td>buy</td><td colspan="2">0.01 / 0.01</td><td>0.00000</td><td></td><td></td><td colspan="2">2025.10.30 16:00:20</td><td>filled</td><td></td></tr>
+   <tr bgcolor="#FFFFFF" align=right><td>2025.11.05 08:00:00</td><td>92</td><td>AUDUSD</td><td>buy</td><td colspan="2">0.01 / 0.01</td><td>0.00000</td><td></td><td></td><td colspan="2">2025.11.05 08:00:00</td><td>filled</td><td>DCA-EA-V1.0</td></tr>
+   <tr bgcolor="#F7F7F7" align=right><td>2025.11.10 00:05:00</td><td>93</td><td>AUDUSD</td><td>buy</td><td colspan="2">0.02 / 0.02</td><td>0.00000</td><td></td><td></td><td colspan="2">2025.11.10 00:05:00</td><td>filled</td><td>DCA-EA-V1.0</td></tr>
+   <tr bgcolor="#FFFFFF" align=right><td>2025.11.10 04:00:20</td><td>94</td><td>AUDUSD</td><td>sell</td><td colspan="2">0.02 / 0.02</td><td>0.00000</td><td></td><td></td><td colspan="2">2025.11.10 04:00:20</td><td>filled</td><td></td></tr>
+   <tr bgcolor="#F7F7F7" align=right><td>2025.11.10 04:00:20</td><td>95</td><td>AUDUSD</td><td>sell</td><td colspan="2">0.01 / 0.01</td><td>0.00000</td><td></td><td></td><td colspan="2">2025.11.10 04:00:20</td><td>filled</td><td></td></tr>
+   <tr bgcolor="#FFFFFF" align=right><td>2025.11.13 20:00:00</td><td>96</td><td>AUDUSD</td><td>sell</td><td colspan="2">0.01 / 0.01</td><td>0.00000</td><td></td><td></td><td colspan="2">2025.11.13 20:00:00</td><td>filled</td><td>DCA-EA-V1.0</td></tr>
+   <tr bgcolor="#F7F7F7" align=right><td>2025.11.14 12:00:20</td><td>97</td><td>AUDUSD</td><td>buy</td><td colspan="2">0.01 / 0.01</td><td>0.00000</td><td></td><td></td><td colspan="2">2025.11.14 12:00:20</td><td>filled</td><td></td></tr>
+   <tr bgcolor="#FFFFFF" align=right><td>2025.11.18 16:00:00</td><td>98</td><td>AUDUSD</td><td>buy</td><td colspan="2">0.01 / 0.01</td><td>0.00000</td><td></td><td></td><td colspan="2">2025.11.18 16:00:00</td><td>filled</td><td>DCA-EA-V1.0</td></tr>
+   <tr bgcolor="#F7F7F7" align=right><td>2025.11.26 20:00:00</td><td>99</td><td>AUDUSD</td><td>sell</td><td colspan="2">0.01 / 0.01</td><td>0.00000</td><td></td><td></td><td colspan="2">2025.11.26 20:00:00</td><td>filled</td><td>DCA-EA-V1.0</td></tr>
+   <tr bgcolor="#FFFFFF" align=right><td>2025.11.27 00:06:00</td><td>100</td><td>AUDUSD</td><td>sell</td><td colspan="2">0.01 / 0.01</td><td>0.00000</td><td></td><td></td><td colspan="2">2025.11.27 00:06:00</td><td>filled</td><td></td></tr>
+   <tr bgcolor="#F7F7F7" align=right><td>2025.11.28 12:00:00</td><td>101</td><td>AUDUSD</td><td>sell</td><td colspan="2">0.02 / 0.02</td><td>0.00000</td><td></td><td></td><td colspan="2">2025.11.28 12:00:00</td><td>filled</td><td>DCA-EA-V1.0</td></tr>
+   <tr bgcolor="#FFFFFF" align=right><td>2025.12.05 00:05:30</td><td>102</td><td>AUDUSD</td><td>sell</td><td colspan="2">0.03 / 0.03</td><td>0.00000</td><td></td><td></td><td colspan="2">2025.12.05 00:05:30</td><td>filled</td><td>DCA-EA-V1.0</td></tr>
+   <tr bgcolor="#F7F7F7" align=right><td>2025.12.08 12:00:00</td><td>103</td><td>AUDUSD</td><td>sell</td><td colspan="2">0.04 / 0.04</td><td>0.00000</td><td></td><td></td><td colspan="2">2025.12.08 12:00:00</td><td>filled</td><td>DCA-EA-V1.0</td></tr>
+   <tr bgcolor="#FFFFFF" align=right><td>2025.12.11 12:00:00</td><td>104</td><td>AUDUSD</td><td>sell</td><td colspan="2">0.05 / 0.05</td><td>0.00000</td><td></td><td></td><td colspan="2">2025.12.11 12:00:00</td><td>filled</td><td>DCA-EA-V1.0</td></tr>
+   <tr bgcolor="#F7F7F7" align=right><td>2025.12.17 12:00:00</td><td>105</td><td>AUDUSD</td><td>sell</td><td colspan="2">0.06 / 0.06</td><td>0.00000</td><td></td><td></td><td colspan="2">2025.12.17 12:00:00</td><td>filled</td><td>DCA-EA-V1.0</td></tr>
+   <tr bgcolor="#FFFFFF" align=right><td>2025.12.17 12:00:00</td><td>106</td><td>AUDUSD</td><td>sell</td><td colspan="2">0.01 / 0.01</td><td>0.00000</td><td></td><td></td><td colspan="2">2025.12.17 12:00:00</td><td>filled</td><td>DCA-EA-V1.0</td></tr>
+   <tr bgcolor="#F7F7F7" align=right><td>2025.12.18 04:00:20</td><td>107</td><td>AUDUSD</td><td>buy</td><td colspan="2">0.01 / 0.01</td><td>0.00000</td><td></td><td></td><td colspan="2">2025.12.18 04:00:20</td><td>filled</td><td></td></tr>
+   <tr bgcolor="#FFFFFF" align=right><td>2025.12.18 04:00:20</td><td>108</td><td>AUDUSD</td><td>buy</td><td colspan="2">0.06 / 0.06</td><td>0.00000</td><td></td><td></td><td colspan="2">2025.12.18 04:00:20</td><td>filled</td><td></td></tr>
+   <tr bgcolor="#F7F7F7" align=right><td>2025.12.18 04:00:20</td><td>109</td><td>AUDUSD</td><td>buy</td><td colspan="2">0.05 / 0.05</td><td>0.00000</td><td></td><td></td><td colspan="2">2025.12.18 04:00:20</td><td>filled</td><td></td></tr>
+   <tr bgcolor="#FFFFFF" align=right><td>2025.12.18 04:00:20</td><td>110</td><td>AUDUSD</td><td>buy</td><td colspan="2">0.04 / 0.04</td><td>0.00000</td><td></td><td></td><td colspan="2">2025.12.18 04:00:20</td><td>filled</td><td></td></tr>
+   <tr bgcolor="#F7F7F7" align=right><td>2025.12.18 04:00:20</td><td>111</td><td>AUDUSD</td><td>buy</td><td colspan="2">0.03 / 0.03</td><td>0.00000</td><td></td><td></td><td colspan="2">2025.12.18 04:00:20</td><td>filled</td><td></td></tr>
+   <tr bgcolor="#FFFFFF" align=right><td>2025.12.18 04:00:20</td><td>112</td><td>AUDUSD</td><td>buy</td><td colspan="2">0.02 / 0.02</td><td>0.00000</td><td></td><td></td><td colspan="2">2025.12.18 04:00:20</td><td>filled</td><td></td></tr>
+   <tr bgcolor="#F7F7F7" align=right><td>2025.12.18 04:00:20</td><td>113</td><td>AUDUSD</td><td>buy</td><td colspan="2">0.01 / 0.01</td><td>0.00000</td><td></td><td></td><td colspan="2">2025.12.18 04:00:20</td><td>filled</td><td></td></tr>
+   <tr bgcolor="#FFFFFF" align=right><td>2025.12.18 16:00:00</td><td>114</td><td>AUDUSD</td><td>buy</td><td colspan="2">0.01 / 0.01</td><td>0.00000</td><td></td><td></td><td colspan="2">2025.12.18 16:00:00</td><td>filled</td><td>DCA-EA-V1.0</td></tr>
+   <tr bgcolor="#F7F7F7" align=right><td>2025.12.22 08:00:20</td><td>115</td><td>AUDUSD</td><td>sell</td><td colspan="2">0.01 / 0.01</td><td>0.00000</td><td></td><td></td><td colspan="2">2025.12.22 08:00:20</td><td>filled</td><td></td></tr>
+   <tr bgcolor="#FFFFFF" align=right><td>2025.12.26 12:00:00</td><td>116</td><td>AUDUSD</td><td>sell</td><td colspan="2">0.01 / 0.01</td><td>0.00000</td><td></td><td></td><td colspan="2">2025.12.26 12:00:00</td><td>filled</td><td>DCA-EA-V1.0</td></tr>
+   <tr bgcolor="#F7F7F7" align=right><td>2025.12.31 08:00:20</td><td>117</td><td>AUDUSD</td><td>buy</td><td colspan="2">0.01 / 0.01</td><td>0.00000</td><td></td><td></td><td colspan="2">2025.12.31 08:00:20</td><td>filled</td><td></td></tr>
+   <tr bgcolor="#FFFFFF" align=right><td>2026.01.07 20:00:00</td><td>118</td><td>AUDUSD</td><td>sell</td><td colspan="2">0.01 / 0.01</td><td>0.00000</td><td></td><td></td><td colspan="2">2026.01.07 20:00:00</td><td>filled</td><td>DCA-EA-V1.0</td></tr>
+   <tr bgcolor="#F7F7F7" align=right><td>2026.01.08 08:00:20</td><td>119</td><td>AUDUSD</td><td>buy</td><td colspan="2">0.01 / 0.01</td><td>0.00000</td><td></td><td></td><td colspan="2">2026.01.08 08:00:20</td><td>filled</td><td></td></tr>
+   <tr bgcolor="#FFFFFF" align=right><td>2026.01.15 08:00:00</td><td>120</td><td>AUDUSD</td><td>buy</td><td colspan="2">0.01 / 0.01</td><td>0.00000</td><td></td><td></td><td colspan="2">2026.01.15 08:00:00</td><td>filled</td><td>DCA-EA-V1.0</td></tr>
+   <tr bgcolor="#F7F7F7" align=right><td>2026.01.15 12:00:20</td><td>121</td><td>AUDUSD</td><td>sell</td><td colspan="2">0.01 / 0.01</td><td>0.00000</td><td></td><td></td><td colspan="2">2026.01.15 12:00:20</td><td>filled</td><td></td></tr>
+   <tr bgcolor="#FFFFFF" align=right><td>2026.01.27 00:19:00</td><td>122</td><td>AUDUSD</td><td>sell</td><td colspan="2">0.01 / 0.01</td><td>0.00000</td><td></td><td></td><td colspan="2">2026.01.27 00:19:00</td><td>filled</td><td>DCA-EA-V1.0</td></tr>
+   <tr bgcolor="#F7F7F7" align=right><td>2026.01.28 16:00:00</td><td>123</td><td>AUDUSD</td><td>sell</td><td colspan="2">0.02 / 0.02</td><td>0.00000</td><td></td><td></td><td colspan="2">2026.01.28 16:00:00</td><td>filled</td><td>DCA-EA-V1.0</td></tr>
+   <tr bgcolor="#FFFFFF" align=right><td>2026.02.02 00:05:30</td><td>124</td><td>AUDUSD</td><td>buy</td><td colspan="2">0.02 / 0.02</td><td>0.00000</td><td></td><td></td><td colspan="2">2026.02.02 00:05:30</td><td>filled</td><td></td></tr>
+   <tr bgcolor="#F7F7F7" align=right><td>2026.02.02 00:05:30</td><td>125</td><td>AUDUSD</td><td>buy</td><td colspan="2">0.01 / 0.01</td><td>0.00000</td><td></td><td></td><td colspan="2">2026.02.02 00:05:30</td><td>filled</td><td></td></tr>
+   <tr bgcolor="#FFFFFF" align=right><td>2026.02.06 12:00:00</td><td>126</td><td>AUDUSD</td><td>buy</td><td colspan="2">0.01 / 0.01</td><td>0.00000</td><td></td><td></td><td colspan="2">2026.02.06 12:00:00</td><td>filled</td><td>DCA-EA-V1.0</td></tr>
+   <tr bgcolor="#F7F7F7" align=right><td>2026.02.06 16:00:20</td><td>127</td><td>AUDUSD</td><td>sell</td><td colspan="2">0.01 / 0.01</td><td>0.00000</td><td></td><td></td><td colspan="2">2026.02.06 16:00:20</td><td>filled</td><td></td></tr>
+   <tr bgcolor="#FFFFFF" align=right><td>2026.02.12 08:00:00</td><td>128</td><td>AUDUSD</td><td>sell</td><td colspan="2">0.01 / 0.01</td><td>0.00000</td><td></td><td></td><td colspan="2">2026.02.12 08:00:00</td><td>filled</td><td>DCA-EA-V1.0</td></tr>
+   <tr bgcolor="#F7F7F7" align=right><td>2026.02.13 12:00:20</td><td>129</td><td>AUDUSD</td><td>buy</td><td colspan="2">0.01 / 0.01</td><td>0.00000</td><td></td><td></td><td colspan="2">2026.02.13 12:00:20</td><td>filled</td><td></td></tr>
+   <tr bgcolor="#FFFFFF" align=right><td>2026.02.17 20:00:00</td><td>130</td><td>AUDUSD</td><td>buy</td><td colspan="2">0.01 / 0.01</td><td>0.00000</td><td></td><td></td><td colspan="2">2026.02.17 20:00:00</td><td>filled</td><td>DCA-EA-V1.0</td></tr>
+   <tr bgcolor="#F7F7F7" align=right><td>2026.02.18 00:05:20</td><td>131</td><td>AUDUSD</td><td>sell</td><td colspan="2">0.01 / 0.01</td><td>0.00000</td><td></td><td></td><td colspan="2">2026.02.18 00:05:20</td><td>filled</td><td></td></tr>
+   <tr>
+      <td nowrap style="height: 10px"></td>
+   </tr>
+   <tr align="center">
+      <th colspan="13" style="height: 25px"><div style="font: 10pt Tahoma"><b>Deals</b></div></th>
+   </tr>
+   <tr align="center" bgcolor="#E5F0FC">
+      <td nowrap style="height: 30px"><b>Time</b></td>
+      <td nowrap><b>Deal</b></td>
+      <td nowrap><b>Symbol</b></td>
+      <td nowrap><b>Type</b></td>
+      <td nowrap><b>Direction</b></td>
+      <td nowrap><b>Volume</b></td>
+      <td nowrap><b>Price</b></td>
+      <td nowrap><b>Order</b></td>
+      <td nowrap><b>Commission</b></td>
+      <td nowrap><b>Swap</b></td>
+      <td nowrap><b>Profit</b></td>
+      <td nowrap><b>Balance</b></td>
+      <td nowrap><b>Comment</b></td>
+   </tr>
+   <tr bgcolor="#FFFFFF" align=right><td>2025.03.01 00:00:00</td><td>1</td><td></td><td>balance</td><td></td><td></td><td></td><td></td><td>0.00</td><td>0.00</td><td>15 000.00</td><td>15 000.00</td><td></td></tr>
+   <tr bgcolor="#F7F7F7" align=right><td>2025.03.03 04:00:00</td><td>2</td><td>AUDUSD</td><td>buy</td><td>in</td><td>0.01</td><td>0.62276</td><td>2</td><td>0.00</td><td>0.00</td><td>0.00</td><td>15 000.00</td><td>DCA-EA-V1.0</td></tr>
+   <tr bgcolor="#FFFFFF" align=right><td>2025.03.05 00:05:00</td><td>3</td><td>AUDUSD</td><td>buy</td><td>in</td><td>0.02</td><td>0.62714</td><td>3</td><td>0.00</td><td>0.00</td><td>0.00</td><td>15 000.00</td><td>DCA-EA-V1.0</td></tr>
+   <tr bgcolor="#F7F7F7" align=right><td>2025.03.05 00:05:30</td><td>4</td><td>AUDUSD</td><td>sell</td><td>out</td><td>0.02</td><td>0.62671</td><td>4</td><td>0.00</td><td>0.00</td><td>-0.86</td><td>14 999.14</td><td></td></tr>
+   <tr bgcolor="#FFFFFF" align=right><td>2025.03.05 00:05:30</td><td>5</td><td>AUDUSD</td><td>sell</td><td>out</td><td>0.01</td><td>0.62671</td><td>5</td><td>0.00</td><td>-0.02</td><td>3.95</td><td>15 003.07</td><td></td></tr>
+   <tr bgcolor="#F7F7F7" align=right><td>2025.03.07 04:00:00</td><td>6</td><td>AUDUSD</td><td>sell</td><td>in</td><td>0.01</td><td>0.63188</td><td>6</td><td>0.00</td><td>0.00</td><td>0.00</td><td>15 003.07</td><td>DCA-EA-V1.0</td></tr>
+   <tr bgcolor="#FFFFFF" align=right><td>2025.03.10 20:00:00</td><td>7</td><td>AUDUSD</td><td>sell</td><td>in</td><td>0.02</td><td>0.62857</td><td>7</td><td>0.00</td><td>0.00</td><td>0.00</td><td>15 003.07</td><td>DCA-EA-V1.0</td></tr>
+   <tr bgcolor="#F7F7F7" align=right><td>2025.03.11 00:05:00</td><td>8</td><td>AUDUSD</td><td>buy</td><td>out</td><td>0.02</td><td>0.62777</td><td>8</td><td>0.00</td><td>-0.06</td><td>1.60</td><td>15 004.61</td><td></td></tr>
+   <tr bgcolor="#FFFFFF" align=right><td>2025.03.11 00:05:00</td><td>9</td><td>AUDUSD</td><td>buy</td><td>out</td><td>0.01</td><td>0.62777</td><td>9</td><td>0.00</td><td>-0.06</td><td>4.11</td><td>15 008.66</td><td></td></tr>
+   <tr bgcolor="#F7F7F7" align=right><td>2025.03.18 16:00:00</td><td>10</td><td>AUDUSD</td><td>sell</td><td>in</td><td>0.01</td><td>0.63600</td><td>10</td><td>0.00</td><td>0.00</td><td>0.00</td><td>15 008.66</td><td>DCA-EA-V1.0</td></tr>
+   <tr bgcolor="#FFFFFF" align=right><td>2025.03.19 12:00:20</td><td>11</td><td>AUDUSD</td><td>buy</td><td>out</td><td>0.01</td><td>0.63330</td><td>11</td><td>0.00</td><td>-0.03</td><td>2.70</td><td>15 011.33</td><td></td></tr>
+   <tr bgcolor="#F7F7F7" align=right><td>2025.04.01 08:00:00</td><td>12</td><td>AUDUSD</td><td>buy</td><td>in</td><td>0.01</td><td>0.62692</td><td>12</td><td>0.00</td><td>0.00</td><td>0.00</td><td>15 011.33</td><td>DCA-EA-V1.0</td></tr>
+   <tr bgcolor="#FFFFFF" align=right><td>2025.04.02 04:00:20</td><td>13</td><td>AUDUSD</td><td>sell</td><td>out</td><td>0.01</td><td>0.62761</td><td>13</td><td>0.00</td><td>-0.01</td><td>0.69</td><td>15 012.01</td><td></td></tr>
+   <tr bgcolor="#F7F7F7" align=right><td>2025.04.07 16:00:00</td><td>14</td><td>AUDUSD</td><td>buy</td><td>in</td><td>0.01</td><td>0.60809</td><td>14</td><td>0.00</td><td>0.00</td><td>0.00</td><td>15 012.01</td><td>DCA-EA-V1.0</td></tr>
+   <tr bgcolor="#FFFFFF" align=right><td>2025.04.10 00:06:30</td><td>15</td><td>AUDUSD</td><td>sell</td><td>out</td><td>0.01</td><td>0.61471</td><td>15</td><td>0.00</td><td>-0.05</td><td>6.62</td><td>15 018.58</td><td></td></tr>
+   <tr bgcolor="#F7F7F7" align=right><td>2025.04.14 16:00:00</td><td>16</td><td>AUDUSD</td><td>sell</td><td>in</td><td>0.01</td><td>0.62955</td><td>16</td><td>0.00</td><td>0.00</td><td>0.00</td><td>15 018.58</td><td>DCA-EA-V1.0</td></tr>
+   <tr bgcolor="#FFFFFF" align=right><td>2025.04.17 16:00:00</td><td>17</td><td>AUDUSD</td><td>buy</td><td>in</td><td>0.01</td><td>0.63823</td><td>17</td><td>0.00</td><td>0.00</td><td>0.00</td><td>15 018.58</td><td>DCA-EA-V1.0</td></tr>
+   <tr bgcolor="#F7F7F7" align=right><td>2025.04.21 08:00:20</td><td>18</td><td>AUDUSD</td><td>sell</td><td>out</td><td>0.01</td><td>0.64164</td><td>18</td><td>0.00</td><td>-0.02</td><td>3.41</td><td>15 021.97</td><td></td></tr>
+   <tr bgcolor="#FFFFFF" align=right><td>2025.04.22 12:00:00</td><td>19</td><td>AUDUSD</td><td>sell</td><td>in</td><td>0.02</td><td>0.64079</td><td>19</td><td>0.00</td><td>0.00</td><td>0.00</td><td>15 021.97</td><td>DCA-EA-V1.0</td></tr>
+   <tr bgcolor="#F7F7F7" align=right><td>2025.04.23 00:08:20</td><td>20</td><td>AUDUSD</td><td>buy</td><td>out</td><td>0.02</td><td>0.63744</td><td>20</td><td>0.00</td><td>-0.06</td><td>6.70</td><td>15 028.61</td><td></td></tr>
+   <tr bgcolor="#FFFFFF" align=right><td>2025.04.23 00:08:20</td><td>21</td><td>AUDUSD</td><td>buy</td><td>out</td><td>0.01</td><td>0.63744</td><td>21</td><td>0.00</td><td>-0.27</td><td>-7.89</td><td>15 020.45</td><td></td></tr>
+   <tr bgcolor="#F7F7F7" align=right><td>2025.04.23 04:00:00</td><td>22</td><td>AUDUSD</td><td>sell</td><td>in</td><td>0.01</td><td>0.63949</td><td>22</td><td>0.00</td><td>0.00</td><td>0.00</td><td>15 020.45</td><td>DCA-EA-V1.0</td></tr>
+   <tr bgcolor="#FFFFFF" align=right><td>2025.04.23 20:00:20</td><td>23</td><td>AUDUSD</td><td>buy</td><td>out</td><td>0.01</td><td>0.63703</td><td>23</td><td>0.00</td><td>0.00</td><td>2.46</td><td>15 022.91</td><td></td></tr>
+   <tr bgcolor="#F7F7F7" align=right><td>2025.05.05 20:00:00</td><td>24</td><td>AUDUSD</td><td>sell</td><td>in</td><td>0.01</td><td>0.64634</td><td>24</td><td>0.00</td><td>0.00</td><td>0.00</td><td>15 022.91</td><td>DCA-EA-V1.0</td></tr>
+   <tr bgcolor="#FFFFFF" align=right><td>2025.05.07 20:00:00</td><td>25</td><td>AUDUSD</td><td>sell</td><td>in</td><td>0.02</td><td>0.64614</td><td>25</td><td>0.00</td><td>0.00</td><td>0.00</td><td>15 022.91</td><td>DCA-EA-V1.0</td></tr>
+   <tr bgcolor="#F7F7F7" align=right><td>2025.05.08 00:07:30</td><td>26</td><td>AUDUSD</td><td>buy</td><td>out</td><td>0.02</td><td>0.64269</td><td>26</td><td>0.00</td><td>-0.18</td><td>6.90</td><td>15 029.63</td><td></td></tr>
+   <tr bgcolor="#FFFFFF" align=right><td>2025.05.08 00:07:30</td><td>27</td><td>AUDUSD</td><td>buy</td><td>out</td><td>0.01</td><td>0.64269</td><td>27</td><td>0.00</td><td>-0.15</td><td>3.65</td><td>15 033.13</td><td></td></tr>
+   <tr bgcolor="#F7F7F7" align=right><td>2025.05.08 04:00:00</td><td>28</td><td>AUDUSD</td><td>sell</td><td>in</td><td>0.01</td><td>0.64409</td><td>28</td><td>0.00</td><td>0.00</td><td>0.00</td><td>15 033.13</td><td>DCA-EA-V1.0</td></tr>
+   <tr bgcolor="#FFFFFF" align=right><td>2025.05.08 04:00:20</td><td>29</td><td>AUDUSD</td><td>buy</td><td>out</td><td>0.01</td><td>0.64427</td><td>29</td><td>0.00</td><td>0.00</td><td>-0.18</td><td>15 032.95</td><td></td></tr>
+   <tr bgcolor="#F7F7F7" align=right><td>2025.05.13 08:00:00</td><td>30</td><td>AUDUSD</td><td>buy</td><td>in</td><td>0.01</td><td>0.64125</td><td>30</td><td>0.00</td><td>0.00</td><td>0.00</td><td>15 032.95</td><td>DCA-EA-V1.0</td></tr>
+   <tr bgcolor="#FFFFFF" align=right><td>2025.05.13 20:00:20</td><td>31</td><td>AUDUSD</td><td>sell</td><td>out</td><td>0.01</td><td>0.64725</td><td>31</td><td>0.00</td><td>0.00</td><td>6.00</td><td>15 038.95</td><td></td></tr>
+   <tr bgcolor="#F7F7F7" align=right><td>2025.05.26 20:00:00</td><td>32</td><td>AUDUSD</td><td>sell</td><td>in</td><td>0.01</td><td>0.64887</td><td>32</td><td>0.00</td><td>0.00</td><td>0.00</td><td>15 038.95</td><td>DCA-EA-V1.0</td></tr>
+   <tr bgcolor="#FFFFFF" align=right><td>2025.05.27 12:00:20</td><td>33</td><td>AUDUSD</td><td>buy</td><td>out</td><td>0.01</td><td>0.64510</td><td>33</td><td>0.00</td><td>-0.03</td><td>3.77</td><td>15 042.69</td><td></td></tr>
+   <tr bgcolor="#F7F7F7" align=right><td>2025.06.06 12:00:00</td><td>34</td><td>AUDUSD</td><td>sell</td><td>in</td><td>0.01</td><td>0.64888</td><td>34</td><td>0.00</td><td>0.00</td><td>0.00</td><td>15 042.69</td><td>DCA-EA-V1.0</td></tr>
+   <tr bgcolor="#FFFFFF" align=right><td>2025.06.11 04:00:00</td><td>35</td><td>AUDUSD</td><td>sell</td><td>in</td><td>0.02</td><td>0.65131</td><td>35</td><td>0.00</td><td>0.00</td><td>0.00</td><td>15 042.69</td><td>DCA-EA-V1.0</td></tr>
+   <tr bgcolor="#F7F7F7" align=right><td>2025.06.12 08:00:20</td><td>36</td><td>AUDUSD</td><td>buy</td><td>out</td><td>0.02</td><td>0.64951</td><td>36</td><td>0.00</td><td>-0.18</td><td>3.60</td><td>15 046.11</td><td></td></tr>
+   <tr bgcolor="#FFFFFF" align=right><td>2025.06.12 08:00:20</td><td>37</td><td>AUDUSD</td><td>buy</td><td>out</td><td>0.01</td><td>0.64951</td><td>37</td><td>0.00</td><td>-0.18</td><td>-0.63</td><td>15 045.30</td><td></td></tr>
+   <tr bgcolor="#F7F7F7" align=right><td>2025.06.20 04:00:00</td><td>38</td><td>AUDUSD</td><td>buy</td><td>in</td><td>0.01</td><td>0.64875</td><td>38</td><td>0.00</td><td>0.00</td><td>0.00</td><td>15 045.30</td><td>DCA-EA-V1.0</td></tr>
+   <tr bgcolor="#FFFFFF" align=right><td>2025.06.23 04:00:00</td><td>39</td><td>AUDUSD</td><td>sell</td><td>in</td><td>0.01</td><td>0.64357</td><td>39</td><td>0.00</td><td>0.00</td><td>0.00</td><td>15 045.30</td><td>DCA-EA-V1.0</td></tr>
+   <tr bgcolor="#F7F7F7" align=right><td>2025.06.23 08:00:20</td><td>40</td><td>AUDUSD</td><td>buy</td><td>out</td><td>0.01</td><td>0.64049</td><td>40</td><td>0.00</td><td>0.00</td><td>3.08</td><td>15 048.38</td><td></td></tr>
+   <tr bgcolor="#FFFFFF" align=right><td>2025.06.24 12:00:20</td><td>41</td><td>AUDUSD</td><td>sell</td><td>out</td><td>0.01</td><td>0.65020</td><td>41</td><td>0.00</td><td>-0.02</td><td>1.45</td><td>15 049.81</td><td></td></tr>
+   <tr bgcolor="#F7F7F7" align=right><td>2025.06.27 08:00:00</td><td>42</td><td>AUDUSD</td><td>sell</td><td>in</td><td>0.01</td><td>0.65413</td><td>42</td><td>0.00</td><td>0.00</td><td>0.00</td><td>15 049.81</td><td>DCA-EA-V1.0</td></tr>
+   <tr bgcolor="#FFFFFF" align=right><td>2025.07.01 20:00:00</td><td>43</td><td>AUDUSD</td><td>sell</td><td>in</td><td>0.02</td><td>0.65664</td><td>43</td><td>0.00</td><td>0.00</td><td>0.00</td><td>15 049.81</td><td>DCA-EA-V1.0</td></tr>
+   <tr bgcolor="#F7F7F7" align=right><td>2025.07.03 16:00:00</td><td>44</td><td>AUDUSD</td><td>sell</td><td>in</td><td>0.03</td><td>0.65453</td><td>44</td><td>0.00</td><td>0.00</td><td>0.00</td><td>15 049.81</td><td>DCA-EA-V1.0</td></tr>
+   <tr bgcolor="#FFFFFF" align=right><td>2025.07.03 16:00:20</td><td>45</td><td>AUDUSD</td><td>buy</td><td>out</td><td>0.03</td><td>0.65468</td><td>45</td><td>0.00</td><td>0.00</td><td>-0.45</td><td>15 049.36</td><td></td></tr>
+   <tr bgcolor="#F7F7F7" align=right><td>2025.07.03 16:00:20</td><td>46</td><td>AUDUSD</td><td>buy</td><td>out</td><td>0.02</td><td>0.65468</td><td>46</td><td>0.00</td><td>-0.24</td><td>3.92</td><td>15 053.04</td><td></td></tr>
+   <tr bgcolor="#FFFFFF" align=right><td>2025.07.03 16:00:20</td><td>47</td><td>AUDUSD</td><td>buy</td><td>out</td><td>0.01</td><td>0.65468</td><td>47</td><td>0.00</td><td>-0.18</td><td>-0.55</td><td>15 052.31</td><td></td></tr>
+   <tr bgcolor="#F7F7F7" align=right><td>2025.07.08 04:00:00</td><td>48</td><td>AUDUSD</td><td>buy</td><td>in</td><td>0.01</td><td>0.65133</td><td>48</td><td>0.00</td><td>0.00</td><td>0.00</td><td>15 052.31</td><td>DCA-EA-V1.0</td></tr>
+   <tr bgcolor="#FFFFFF" align=right><td>2025.07.08 08:00:20</td><td>49</td><td>AUDUSD</td><td>sell</td><td>out</td><td>0.01</td><td>0.65383</td><td>49</td><td>0.00</td><td>0.00</td><td>2.50</td><td>15 054.81</td><td></td></tr>
+   <tr bgcolor="#F7F7F7" align=right><td>2025.07.18 04:00:00</td><td>50</td><td>AUDUSD</td><td>buy</td><td>in</td><td>0.01</td><td>0.65067</td><td>50</td><td>0.00</td><td>0.00</td><td>0.00</td><td>15 054.81</td><td>DCA-EA-V1.0</td></tr>
+   <tr bgcolor="#FFFFFF" align=right><td>2025.07.18 20:00:20</td><td>51</td><td>AUDUSD</td><td>sell</td><td>out</td><td>0.01</td><td>0.65117</td><td>51</td><td>0.00</td><td>0.00</td><td>0.50</td><td>15 055.31</td><td></td></tr>
+   <tr bgcolor="#F7F7F7" align=right><td>2025.07.24 16:00:00</td><td>52</td><td>AUDUSD</td><td>sell</td><td>in</td><td>0.01</td><td>0.66049</td><td>52</td><td>0.00</td><td>0.00</td><td>0.00</td><td>15 055.31</td><td>DCA-EA-V1.0</td></tr>
+   <tr bgcolor="#FFFFFF" align=right><td>2025.07.28 12:00:00</td><td>53</td><td>AUDUSD</td><td>sell</td><td>in</td><td>0.02</td><td>0.65217</td><td>53</td><td>0.00</td><td>0.00</td><td>0.00</td><td>15 055.31</td><td>DCA-EA-V1.0</td></tr>
+   <tr bgcolor="#F7F7F7" align=right><td>2025.07.28 12:00:20</td><td>54</td><td>AUDUSD</td><td>buy</td><td>out</td><td>0.02</td><td>0.65226</td><td>54</td><td>0.00</td><td>0.00</td><td>-0.18</td><td>15 055.13</td><td></td></tr>
+   <tr bgcolor="#FFFFFF" align=right><td>2025.07.28 12:00:20</td><td>55</td><td>AUDUSD</td><td>buy</td><td>out</td><td>0.01</td><td>0.65226</td><td>55</td><td>0.00</td><td>-0.06</td><td>8.23</td><td>15 063.30</td><td></td></tr>
+   <tr bgcolor="#F7F7F7" align=right><td>2025.07.30 16:00:00</td><td>56</td><td>AUDUSD</td><td>buy</td><td>in</td><td>0.01</td><td>0.64674</td><td>56</td><td>0.00</td><td>0.00</td><td>0.00</td><td>15 063.30</td><td>DCA-EA-V1.0</td></tr>
+   <tr bgcolor="#FFFFFF" align=right><td>2025.07.31 08:00:00</td><td>57</td><td>AUDUSD</td><td>buy</td><td>in</td><td>0.02</td><td>0.64686</td><td>57</td><td>0.00</td><td>0.00</td><td>0.00</td><td>15 063.30</td><td>DCA-EA-V1.0</td></tr>
+   <tr bgcolor="#F7F7F7" align=right><td>2025.08.06 08:00:20</td><td>58</td><td>AUDUSD</td><td>sell</td><td>out</td><td>0.02</td><td>0.64930</td><td>58</td><td>0.00</td><td>-0.08</td><td>4.88</td><td>15 068.10</td><td></td></tr>
+   <tr bgcolor="#FFFFFF" align=right><td>2025.08.06 08:00:20</td><td>59</td><td>AUDUSD</td><td>sell</td><td>out</td><td>0.01</td><td>0.64930</td><td>59</td><td>0.00</td><td>-0.07</td><td>2.56</td><td>15 070.59</td><td></td></tr>
+   <tr bgcolor="#F7F7F7" align=right><td>2025.08.07 20:00:00</td><td>60</td><td>AUDUSD</td><td>sell</td><td>in</td><td>0.01</td><td>0.64999</td><td>60</td><td>0.00</td><td>0.00</td><td>0.00</td><td>15 070.59</td><td>DCA-EA-V1.0</td></tr>
+   <tr bgcolor="#FFFFFF" align=right><td>2025.08.12 12:00:20</td><td>61</td><td>AUDUSD</td><td>buy</td><td>out</td><td>0.01</td><td>0.64936</td><td>61</td><td>0.00</td><td>-0.09</td><td>0.63</td><td>15 071.13</td><td></td></tr>
+   <tr bgcolor="#F7F7F7" align=right><td>2025.08.14 12:00:00</td><td>62</td><td>AUDUSD</td><td>sell</td><td>in</td><td>0.01</td><td>0.65247</td><td>62</td><td>0.00</td><td>0.00</td><td>0.00</td><td>15 071.13</td><td>DCA-EA-V1.0</td></tr>
+   <tr bgcolor="#FFFFFF" align=right><td>2025.08.14 16:00:20</td><td>63</td><td>AUDUSD</td><td>buy</td><td>out</td><td>0.01</td><td>0.65063</td><td>63</td><td>0.00</td><td>0.00</td><td>1.84</td><td>15 072.97</td><td></td></tr>
+   <tr bgcolor="#F7F7F7" align=right><td>2025.08.15 16:00:00</td><td>64</td><td>AUDUSD</td><td>buy</td><td>in</td><td>0.01</td><td>0.65168</td><td>64</td><td>0.00</td><td>0.00</td><td>0.00</td><td>15 072.97</td><td>DCA-EA-V1.0</td></tr>
+   <tr bgcolor="#FFFFFF" align=right><td>2025.08.22 04:00:00</td><td>65</td><td>AUDUSD</td><td>buy</td><td>in</td><td>0.02</td><td>0.64256</td><td>65</td><td>0.00</td><td>0.00</td><td>0.00</td><td>15 072.97</td><td>DCA-EA-V1.0</td></tr>
+   <tr bgcolor="#F7F7F7" align=right><td>2025.08.22 04:00:00</td><td>66</td><td>AUDUSD</td><td>buy</td><td>in</td><td>0.01</td><td>0.64256</td><td>66</td><td>0.00</td><td>0.00</td><td>0.00</td><td>15 072.97</td><td>DCA-EA-V1.0</td></tr>
+   <tr bgcolor="#FFFFFF" align=right><td>2025.08.22 20:00:20</td><td>67</td><td>AUDUSD</td><td>sell</td><td>out</td><td>0.01</td><td>0.64875</td><td>67</td><td>0.00</td><td>0.00</td><td>6.19</td><td>15 079.16</td><td></td></tr>
+   <tr bgcolor="#F7F7F7" align=right><td>2025.08.22 20:00:20</td><td>68</td><td>AUDUSD</td><td>sell</td><td>out</td><td>0.02</td><td>0.64875</td><td>68</td><td>0.00</td><td>0.00</td><td>12.38</td><td>15 091.54</td><td></td></tr>
+   <tr bgcolor="#FFFFFF" align=right><td>2025.08.22 20:00:20</td><td>69</td><td>AUDUSD</td><td>sell</td><td>out</td><td>0.01</td><td>0.64875</td><td>69</td><td>0.00</td><td>-0.07</td><td>-2.93</td><td>15 088.54</td><td></td></tr>
+   <tr bgcolor="#F7F7F7" align=right><td>2025.09.09 20:00:00</td><td>70</td><td>AUDUSD</td><td>sell</td><td>in</td><td>0.01</td><td>0.65898</td><td>70</td><td>0.00</td><td>0.00</td><td>0.00</td><td>15 088.54</td><td>DCA-EA-V1.0</td></tr>
+   <tr bgcolor="#FFFFFF" align=right><td>2025.09.12 12:00:00</td><td>71</td><td>AUDUSD</td><td>sell</td><td>in</td><td>0.02</td><td>0.66449</td><td>71</td><td>0.00</td><td>0.00</td><td>0.00</td><td>15 088.54</td><td>DCA-EA-V1.0</td></tr>
+   <tr bgcolor="#F7F7F7" align=right><td>2025.09.17 12:00:00</td><td>72</td><td>AUDUSD</td><td>sell</td><td>in</td><td>0.03</td><td>0.66703</td><td>72</td><td>0.00</td><td>0.00</td><td>0.00</td><td>15 088.54</td><td>DCA-EA-V1.0</td></tr>
+   <tr bgcolor="#FFFFFF" align=right><td>2025.09.18 08:00:20</td><td>73</td><td>AUDUSD</td><td>buy</td><td>out</td><td>0.03</td><td>0.66316</td><td>73</td><td>0.00</td><td>-0.27</td><td>11.61</td><td>15 099.88</td><td></td></tr>
+   <tr bgcolor="#F7F7F7" align=right><td>2025.09.18 08:00:20</td><td>74</td><td>AUDUSD</td><td>buy</td><td>out</td><td>0.02</td><td>0.66316</td><td>74</td><td>0.00</td><td>-0.36</td><td>2.66</td><td>15 102.18</td><td></td></tr>
+   <tr bgcolor="#FFFFFF" align=right><td>2025.09.18 08:00:20</td><td>75</td><td>AUDUSD</td><td>buy</td><td>out</td><td>0.01</td><td>0.66316</td><td>75</td><td>0.00</td><td>-0.33</td><td>-4.18</td><td>15 097.67</td><td></td></tr>
+   <tr bgcolor="#F7F7F7" align=right><td>2025.09.22 16:00:00</td><td>76</td><td>AUDUSD</td><td>buy</td><td>in</td><td>0.01</td><td>0.65986</td><td>76</td><td>0.00</td><td>0.00</td><td>0.00</td><td>15 097.67</td><td>DCA-EA-V1.0</td></tr>
+   <tr bgcolor="#FFFFFF" align=right><td>2025.09.24 12:00:20</td><td>77</td><td>AUDUSD</td><td>sell</td><td>out</td><td>0.01</td><td>0.66125</td><td>77</td><td>0.00</td><td>-0.02</td><td>1.39</td><td>15 099.04</td><td></td></tr>
+   <tr bgcolor="#F7F7F7" align=right><td>2025.10.01 04:00:00</td><td>78</td><td>AUDUSD</td><td>sell</td><td>in</td><td>0.01</td><td>0.66036</td><td>78</td><td>0.00</td><td>0.00</td><td>0.00</td><td>15 099.04</td><td>DCA-EA-V1.0</td></tr>
+   <tr bgcolor="#FFFFFF" align=right><td>2025.10.02 20:00:20</td><td>79</td><td>AUDUSD</td><td>buy</td><td>out</td><td>0.01</td><td>0.65943</td><td>79</td><td>0.00</td><td>-0.09</td><td>0.93</td><td>15 099.88</td><td></td></tr>
+   <tr bgcolor="#F7F7F7" align=right><td>2025.10.08 16:00:00</td><td>80</td><td>AUDUSD</td><td>buy</td><td>in</td><td>0.01</td><td>0.65803</td><td>80</td><td>0.00</td><td>0.00</td><td>0.00</td><td>15 099.88</td><td>DCA-EA-V1.0</td></tr>
+   <tr bgcolor="#FFFFFF" align=right><td>2025.10.09 08:00:20</td><td>81</td><td>AUDUSD</td><td>sell</td><td>out</td><td>0.01</td><td>0.66056</td><td>81</td><td>0.00</td><td>-0.03</td><td>2.53</td><td>15 102.38</td><td></td></tr>
+   <tr bgcolor="#F7F7F7" align=right><td>2025.10.13 20:00:00</td><td>82</td><td>AUDUSD</td><td>buy</td><td>in</td><td>0.01</td><td>0.65248</td><td>82</td><td>0.00</td><td>0.00</td><td>0.00</td><td>15 102.38</td><td>DCA-EA-V1.0</td></tr>
+   <tr bgcolor="#FFFFFF" align=right><td>2025.10.20 16:00:00</td><td>83</td><td>AUDUSD</td><td>buy</td><td>in</td><td>0.01</td><td>0.64931</td><td>83</td><td>0.00</td><td>0.00</td><td>0.00</td><td>15 102.38</td><td>DCA-EA-V1.0</td></tr>
+   <tr bgcolor="#F7F7F7" align=right><td>2025.10.20 20:00:20</td><td>84</td><td>AUDUSD</td><td>sell</td><td>out</td><td>0.01</td><td>0.65130</td><td>84</td><td>0.00</td><td>0.00</td><td>1.99</td><td>15 104.37</td><td></td></tr>
+   <tr bgcolor="#FFFFFF" align=right><td>2025.10.23 12:00:00</td><td>85</td><td>AUDUSD</td><td>buy</td><td>in</td><td>0.02</td><td>0.65093</td><td>85</td><td>0.00</td><td>0.00</td><td>0.00</td><td>15 104.37</td><td>DCA-EA-V1.0</td></tr>
+   <tr bgcolor="#F7F7F7" align=right><td>2025.10.27 04:00:00</td><td>86</td><td>AUDUSD</td><td>buy</td><td>in</td><td>0.03</td><td>0.65350</td><td>86</td><td>0.00</td><td>0.00</td><td>0.00</td><td>15 104.37</td><td>DCA-EA-V1.0</td></tr>
+   <tr bgcolor="#FFFFFF" align=right><td>2025.10.27 08:00:20</td><td>87</td><td>AUDUSD</td><td>sell</td><td>out</td><td>0.03</td><td>0.65367</td><td>87</td><td>0.00</td><td>0.00</td><td>0.51</td><td>15 104.88</td><td></td></tr>
+   <tr bgcolor="#F7F7F7" align=right><td>2025.10.27 08:00:20</td><td>88</td><td>AUDUSD</td><td>sell</td><td>out</td><td>0.02</td><td>0.65367</td><td>88</td><td>0.00</td><td>-0.04</td><td>5.48</td><td>15 110.32</td><td></td></tr>
+   <tr bgcolor="#FFFFFF" align=right><td>2025.10.27 08:00:20</td><td>89</td><td>AUDUSD</td><td>sell</td><td>out</td><td>0.01</td><td>0.65367</td><td>89</td><td>0.00</td><td>-0.14</td><td>1.19</td><td>15 111.37</td><td></td></tr>
+   <tr bgcolor="#F7F7F7" align=right><td>2025.10.30 04:00:00</td><td>90</td><td>AUDUSD</td><td>sell</td><td>in</td><td>0.01</td><td>0.65844</td><td>90</td><td>0.00</td><td>0.00</td><td>0.00</td><td>15 111.37</td><td>DCA-EA-V1.0</td></tr>
+   <tr bgcolor="#FFFFFF" align=right><td>2025.10.30 16:00:20</td><td>91</td><td>AUDUSD</td><td>buy</td><td>out</td><td>0.01</td><td>0.65472</td><td>91</td><td>0.00</td><td>0.00</td><td>3.72</td><td>15 115.09</td><td></td></tr>
+   <tr bgcolor="#F7F7F7" align=right><td>2025.11.05 08:00:00</td><td>92</td><td>AUDUSD</td><td>buy</td><td>in</td><td>0.01</td><td>0.64908</td><td>92</td><td>0.00</td><td>0.00</td><td>0.00</td><td>15 115.09</td><td>DCA-EA-V1.0</td></tr>
+   <tr bgcolor="#FFFFFF" align=right><td>2025.11.10 00:05:00</td><td>93</td><td>AUDUSD</td><td>buy</td><td>in</td><td>0.02</td><td>0.64989</td><td>93</td><td>0.00</td><td>0.00</td><td>0.00</td><td>15 115.09</td><td>DCA-EA-V1.0</td></tr>
+   <tr bgcolor="#F7F7F7" align=right><td>2025.11.10 04:00:20</td><td>94</td><td>AUDUSD</td><td>sell</td><td>out</td><td>0.02</td><td>0.65167</td><td>94</td><td>0.00</td><td>0.00</td><td>3.56</td><td>15 118.65</td><td></td></tr>
+   <tr bgcolor="#FFFFFF" align=right><td>2025.11.10 04:00:20</td><td>95</td><td>AUDUSD</td><td>sell</td><td>out</td><td>0.01</td><td>0.65167</td><td>95</td><td>0.00</td><td>-0.05</td><td>2.59</td><td>15 121.19</td><td></td></tr>
+   <tr bgcolor="#F7F7F7" align=right><td>2025.11.13 20:00:00</td><td>96</td><td>AUDUSD</td><td>sell</td><td>in</td><td>0.01</td><td>0.65482</td><td>96</td><td>0.00</td><td>0.00</td><td>0.00</td><td>15 121.19</td><td>DCA-EA-V1.0</td></tr>
+   <tr bgcolor="#FFFFFF" align=right><td>2025.11.14 12:00:20</td><td>97</td><td>AUDUSD</td><td>buy</td><td>out</td><td>0.01</td><td>0.65220</td><td>97</td><td>0.00</td><td>-0.03</td><td>2.62</td><td>15 123.78</td><td></td></tr>
+   <tr bgcolor="#F7F7F7" align=right><td>2025.11.18 16:00:00</td><td>98</td><td>AUDUSD</td><td>buy</td><td>in</td><td>0.01</td><td>0.65067</td><td>98</td><td>0.00</td><td>0.00</td><td>0.00</td><td>15 123.78</td><td>DCA-EA-V1.0</td></tr>
+   <tr bgcolor="#FFFFFF" align=right><td>2025.11.26 20:00:00</td><td>99</td><td>AUDUSD</td><td>sell</td><td>in</td><td>0.01</td><td>0.65138</td><td>99</td><td>0.00</td><td>0.00</td><td>0.00</td><td>15 123.78</td><td>DCA-EA-V1.0</td></tr>
+   <tr bgcolor="#F7F7F7" align=right><td>2025.11.27 00:06:00</td><td>100</td><td>AUDUSD</td><td>sell</td><td>out</td><td>0.01</td><td>0.65163</td><td>100</td><td>0.00</td><td>-0.11</td><td>0.96</td><td>15 124.63</td><td></td></tr>
+   <tr bgcolor="#FFFFFF" align=right><td>2025.11.28 12:00:00</td><td>101</td><td>AUDUSD</td><td>sell</td><td>in</td><td>0.02</td><td>0.65239</td><td>101</td><td>0.00</td><td>0.00</td><td>0.00</td><td>15 124.63</td><td>DCA-EA-V1.0</td></tr>
+   <tr bgcolor="#F7F7F7" align=right><td>2025.12.05 00:05:30</td><td>102</td><td>AUDUSD</td><td>sell</td><td>in</td><td>0.03</td><td>0.66089</td><td>102</td><td>0.00</td><td>0.00</td><td>0.00</td><td>15 124.63</td><td>DCA-EA-V1.0</td></tr>
+   <tr bgcolor="#FFFFFF" align=right><td>2025.12.08 12:00:00</td><td>103</td><td>AUDUSD</td><td>sell</td><td>in</td><td>0.04</td><td>0.66352</td><td>103</td><td>0.00</td><td>0.00</td><td>0.00</td><td>15 124.63</td><td>DCA-EA-V1.0</td></tr>
+   <tr bgcolor="#F7F7F7" align=right><td>2025.12.11 12:00:00</td><td>104</td><td>AUDUSD</td><td>sell</td><td>in</td><td>0.05</td><td>0.66507</td><td>104</td><td>0.00</td><td>0.00</td><td>0.00</td><td>15 124.63</td><td>DCA-EA-V1.0</td></tr>
+   <tr bgcolor="#FFFFFF" align=right><td>2025.12.17 12:00:00</td><td>105</td><td>AUDUSD</td><td>sell</td><td>in</td><td>0.06</td><td>0.66136</td><td>105</td><td>0.00</td><td>0.00</td><td>0.00</td><td>15 124.63</td><td>DCA-EA-V1.0</td></tr>
+   <tr bgcolor="#F7F7F7" align=right><td>2025.12.17 12:00:00</td><td>106</td><td>AUDUSD</td><td>sell</td><td>in</td><td>0.01</td><td>0.66136</td><td>106</td><td>0.00</td><td>0.00</td><td>0.00</td><td>15 124.63</td><td>DCA-EA-V1.0</td></tr>
+   <tr bgcolor="#FFFFFF" align=right><td>2025.12.18 04:00:20</td><td>107</td><td>AUDUSD</td><td>buy</td><td>out</td><td>0.01</td><td>0.66003</td><td>107</td><td>0.00</td><td>-0.09</td><td>1.33</td><td>15 125.87</td><td></td></tr>
+   <tr bgcolor="#F7F7F7" align=right><td>2025.12.18 04:00:20</td><td>108</td><td>AUDUSD</td><td>buy</td><td>out</td><td>0.06</td><td>0.66003</td><td>108</td><td>0.00</td><td>-0.54</td><td>7.98</td><td>15 133.31</td><td></td></tr>
+   <tr bgcolor="#FFFFFF" align=right><td>2025.12.18 04:00:20</td><td>109</td><td>AUDUSD</td><td>buy</td><td>out</td><td>0.05</td><td>0.66003</td><td>109</td><td>0.00</td><td>-1.05</td><td>25.20</td><td>15 157.46</td><td></td></tr>
+   <tr bgcolor="#F7F7F7" align=right><td>2025.12.18 04:00:20</td><td>110</td><td>AUDUSD</td><td>buy</td><td>out</td><td>0.04</td><td>0.66003</td><td>110</td><td>0.00</td><td>-1.44</td><td>13.96</td><td>15 169.98</td><td></td></tr>
+   <tr bgcolor="#FFFFFF" align=right><td>2025.12.18 04:00:20</td><td>111</td><td>AUDUSD</td><td>buy</td><td>out</td><td>0.03</td><td>0.66003</td><td>111</td><td>0.00</td><td>-1.17</td><td>2.58</td><td>15 171.39</td><td></td></tr>
+   <tr bgcolor="#F7F7F7" align=right><td>2025.12.18 04:00:20</td><td>112</td><td>AUDUSD</td><td>buy</td><td>out</td><td>0.02</td><td>0.66003</td><td>112</td><td>0.00</td><td>-1.20</td><td>-15.28</td><td>15 154.91</td><td></td></tr>
+   <tr bgcolor="#FFFFFF" align=right><td>2025.12.18 04:00:20</td><td>113</td><td>AUDUSD</td><td>buy</td><td>out</td><td>0.01</td><td>0.66003</td><td>113</td><td>0.00</td><td>-0.72</td><td>-8.65</td><td>15 145.54</td><td></td></tr>
+   <tr bgcolor="#F7F7F7" align=right><td>2025.12.18 16:00:00</td><td>114</td><td>AUDUSD</td><td>buy</td><td>in</td><td>0.01</td><td>0.66232</td><td>114</td><td>0.00</td><td>0.00</td><td>0.00</td><td>15 145.54</td><td>DCA-EA-V1.0</td></tr>
+   <tr bgcolor="#FFFFFF" align=right><td>2025.12.22 08:00:20</td><td>115</td><td>AUDUSD</td><td>sell</td><td>out</td><td>0.01</td><td>0.66246</td><td>115</td><td>0.00</td><td>-0.02</td><td>0.14</td><td>15 145.66</td><td></td></tr>
+   <tr bgcolor="#F7F7F7" align=right><td>2025.12.26 12:00:00</td><td>116</td><td>AUDUSD</td><td>sell</td><td>in</td><td>0.01</td><td>0.66970</td><td>116</td><td>0.00</td><td>0.00</td><td>0.00</td><td>15 145.66</td><td>DCA-EA-V1.0</td></tr>
+   <tr bgcolor="#FFFFFF" align=right><td>2025.12.31 08:00:20</td><td>117</td><td>AUDUSD</td><td>buy</td><td>out</td><td>0.01</td><td>0.66908</td><td>117</td><td>0.00</td><td>-0.09</td><td>0.62</td><td>15 146.19</td><td></td></tr>
+   <tr bgcolor="#F7F7F7" align=right><td>2026.01.07 20:00:00</td><td>118</td><td>AUDUSD</td><td>sell</td><td>in</td><td>0.01</td><td>0.67281</td><td>118</td><td>0.00</td><td>0.00</td><td>0.00</td><td>15 146.19</td><td>DCA-EA-V1.0</td></tr>
+   <tr bgcolor="#FFFFFF" align=right><td>2026.01.08 08:00:20</td><td>119</td><td>AUDUSD</td><td>buy</td><td>out</td><td>0.01</td><td>0.67045</td><td>119</td><td>0.00</td><td>-0.09</td><td>2.36</td><td>15 148.46</td><td></td></tr>
+   <tr bgcolor="#F7F7F7" align=right><td>2026.01.15 08:00:00</td><td>120</td><td>AUDUSD</td><td>buy</td><td>in</td><td>0.01</td><td>0.66776</td><td>120</td><td>0.00</td><td>0.00</td><td>0.00</td><td>15 148.46</td><td>DCA-EA-V1.0</td></tr>
+   <tr bgcolor="#FFFFFF" align=right><td>2026.01.15 12:00:20</td><td>121</td><td>AUDUSD</td><td>sell</td><td>out</td><td>0.01</td><td>0.66939</td><td>121</td><td>0.00</td><td>0.00</td><td>1.63</td><td>15 150.09</td><td></td></tr>
+   <tr bgcolor="#F7F7F7" align=right><td>2026.01.27 00:19:00</td><td>122</td><td>AUDUSD</td><td>sell</td><td>in</td><td>0.01</td><td>0.69128</td><td>122</td><td>0.00</td><td>0.00</td><td>0.00</td><td>15 150.09</td><td>DCA-EA-V1.0</td></tr>
+   <tr bgcolor="#FFFFFF" align=right><td>2026.01.28 16:00:00</td><td>123</td><td>AUDUSD</td><td>sell</td><td>in</td><td>0.02</td><td>0.69956</td><td>123</td><td>0.00</td><td>0.00</td><td>0.00</td><td>15 150.09</td><td>DCA-EA-V1.0</td></tr>
+   <tr bgcolor="#F7F7F7" align=right><td>2026.02.02 00:05:30</td><td>124</td><td>AUDUSD</td><td>buy</td><td>out</td><td>0.02</td><td>0.69557</td><td>124</td><td>0.00</td><td>-0.30</td><td>7.98</td><td>15 157.77</td><td></td></tr>
+   <tr bgcolor="#FFFFFF" align=right><td>2026.02.02 00:05:30</td><td>125</td><td>AUDUSD</td><td>buy</td><td>out</td><td>0.01</td><td>0.69557</td><td>125</td><td>0.00</td><td>-0.18</td><td>-4.29</td><td>15 153.30</td><td></td></tr>
+   <tr bgcolor="#F7F7F7" align=right><td>2026.02.06 12:00:00</td><td>126</td><td>AUDUSD</td><td>buy</td><td>in</td><td>0.01</td><td>0.69763</td><td>126</td><td>0.00</td><td>0.00</td><td>0.00</td><td>15 153.30</td><td>DCA-EA-V1.0</td></tr>
+   <tr bgcolor="#FFFFFF" align=right><td>2026.02.06 16:00:20</td><td>127</td><td>AUDUSD</td><td>sell</td><td>out</td><td>0.01</td><td>0.69927</td><td>127</td><td>0.00</td><td>0.00</td><td>1.64</td><td>15 154.94</td><td></td></tr>
+   <tr bgcolor="#F7F7F7" align=right><td>2026.02.12 08:00:00</td><td>128</td><td>AUDUSD</td><td>sell</td><td>in</td><td>0.01</td><td>0.71240</td><td>128</td><td>0.00</td><td>0.00</td><td>0.00</td><td>15 154.94</td><td>DCA-EA-V1.0</td></tr>
+   <tr bgcolor="#FFFFFF" align=right><td>2026.02.13 12:00:20</td><td>129</td><td>AUDUSD</td><td>buy</td><td>out</td><td>0.01</td><td>0.70715</td><td>129</td><td>0.00</td><td>-0.03</td><td>5.25</td><td>15 160.16</td><td></td></tr>
+   <tr bgcolor="#F7F7F7" align=right><td>2026.02.17 20:00:00</td><td>130</td><td>AUDUSD</td><td>buy</td><td>in</td><td>0.01</td><td>0.70667</td><td>130</td><td>0.00</td><td>0.00</td><td>0.00</td><td>15 160.16</td><td>DCA-EA-V1.0</td></tr>
+   <tr bgcolor="#FFFFFF" align=right><td>2026.02.18 00:05:20</td><td>131</td><td>AUDUSD</td><td>sell</td><td>out</td><td>0.01</td><td>0.70803</td><td>131</td><td>0.00</td><td>-0.01</td><td>1.36</td><td>15 161.51</td><td></td></tr>
+   <tr align="right">
+      <td nowrap colspan="8" style="height: 30px"></td>
+      <td nowrap><b>0.00</b></td>
+      <td nowrap><b>-10.51</b></td>
+      <td nowrap><b>172.02</b></td>
+      <td nowrap><b>15 161.51</b></td>
+      <td nowrap></td>
+   </tr>
+   <tr>
+      <td nowrap style="height: 10px"></td>
+   </tr>
+</table>
+</div>
+</body>
+</html>

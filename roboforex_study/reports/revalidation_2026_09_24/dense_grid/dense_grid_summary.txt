@@ -1,0 +1,5 @@
+Symbol    Combos      EquityDD range        PF range   Neg-profit combos          Default combo (35,2.25) result
+AUDUSD       121    0.67-0.69         3.52-4.79                      0  $161.51, PF 4.28, 65 trades, DD 0.67%
+USDCHF       121    1.28-1.81         2.23-3.78                      0  $310.27, PF 3.34, 75 trades, DD 1.31%
+CADCHF       121    0.17-0.89         2.16-31.56                     0  $153.35, PF 4.32, 70 trades, DD 0.60%
+

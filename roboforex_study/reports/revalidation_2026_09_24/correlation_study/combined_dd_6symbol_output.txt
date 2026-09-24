@@ -1,0 +1,19 @@
+Bar counts: [('EURUSD', 1545), ('GBPUSD', 1545), ('USDJPY', 1545), ('AUDUSD', 1545), ('USDCHF', 1545), ('CADCHF', 1545)] -- using n_bars=1545
+
+Combination                                Combined max Equity DD   Combined profit
+Existing only (EUR/GBP/JPY)                                 0.48%           729.60
+Existing + AUDUSD only                                      0.45%           891.11
+Existing + USDCHF only                                      0.49%          1039.80
+Existing + CADCHF only                                      0.35%           882.95
+Existing + USDCHF + CADCHF                                  0.38%          1193.15
+Existing + USDCHF + AUDUSD                                  0.40%          1201.31
+Existing + CADCHF + AUDUSD                                  0.35%          1044.46
+All 6 deployed symbols combined                             0.32%          1354.66
+
+Solo max Equity DD per symbol (for reference):
+  EURUSD: 1.58%
+  GBPUSD: 0.67%
+  USDJPY: 0.50%
+  AUDUSD: 0.59%
+  USDCHF: 1.16%
+  CADCHF: 0.44%
