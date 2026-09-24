@@ -1,6 +1,6 @@
 # EA-DCA-V1.0 — Project Handoff
 
-**Last updated**: 2026-09-23, as of commit `754e837` (the commit adding this
+**Last updated**: 2026-09-24, as of commit `e72da40` (the commit adding this
 update will be one ahead of that by the time you read it).
 
 > **Maintenance note**: this is a living document, not a snapshot. Update it
@@ -58,12 +58,15 @@ breakdown: `INDEX.md`.
   urgent, but also not forgotten — pick this up whenever the RoboForex
   track (below) isn't the priority.
 
-### C. RoboForex multi-symbol study — portfolio defined, ⚠ spot-check found real reshuffling
+### C. RoboForex multi-symbol study — 6-symbol portfolio (USDCAD dropped), ⚠ spot-check found real reshuffling
 
 - Real funded cent account (RoboForex-Pro, Login `52010662`). Screened the
   full Market Watch universe for portfolio-diversification candidates,
-  landed on a 7-symbol portfolio: EURUSD/GBPUSD/USDJPY (existing) +
-  AUDUSD/USDCHF/USDCAD/CADCHF (Tier 1 candidates). Full validation backlog
+  originally landed on a 7-symbol portfolio: EURUSD/GBPUSD/USDJPY (existing)
+  + AUDUSD/USDCHF/USDCAD/CADCHF (Tier 1 candidates). **USDCAD was dropped
+  2026-09-24** (see below) — the deployed portfolio is now 6 symbols; every
+  reference to "7 symbols" elsewhere in this section describes the study's
+  history, not the current deployment target. Full validation backlog
   completed — wider-window/OOS, trade-level investigation of a USDCAD
   drawdown episode, dense parameter-cliff check, walk-forward, Monte Carlo,
   USDCHF/CADCHF co-dependency check. All findings and reasoning:
@@ -120,12 +123,26 @@ breakdown: `INDEX.md`.
   `CURRENT_PORTFOLIO.md`'s USDCAD block,
   `roboforex_study/reports/usdcad_breaker_test/FINDING.md`.
 
-- **Next action, not yet decided**: whether to test a higher breaker
-  threshold (e.g. 11-12%, nearer the 10.35% natural peak) before ruling the
-  breaker out entirely, whether to drop USDCAD instead of tuning around it,
-  or to run the full OOS/walk-forward/Monte Carlo battery again for all 4
-  Tier-1 candidates given the checklist's broader spot-check outcome. All
-  remain scope/budget calls for the user, not resolved here.
+- **2026-09-24, USDCAD dropped from the deployed portfolio — "for now," not
+  permanent**: given seven independent lines of evidence all pointing the
+  same direction and the failed 8% breaker test, decided to drop USDCAD
+  rather than keep tuning around it or deploy accepting the risk as-is.
+  Supersedes the 2026-09-19 "deploy as-is, breaker off" decision.
+  `USDCAD.set`/`USDCAD_breaker8pct.set` and the full investigation trail
+  stay in the repo — a higher breaker threshold (11-12%) remains untested
+  if there's appetite to revisit later. `CURRENT_PORTFOLIO.md` updated
+  throughout to reflect the 6-symbol deployed portfolio
+  (EURUSD/GBPUSD/USDJPY/AUDUSD/USDCHF/CADCHF).
+
+- **Next action, not yet decided**: whether to run the full
+  OOS/walk-forward/Monte Carlo battery again for the 5 remaining deployed
+  Tier-1/existing symbols (AUDUSD, USDCHF, CADCHF specifically haven't been
+  individually re-validated beyond the 1-year checklist spot-check) given
+  the checklist's broader "materially different" outcome — a scope/budget
+  call for the user, not resolved here. The combined-portfolio diversification
+  figures in `CURRENT_PORTFOLIO.md` (§ "Quantitative diversification
+  evidence") also still include USDCAD and haven't been re-run for the
+  current 6-symbol set.
 
 - **Explicitly not started, and shouldn't be until the above resolves**:
   testing alternate multiplier systems (only Linear has ever been tried
@@ -170,16 +187,17 @@ breakdown: `INDEX.md`.
    peak, crystallizing a loss the position would otherwise have mostly
    recovered from). Detail: §2C above,
    `roboforex_study/reports/usdcad_breaker_test/FINDING.md`.
-4. **Decide USDCAD's disposition**: test a higher breaker threshold
-   (11-12%, nearer the natural 10.35% peak) before ruling the breaker out
-   entirely, drop USDCAD from the portfolio instead of tuning around it, or
-   keep it in as-is (breaker off) with the risk now fully documented and
-   accepted. Not resolved here — the 8% test answered "does a tight
-   threshold help" (no), not "should USDCAD be deployed."
+4. ~~Decide USDCAD's disposition~~ — **done 2026-09-24: dropped from the
+   deployed portfolio, "for now."** Deployed portfolio is 6 symbols
+   (EURUSD/GBPUSD/USDJPY/AUDUSD/USDCHF/CADCHF). `USDCAD.set` and its
+   investigation trail kept in the repo, not deleted — a higher breaker
+   threshold (11-12%) remains untested if there's appetite to revisit.
 5. **Decide whether to run the full validation stack again** (OOS,
-   walk-forward, Monte Carlo) for AUDUSD/USDCHF/CADCHF too, given the
-   checklist's overall "materially different" spot-check outcome — still a
-   scope/budget call, not decided here.
+   walk-forward, Monte Carlo) for AUDUSD/USDCHF/CADCHF specifically, given
+   the checklist's overall "materially different" spot-check outcome — still
+   a scope/budget call, not decided here. Also re-run the combined-portfolio
+   diversification analysis (`CURRENT_PORTFOLIO.md`'s §C figures) for the
+   current 6-symbol set — the existing numbers still include USDCAD.
 6. Delete the old OneDrive project folder once satisfied the new location
    works (user's own manual step, not blocking anything).
 7. Lower priority, pick up whenever there's appetite: the Safe-vs-Linear

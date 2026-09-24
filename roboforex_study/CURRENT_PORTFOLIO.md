@@ -1,4 +1,18 @@
-# Current RoboForex Cent-Account Portfolio — 7 Symbols
+# Current RoboForex Cent-Account Portfolio — 6 Symbols
+
+> ⚠ **USDCAD dropped from the deployed portfolio, 2026-09-24 — "for now",
+> not a permanent disqualification.** After the corrected-price-basis
+> re-checks below made USDCAD's risk profile progressively worse (not
+> better) across seven independent lines of evidence, and an 8% circuit
+> breaker threshold test made its worst episode *more* damaging rather than
+> less (see the dedicated warning block further down), the decision was to
+> drop it rather than keep tuning around it. **The deployed portfolio is now
+> EURUSD/GBPUSD/USDJPY/AUDUSD/USDCHF/CADCHF (6 symbols)** — `USDCAD.set`
+> and all its investigation history are kept in this repo for reference and
+> a possible future revisit (e.g. a higher breaker threshold not yet
+> tested, or renewed interest after the full re-validation battery below),
+> not deleted. Every mention of "7 symbols" elsewhere in this file and in
+> `SYMBOL_SCREENING_REPORT.md` predates this decision.
 
 > ⚠ **`InpBBAppliedPrice` fix spot-checked 2026-09-23 — two symbols'
 > standing genuinely changed, not just their exact numbers.** All 7 `.set`
@@ -29,7 +43,9 @@ profile and AUDUSD's standout status were both largely artifacts of the bug,
 and USDCAD's risk-outlier status got worse, not better. **This is a working
 baseline to continue adjusting, not a go-live sign-off**, and less settled
 than the 2026-09-19 update implied — a full re-validation is now the more
-honest next step, not just remaining deployment decisions.
+honest next step, not just remaining deployment decisions. **Update
+2026-09-24**: USDCAD dropped from the deployed portfolio (see the dedicated
+warning above) — this document's portfolio is now 6 symbols, not 7.
 
 > ⚠ **USDCAD downgraded from Tier 1 — investigated, a genuine near-miss, not
 > disqualifying but not risk-free.** Out-of-sample testing found a real 10.17%
@@ -97,6 +113,15 @@ honest next step, not just remaining deployment decisions.
 > *future* episode goes further than this one did, which is a real tradeoff,
 > not resolved by this one test. Full write-up:
 > `roboforex_study/reports/usdcad_breaker_test/FINDING.md`.
+>
+> **Decision 2026-09-24: dropped from the deployed portfolio, for now.**
+> Given seven independent lines of evidence all pointing the same direction
+> and a circuit-breaker threshold test that made the worst historical
+> episode worse rather than better, the call was to drop USDCAD rather than
+> keep tuning around it or deploy it accepting the risk as-is. This is
+> explicitly **not** framed as permanent — `USDCAD.set` and this entire
+> investigation trail stay in the repo, and a higher breaker threshold
+> (11-12%) remains untested if there's appetite to revisit later.
 
 ## Composition
 
@@ -107,13 +132,15 @@ honest next step, not just remaining deployment decisions.
 | USDJPY | Existing portfolio | Same. Previously characterized as carrying elevated equity DD (4.2-4.7%) as a risk/reward tradeoff for its profitability — **the 2026-09-23 spot-check found this was largely an `InpBBAppliedPrice`-bug artifact: under the corrected value, DD drops to 0.60% and PF/Recovery Factor are among the best of the 7**. See the top-of-file warning; this row's original framing is now considered unreliable pending full re-validation. |
 | AUDUSD | Tier 1 candidate | `SYMBOL_SCREENING_REPORT.md` §B — most structurally robust symbol in the whole screen (tightest DD band, 0.13-0.69% across the full 49-combo grid, zero losing combinations), lowest correlation to the existing 3 (0.03-0.22). **2026-09-23 spot-check**: profit and Recovery Factor both dropped meaningfully under the corrected price basis (-33% profit) — still solid, no longer clearly *the* standout. |
 | USDCHF | Tier 1 candidate | Same §B — clean, stable grid, meaningful optimization improvement without degrading risk-adjusted quality. Highest correlation to the existing portfolio of the 4 candidates (0.23 vs EUR/JPY on the equity measure) and co-drawdows with USDJPY in Apr 2025 — kept in, but see the note below |
-| USDCAD | Investigated, kept in as-is | Same §B screening looked clean, but the 1-year window missed a real 10.17% equity DD episode; trade-level investigation (§D2) found it was a genuine but ultimately self-resolving near-miss (~$453 realized loss, not a stop-out). Circuit breaker deliberately left off for now (see warning above) |
+| ~~USDCAD~~ | **Dropped 2026-09-24** | Same §B screening looked clean, but the 1-year window missed a real 10.17% equity DD episode; investigated in depth (§D2, the checklist spot-check, an OOS-B re-check, and an 8%-threshold breaker test), and every one of those seven data points pointed the same direction. Dropped from the deployed portfolio rather than tuned around further — see the dedicated warning block above. `USDCAD.set` kept in the repo, not deleted. |
 | CADCHF | Tier 1 candidate | Same §B — tightest DD band alongside AUDUSD, near-zero correlation to the existing portfolio, gave the single largest combined-portfolio drawdown reduction of the 4 candidates in §C's equity analysis |
 
 **Quantitative diversification evidence** (`SYMBOL_SCREENING_REPORT.md` §C):
-combined equity drawdown for all 7 together is **0.77%**, against 1.43% for the
-existing 3 alone and 4.28% for USDJPY standalone — a real, measured
-diversification benefit, not an assumption.
+combined equity drawdown for the original 7 together was **0.77%**, against
+1.43% for the existing 3 alone and 4.28% for USDJPY standalone — a real,
+measured diversification benefit at the time, but **this figure includes
+USDCAD and predates its 2026-09-24 drop** — the combined-drawdown analysis
+hasn't been re-run for the current 6-symbol set.
 
 **USDCHF/CADCHF co-dependency — checked, not a concern in practice**
 (`SYMBOL_SCREENING_REPORT.md` §D6): they do correlate at 0.34 (the highest
@@ -162,7 +189,8 @@ no reason to drop either symbol.
   still applies unchanged to these `.set` files despite the different numbers.
   Sequential from the project's original default, so EURUSD keeps the exact
   value (`123456`) every prior test used, and the rest increment by 1 in the
-  order above:
+  order above. `123461` (USDCAD) is skipped in the deployed set below, not
+  reassigned — reserved in case USDCAD is redeployed later:
 
   | Symbol | Magic Number |
   |---|---:|
@@ -171,16 +199,18 @@ no reason to drop either symbol.
   | USDJPY | 123458 |
   | AUDUSD | 123459 |
   | USDCHF | 123460 |
-  | USDCAD | 123461 |
+  | ~~USDCAD~~ | ~~123461~~ (dropped, reserved) |
   | CADCHF | 123462 |
 
 ## Files
 
-`roboforex_study/sets/cent_portfolio/<SYMBOL>.set` — one file per symbol.
-Content is identical **except** `InpMagicNumber`, per the table above (MT5
-`.set` files don't encode which symbol to trade; that's determined by which
-chart the EA is attached to — the magic number is the only per-symbol
-difference between these 7 files).
+`roboforex_study/sets/cent_portfolio/<SYMBOL>.set` — one file per deployed
+symbol (6, since USDCAD's drop). Content is identical **except**
+`InpMagicNumber`, per the table above (MT5 `.set` files don't encode which
+symbol to trade; that's determined by which chart the EA is attached to —
+the magic number is the only per-symbol difference between these files).
+`USDCAD.set` and `USDCAD_breaker8pct.set` remain in the same folder for
+reference but are not part of the deployed set.
 
 **Target EA**: `EA_DCA_CENT_V1.mq5` (the cent-account track build, currently at
 commit `793d30a` — InpMaxInitialLot fix applied to the risk-adjusted lot-sizing
@@ -203,15 +233,18 @@ execution, not further testing:
 ## Deployment checklist (for when you're ready, not done here)
 
 - [ ] **Re-run the validation stack with the corrected `InpBBAppliedPrice=2`**
-      before trusting this portfolio's composition — see the warning at the
-      top of this file. This should happen before any of the items below,
-      not after.
-- [x] **USDCAD decision made 2026-09-19**: deploy alongside the other 6,
-      circuit breaker deliberately left off — reconfirmed by every
-      subsequent validation step above (**pending re-validation per the item
-      above**)
-- [ ] Decide on the Max Floating Loss circuit breaker threshold before committing
-      live capital, given it's currently off
+      for the 5 remaining Tier 1/existing symbols not yet individually
+      re-validated beyond the 1-year checklist spot-check (AUDUSD, USDCHF,
+      CADCHF specifically) before treating this portfolio's composition as
+      settled. This should happen before any of the items below, not after.
+- [x] **USDCAD decision superseded 2026-09-24**: dropped from the deployed
+      portfolio (not disqualified permanently — see warning above) after
+      seven independent lines of evidence and a failed 8%-threshold breaker
+      test. Supersedes the 2026-09-19 "deploy as-is, breaker off" decision.
+- [x] **Max Floating Loss circuit breaker threshold**: tested at 8% for
+      USDCAD specifically — made its worst episode worse, not better (see
+      warning above). Remains off for the 6 deployed symbols, none of which
+      have shown a drawdown episode remotely close to justifying it so far.
 - [ ] Attach `EA_DCA_CENT_V1.mq5` to charts (one per symbol above), H4,
       loading the matching `.set` file on each
 - [ ] Confirm each chart's Magic Number collision check passes (expected: yes,
