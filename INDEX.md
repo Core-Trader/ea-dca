@@ -91,7 +91,7 @@ candidates.
 |---|---|
 | `ROBOFOREX_MULTI_SYMBOL_STUDY.md` | BB/QQE optimization grids for the original EURUSD/GBPUSD/USDJPY portfolio at the account's real $15,000 deposit |
 | `SYMBOL_SCREENING_REPORT.md` | The full diversification screening study — Market Watch-wide default-parameter pass, genetic optimization shortlist, correlation/drawdown-overlap analysis, wider-window/OOS validation, trade-level investigation, dense parameter-cliff check, same-settings-over-time check, Monte Carlo, and the resulting Tier 1 candidate picks (AUDUSD/USDCHF/USDCAD/CADCHF) |
-| `CURRENT_PORTFOLIO.md` | **The live-facing summary** — the current 7-symbol portfolio, what's deliberately different from the tested configuration (per-symbol magic numbers) and why, and the deployment checklist |
+| `CURRENT_PORTFOLIO.md` | **The live-facing summary** — the current 6-symbol portfolio (USDCAD dropped 2026-09-24), what's deliberately different from the tested configuration (per-symbol magic numbers) and why, and the deployment checklist |
 | `BACKTEST_VIABILITY_CHECKLIST.md` | Manual, no-budget-needed checklist for re-running the 7 portfolio symbols in the MT5 GUI after the `InpBBAppliedPrice` fix, with the exact pre-fix numbers to compare against |
 | `sets/cent_portfolio/<SYMBOL>.set` | The actual `.set` file to load per symbol for the current portfolio |
 | `sets/*.set` | Other named configs used across the study (defaults, optimization sweep definitions) |
@@ -112,6 +112,8 @@ bare-named root-level indicator files. **Run this after any change to `src/`**
 
 ## Everything else
 
+- `README.md` — short landing page pointing to this file, `PROJECT_HANDOFF.md`
+  and `CLAUDE.md`, plus the edit → sync → compile → verify → backtest workflow.
 - `default.set` — the original baseline `.set` for `DCA_EA.mq5`, matches the
   input order in `DCA_EA_Analysis_Report.md`.
 - `diagnostics/backtests/` — gitignored scratch space for backtest reports
