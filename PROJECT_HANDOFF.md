@@ -1,6 +1,6 @@
 # EA-DCA-V1.0 — Project Handoff
 
-**Last updated**: 2026-09-24, as of commit `e72da40` (the commit adding this
+**Last updated**: 2026-09-24, as of commit `20edace` (the commit adding this
 update will be one ahead of that by the time you read it).
 
 > **Maintenance note**: this is a living document, not a snapshot. Update it
@@ -58,7 +58,7 @@ breakdown: `INDEX.md`.
   urgent, but also not forgotten — pick this up whenever the RoboForex
   track (below) isn't the priority.
 
-### C. RoboForex multi-symbol study — 6-symbol portfolio (USDCAD dropped), ⚠ spot-check found real reshuffling
+### C. RoboForex multi-symbol study — 6-symbol portfolio, re-validated clean 2026-09-24
 
 - Real funded cent account (RoboForex-Pro, Login `52010662`). Screened the
   full Market Watch universe for portfolio-diversification candidates,
@@ -134,15 +134,30 @@ breakdown: `INDEX.md`.
   throughout to reflect the 6-symbol deployed portfolio
   (EURUSD/GBPUSD/USDJPY/AUDUSD/USDCHF/CADCHF).
 
-- **Next action, not yet decided**: whether to run the full
-  OOS/walk-forward/Monte Carlo battery again for the 5 remaining deployed
-  Tier-1/existing symbols (AUDUSD, USDCHF, CADCHF specifically haven't been
-  individually re-validated beyond the 1-year checklist spot-check) given
-  the checklist's broader "materially different" outcome — a scope/budget
-  call for the user, not resolved here. The combined-portfolio diversification
-  figures in `CURRENT_PORTFOLIO.md` (§ "Quantitative diversification
-  evidence") also still include USDCAD and haven't been re-run for the
-  current 6-symbol set.
+- **2026-09-24, full re-validation completed for the 6-symbol set — clean
+  across the board**: re-ran the combined-portfolio diversification analysis
+  (6 fresh `EA_DCA_CENT_V1_EquityForensic` runs) and the full wider-window/
+  OOS + dense parameter-cliff + walk-forward battery for AUDUSD/USDCHF/
+  CADCHF (33 backtests + 3 genetic optimizations, ~11 min headless). Result:
+  combined 6-symbol equity DD is **0.32%**, an improvement over the old
+  7-symbol (USDCAD-included) figure of 0.77% — dropping USDCAD didn't just
+  remove a risk outlier, it measurably improved the portfolio. AUDUSD/
+  USDCHF/CADCHF show **zero negative windows** across 9 wider-window/OOS
+  runs and 15 walk-forward windows, and **zero parameter-cliffs** across 363
+  dense-grid combinations (121 × 3) — nothing resembling USDCAD's risk
+  profile anywhere. **Caveat**: this batch used `Model=1` (1-minute OHLC),
+  not this project's usual `Model=4`, a documented-different-results setting
+  for this EA — treat as a clean fast screen, worth a `Model=4` spot-check
+  before final sign-off, though nothing suggests the conclusion would
+  change. Full detail:
+  `roboforex_study/reports/revalidation_2026_09_24/FINDING.md`.
+
+- **Next action, not yet decided**: whether a `Model=4` re-confirmation pass
+  is worth doing on the more interesting windows above (e.g. USDCHF's
+  Full/OOS-A 3.26% DD episode) before treating this re-validation as fully
+  final — a scope/budget call, not resolved here. Otherwise, the RoboForex
+  workstream's immediate open items are now resolved; remaining work is the
+  lower-priority items below.
 
 - **Explicitly not started, and shouldn't be until the above resolves**:
   testing alternate multiplier systems (only Linear has ever been tried
@@ -192,12 +207,14 @@ breakdown: `INDEX.md`.
    (EURUSD/GBPUSD/USDJPY/AUDUSD/USDCHF/CADCHF). `USDCAD.set` and its
    investigation trail kept in the repo, not deleted — a higher breaker
    threshold (11-12%) remains untested if there's appetite to revisit.
-5. **Decide whether to run the full validation stack again** (OOS,
-   walk-forward, Monte Carlo) for AUDUSD/USDCHF/CADCHF specifically, given
-   the checklist's overall "materially different" spot-check outcome — still
-   a scope/budget call, not decided here. Also re-run the combined-portfolio
-   diversification analysis (`CURRENT_PORTFOLIO.md`'s §C figures) for the
-   current 6-symbol set — the existing numbers still include USDCAD.
+5. ~~Run the full validation stack again for AUDUSD/USDCHF/CADCHF, and
+   re-run the combined-portfolio diversification analysis for the 6-symbol
+   set~~ — **done 2026-09-24, clean across the board.** Combined DD improved
+   to 0.32%; zero negative windows across 9 wider-window/OOS + 15
+   walk-forward runs; zero parameter-cliffs across 363 dense-grid combos.
+   Used `Model=1` for speed — a `Model=4` re-confirmation on the more
+   interesting windows remains a worthwhile, not urgent, follow-up. Detail:
+   §2C above, `roboforex_study/reports/revalidation_2026_09_24/FINDING.md`.
 6. Delete the old OneDrive project folder once satisfied the new location
    works (user's own manual step, not blocking anything).
 7. Lower priority, pick up whenever there's appetite: the Safe-vs-Linear

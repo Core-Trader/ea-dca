@@ -1,5 +1,18 @@
 # Current RoboForex Cent-Account Portfolio — 6 Symbols
 
+> ✅ **Full re-validation for the 6-symbol set completed 2026-09-24 — clean
+> across the board.** Combined-portfolio diversification re-checked under
+> corrected settings: **0.32% combined equity DD**, better than the old
+> 7-symbol (USDCAD-included) figure of 0.77%. AUDUSD/USDCHF/CADCHF each
+> re-run through the full wider-window/OOS, dense parameter-cliff, and
+> walk-forward battery (33 backtests + 3 optimizations total) — **zero
+> negative windows, zero parameter-cliffs, nothing resembling USDCAD's risk
+> profile anywhere**. One caveat: this batch used `Model=1` for speed, not
+> this project's usual `Model=4` — a confirmed-different-results setting for
+> this EA (`CLAUDE.md`), so treat these as a clean fast screen, not a final
+> `Model=4`-confirmed sign-off. Full detail:
+> `roboforex_study/reports/revalidation_2026_09_24/FINDING.md`.
+
 > ⚠ **USDCAD dropped from the deployed portfolio, 2026-09-24 — "for now",
 > not a permanent disqualification.** After the corrected-price-basis
 > re-checks below made USDCAD's risk profile progressively worse (not
@@ -135,12 +148,16 @@ warning above) — this document's portfolio is now 6 symbols, not 7.
 | ~~USDCAD~~ | **Dropped 2026-09-24** | Same §B screening looked clean, but the 1-year window missed a real 10.17% equity DD episode; investigated in depth (§D2, the checklist spot-check, an OOS-B re-check, and an 8%-threshold breaker test), and every one of those seven data points pointed the same direction. Dropped from the deployed portfolio rather than tuned around further — see the dedicated warning block above. `USDCAD.set` kept in the repo, not deleted. |
 | CADCHF | Tier 1 candidate | Same §B — tightest DD band alongside AUDUSD, near-zero correlation to the existing portfolio, gave the single largest combined-portfolio drawdown reduction of the 4 candidates in §C's equity analysis |
 
-**Quantitative diversification evidence** (`SYMBOL_SCREENING_REPORT.md` §C):
-combined equity drawdown for the original 7 together was **0.77%**, against
-1.43% for the existing 3 alone and 4.28% for USDJPY standalone — a real,
-measured diversification benefit at the time, but **this figure includes
-USDCAD and predates its 2026-09-24 drop** — the combined-drawdown analysis
-hasn't been re-run for the current 6-symbol set.
+**Quantitative diversification evidence — re-run 2026-09-24 for the current
+6-symbol set** (`roboforex_study/reports/revalidation_2026_09_24/FINDING.md`
+item 1): combined equity drawdown for all 6 deployed symbols together is
+**0.32%**, against 0.48% for the existing 3 alone — an *improvement* over the
+original 7-symbol (USDCAD-included) figure of 0.77%, not just a
+like-for-like re-confirmation. Dropping USDCAD didn't just remove a risk
+outlier from the roster, it measurably improved the combined-portfolio risk
+profile, consistent with USDCAD having been the dominant contributor to that
+combined drawdown all along. (Original 7-symbol figure, pre-fix/pre-drop,
+for historical reference: `SYMBOL_SCREENING_REPORT.md` §C.)
 
 **USDCHF/CADCHF co-dependency — checked, not a concern in practice**
 (`SYMBOL_SCREENING_REPORT.md` §D6): they do correlate at 0.34 (the highest
@@ -232,11 +249,14 @@ execution, not further testing:
 
 ## Deployment checklist (for when you're ready, not done here)
 
-- [ ] **Re-run the validation stack with the corrected `InpBBAppliedPrice=2`**
-      for the 5 remaining Tier 1/existing symbols not yet individually
-      re-validated beyond the 1-year checklist spot-check (AUDUSD, USDCHF,
-      CADCHF specifically) before treating this portfolio's composition as
-      settled. This should happen before any of the items below, not after.
+- [x] **Full validation stack re-run with corrected `InpBBAppliedPrice=2`**
+      for AUDUSD/USDCHF/CADCHF — **done 2026-09-24**, clean across the board
+      (zero negative windows in wider-window/OOS or walk-forward, no
+      parameter cliffs, combined 6-symbol diversification improved to
+      0.32%). One open caveat: run used `Model=1` for speed, not this
+      project's usual `Model=4` — worth a `Model=4` spot-check on the more
+      interesting windows before treating this as fully final. Detail:
+      `roboforex_study/reports/revalidation_2026_09_24/FINDING.md`.
 - [x] **USDCAD decision superseded 2026-09-24**: dropped from the deployed
       portfolio (not disqualified permanently — see warning above) after
       seven independent lines of evidence and a failed 8%-threshold breaker
