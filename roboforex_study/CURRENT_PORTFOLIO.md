@@ -77,6 +77,26 @@ honest next step, not just remaining deployment decisions.
 > with holding time, not per-trade luck, so the true negative-outcome
 > probability in live trading likely runs somewhat higher than 22.58%. Full
 > data: `roboforex_study/reports/usdcad_oosb_refix/`.
+>
+> **Update 2026-09-24, circuit breaker tested at 8%, made it worse, not
+> better**: tested `InpUseMaxFloatingLoss=true` at `InpMaxFloatingLossPercent
+> =8.0` against this same OOS-B window. Result: net loss **deepened** from
+> -$34.20 to **-$1,181.28** (Profit Factor 0.95→0.04, Recovery Factor
+> -0.02→-0.95), even though Equity DD *did* shrink as designed (10.35%→
+> 8.28%). Mechanism, confirmed from the deal log: the breaker fired once, on
+> 2026-06-23, force-closing 15 stacked legs simultaneously for a ~$1,201
+> realized loss — **2 days before** the adverse move's actual peak
+> (~2026-06-25, per §D2). Historically the position then reverted and exited
+> for a much smaller ~$453 loss via the normal BB Centre Band exit; the 8%
+> breaker crystallized the loss right before that recovery instead of
+> letting it happen. Same failure mode this EA's own code already documents
+> for Equity Protection at low thresholds — cuts a recovering position short.
+> **Not evidence the breaker concept is bad, evidence this specific
+> threshold was badly timed for this specific historical episode** — a
+> higher threshold (nearer the 10.35% natural peak) would only fire if a
+> *future* episode goes further than this one did, which is a real tradeoff,
+> not resolved by this one test. Full write-up:
+> `roboforex_study/reports/usdcad_breaker_test/FINDING.md`.
 
 ## Composition
 

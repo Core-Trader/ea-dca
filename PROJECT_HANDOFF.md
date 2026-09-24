@@ -107,13 +107,25 @@ breakdown: `INDEX.md`.
   weak-but-positive result. Full detail: `CURRENT_PORTFOLIO.md`'s USDCAD
   warning block, data in `roboforex_study/reports/usdcad_oosb_refix/`.
 
-- **Next action, not yet decided**: whether to run the full
-  OOS/walk-forward/Monte Carlo battery again for all 4 Tier-1 candidates
-  given the checklist's spot-check outcome, and whether the USDCAD
-  circuit-breaker-off decision should be revisited given its now
-  substantially reinforced risk profile (see above). Both remain scope/
-  budget calls for the user, not resolved here — but the USDCAD evidence in
-  particular is no longer marginal.
+- **2026-09-24, circuit breaker tested at 8%, made it worse**: tested
+  `InpUseMaxFloatingLoss=true` at 8% against the same OOS-B window. Net loss
+  deepened from -$34.20 to **-$1,181.28** — the breaker fired once
+  (2026-06-23), force-closing 15 stacked legs for a ~$1,201 realized loss
+  **2 days before** the adverse move's actual peak, crystallizing the loss
+  right before the historical mean-reversion that (with no breaker) let it
+  recover to a much smaller ~$453 loss. Confirms the EA's own documented
+  Equity-Protection-at-low-thresholds failure mode applies here too. Not a
+  verdict on the breaker concept — a verdict on this one threshold for this
+  one historical episode; a higher threshold remains untested. Detail:
+  `CURRENT_PORTFOLIO.md`'s USDCAD block,
+  `roboforex_study/reports/usdcad_breaker_test/FINDING.md`.
+
+- **Next action, not yet decided**: whether to test a higher breaker
+  threshold (e.g. 11-12%, nearer the 10.35% natural peak) before ruling the
+  breaker out entirely, whether to drop USDCAD instead of tuning around it,
+  or to run the full OOS/walk-forward/Monte Carlo battery again for all 4
+  Tier-1 candidates given the checklist's broader spot-check outcome. All
+  remain scope/budget calls for the user, not resolved here.
 
 - **Explicitly not started, and shouldn't be until the above resolves**:
   testing alternate multiplier systems (only Linear has ever been tried
@@ -152,18 +164,25 @@ breakdown: `INDEX.md`.
    post-fix, with a 22.58% resampled chance of a net-negative path. Seventh
    independent line of evidence against USDCAD, and the most unambiguous
    yet. Detail: §2C above, `CURRENT_PORTFOLIO.md`'s USDCAD warning block.
-3. **Decide whether to revisit the USDCAD circuit-breaker-off decision**
-   specifically — it was made 2026-09-19, before either the checklist
-   spot-check or the OOS-B re-check showed USDCAD's risk profile is worse
-   under the corrected price basis, not better. This evidence is no longer
-   marginal; worth an explicit decision, not silent carry-forward.
-4. **Decide whether to run the full validation stack again** (OOS,
+3. ~~Test a circuit breaker threshold~~ — **done 2026-09-24, 8% tested,
+   made the outcome worse, not better** (net loss deepened from -$34.20 to
+   -$1,181.28 — breaker fired 2 days before the adverse move's historical
+   peak, crystallizing a loss the position would otherwise have mostly
+   recovered from). Detail: §2C above,
+   `roboforex_study/reports/usdcad_breaker_test/FINDING.md`.
+4. **Decide USDCAD's disposition**: test a higher breaker threshold
+   (11-12%, nearer the natural 10.35% peak) before ruling the breaker out
+   entirely, drop USDCAD from the portfolio instead of tuning around it, or
+   keep it in as-is (breaker off) with the risk now fully documented and
+   accepted. Not resolved here — the 8% test answered "does a tight
+   threshold help" (no), not "should USDCAD be deployed."
+5. **Decide whether to run the full validation stack again** (OOS,
    walk-forward, Monte Carlo) for AUDUSD/USDCHF/CADCHF too, given the
    checklist's overall "materially different" spot-check outcome — still a
    scope/budget call, not decided here.
-5. Delete the old OneDrive project folder once satisfied the new location
+6. Delete the old OneDrive project folder once satisfied the new location
    works (user's own manual step, not blocking anything).
-6. Lower priority, pick up whenever there's appetite: the Safe-vs-Linear
+7. Lower priority, pick up whenever there's appetite: the Safe-vs-Linear
    multiplier decision (§2B), porting TP/SL mode into `EA_DCA_CENT_V1.mq5`
    (§2A), and the explicitly-deferred multiplier/BB-range/exit-strategy
    expansion for RoboForex symbols (§2C) — the last of these still
