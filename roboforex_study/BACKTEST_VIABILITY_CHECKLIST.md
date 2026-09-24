@@ -3,7 +3,7 @@
 **Purpose**: re-run the 7 portfolio symbols with the corrected `InpBBAppliedPrice=2`
 (PRICE_HIGH — see `CURRENT_PORTFOLIO.md`'s warning banner for the full incident)
 and check whether each symbol still looks viable, before spending any further
-budget re-running the full validation stack (OOS, walk-forward, Monte Carlo).
+budget re-running the full validation stack (OOS, same-settings-over-time, Monte Carlo).
 This is the cheap, first-pass check: **one window, one run per symbol.**
 
 Do this manually in the MT5 GUI — no Claude Code / API budget needed.
@@ -133,7 +133,7 @@ the profit" framing needs to be retired, not just footnoted.
 
 **Finding 2 — USDCAD's risk-outlier status is reinforced, not resolved.**
 Already flagged by five independent methods pre-fix (screening grid, OOS,
-trade-level investigation, walk-forward, Monte Carlo). Post-fix, its Recovery
+trade-level investigation, same-settings-over-time check, Monte Carlo). Post-fix, its Recovery
 Factor is now the *worst* of the 7 (0.47) and its Equity DD is the *highest*
 of the 7 (3.38%, more than double USDCHF's 1.30%, its nearest rival). The
 prior "kept in, not disqualified" decision was made without this data point
@@ -153,14 +153,14 @@ different" branch, not "looks broadly similar":
 - **USDJPY**: re-frame, don't just re-test. Its risk profile changed enough
   that this project's own repeated characterization of it needs correcting
   in every document that cites it, independent of whether a fuller
-  OOS/walk-forward/Monte Carlo re-run happens.
+  OOS/same-settings-over-time/Monte Carlo re-run happens.
 - **USDCAD**: the case for keeping it in without the circuit breaker is
   weaker now than when that decision was made (§D2/§E item 1 in
   `SYMBOL_SCREENING_REPORT.md`) — worth deciding again with this data point
   in hand, not treating the earlier decision as still settled.
 - **AUDUSD**: no longer clearly the single best candidate — still fine, just
   not obviously the standout the original (buggy) study made it look like.
-- **Full OOS/walk-forward/Monte Carlo re-run**: given two symbols moved this
+- **Full OOS/same-settings-over-time/Monte Carlo re-run**: given two symbols moved this
   much, a full re-validation is more justified now than a spot-check would
   have supported — but that's a scope/budget decision for the user, not
   decided here.

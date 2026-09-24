@@ -5,7 +5,7 @@
 > corrected settings: **0.32% combined equity DD**, better than the old
 > 7-symbol (USDCAD-included) figure of 0.77%. AUDUSD/USDCHF/CADCHF each
 > re-run through the full wider-window/OOS, dense parameter-cliff, and
-> walk-forward battery (33 backtests + 3 optimizations total) — **zero
+> same-settings-over-time battery (33 backtests + 3 optimizations total) — **zero
 > negative windows, zero parameter-cliffs, nothing resembling USDCAD's risk
 > profile anywhere**. One caveat: this batch used `Model=1` for speed, not
 > this project's usual `Model=4` — a confirmed-different-results setting for
@@ -38,7 +38,7 @@
 > (1.00→0.47)** — its already-flagged risk-outlier status is reinforced, not
 > resolved, by the correction. AUDUSD's profit and Recovery Factor both
 > dropped meaningfully (-33% profit) — no longer clearly *the* standout
-> candidate. This was one window, not the full OOS/walk-forward/Monte Carlo
+> candidate. This was one window, not the full OOS/same-settings-over-time/Monte Carlo
 > battery this portfolio's composition originally rested on — **that full
 > re-validation is more justified now than before the spot-check**, and the
 > USDCAD circuit-breaker-off decision specifically (below) was made without
@@ -49,7 +49,7 @@
 from `SYMBOL_SCREENING_REPORT.md`'s existing portfolio plus its 4 Tier 1
 candidates. **Update 2026-09-19**: the full validation backlog (§D2-§D6 —
 wider-window/OOS, trade-level investigation, dense parameter-cliff check,
-walk-forward, Monte Carlo, USDCHF/CADCHF co-dependency) is complete. **Update
+same-settings-over-time check, Monte Carlo, USDCHF/CADCHF co-dependency) is complete. **Update
 2026-09-23**: that entire backlog ran under the `InpBBAppliedPrice` bug (see
 warning above) — a spot-check under the corrected value found USDJPY's risk
 profile and AUDUSD's standout status were both largely artifacts of the bug,
@@ -74,7 +74,7 @@ warning above) — this document's portfolio is now 6 symbols, not 7.
 > real risk window invisible on the easy-to-glance-at metric. **Decided
 > 2026-09-19**: keep the Max Floating Loss circuit breaker disabled for now
 > (not deploying it yet) — USDCAD stays in the portfolio as-is, matching its
-> tested (breaker-off) configuration. Walk-forward (§D4) and Monte Carlo
+> tested (breaker-off) configuration. The same-settings-over-time check (§D4) and Monte Carlo
 > (§D5) both reinforced this risk profile afterward (a second losing window,
 > outlier status on a fifth method) without changing the decision. **Update
 > 2026-09-23**: the `InpBBAppliedPrice` spot-check adds a sixth data point,
@@ -240,7 +240,7 @@ path). **Account**: RoboForex-Pro, Login `52010662`.
 - [x] Wider-window (2024.01-2026.09) + out-of-sample validation (§D)
 - [x] USDCAD drawdown episode — trade-level investigation (§D2)
 - [x] Dense parameter-neighborhood cliff check, all 4 candidates (§D3)
-- [x] Walk-forward rolling-window consistency check (§D4)
+- [x] Same-settings-over-time rolling-window consistency check (§D4)
 - [x] Monte Carlo trade-resampling bootstrap (§D5)
 - [x] USDCHF-CADCHF co-dependency check (§D6)
 
@@ -251,7 +251,7 @@ execution, not further testing:
 
 - [x] **Full validation stack re-run with corrected `InpBBAppliedPrice=2`**
       for AUDUSD/USDCHF/CADCHF — **done 2026-09-24**, clean across the board
-      (zero negative windows in wider-window/OOS or walk-forward, no
+      (zero negative windows in wider-window/OOS or same-settings-over-time windows, no
       parameter cliffs, combined 6-symbol diversification improved to
       0.32%). One open caveat: run used `Model=1` for speed, not this
       project's usual `Model=4` — worth a `Model=4` spot-check on the more

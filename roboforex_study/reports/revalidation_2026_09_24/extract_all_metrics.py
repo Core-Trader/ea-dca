@@ -34,7 +34,7 @@ for sym in SYMBOLS:
     print()
 
 print("=" * 100)
-print("WALK-FORWARD (revalidation 2026-09-24, corrected InpBBAppliedPrice=2, Model=1)")
+print("SAME SETTINGS OVER TIME - fixed params, not walk-forward (revalidation 2026-09-24, corrected InpBBAppliedPrice=2, Model=1)")
 print("=" * 100)
 window_dates = {
     'W1': '2024 H1', 'W2': '2024 H2', 'W3': '2025 H1',

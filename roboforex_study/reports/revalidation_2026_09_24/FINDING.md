@@ -45,7 +45,7 @@ remove a risk outlier — it improved the combined-portfolio risk profile
 directly, consistent with USDCAD having been the dominant contributor to
 that combined drawdown all along.
 
-## Item 2 — Full battery for AUDUSD/USDCHF/CADCHF (§D/§D3/§D4 equivalent)
+## Item 2 — Full battery for AUDUSD/USDCHF/CADCHF (§D/§D3/§D4 equivalent: OOS, dense grid, same settings over time)
 
 **§D wider-window/OOS** (9 runs: 3 symbols × Full/OOS-A/OOS-B,
 corrected `.set`): all 9 positive, no red flags. Full data:
@@ -85,7 +85,9 @@ small-sample outlier at one grid corner, same caution already flagged
 elsewhere in this study for small-trade-count PF figures; not investigated
 further since DD stays tight regardless.)
 
-**§D4 walk-forward** (15 runs: 3 symbols × 5 sequential ~6-month windows,
+**§D4 same-settings-over-time check** (not true walk-forward — no
+re-optimization per window; see `SYMBOL_SCREENING_REPORT.md` §D4's naming
+note) (15 runs: 3 symbols × 5 sequential ~6-month windows,
 deployed `.set` files, fixed non-reoptimized parameters): **zero negative
 windows across all 3 symbols, 15/15 clean.** Full data: `walk_forward/`,
 extracted: `extracted_metrics.txt`.

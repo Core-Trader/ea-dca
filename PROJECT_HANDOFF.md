@@ -68,7 +68,7 @@ breakdown: `INDEX.md`.
   reference to "7 symbols" elsewhere in this section describes the study's
   history, not the current deployment target. Full validation backlog
   completed — wider-window/OOS, trade-level investigation of a USDCAD
-  drawdown episode, dense parameter-cliff check, walk-forward, Monte Carlo,
+  drawdown episode, dense parameter-cliff check, same-settings-over-time check, Monte Carlo,
   USDCHF/CADCHF co-dependency check. All findings and reasoning:
   `roboforex_study/SYMBOL_SCREENING_REPORT.md`. Live-facing summary:
   `roboforex_study/CURRENT_PORTFOLIO.md`.
@@ -137,13 +137,13 @@ breakdown: `INDEX.md`.
 - **2026-09-24, full re-validation completed for the 6-symbol set — clean
   across the board**: re-ran the combined-portfolio diversification analysis
   (6 fresh `EA_DCA_CENT_V1_EquityForensic` runs) and the full wider-window/
-  OOS + dense parameter-cliff + walk-forward battery for AUDUSD/USDCHF/
+  OOS + dense parameter-cliff + same-settings-over-time battery for AUDUSD/USDCHF/
   CADCHF (33 backtests + 3 genetic optimizations, ~11 min headless). Result:
   combined 6-symbol equity DD is **0.32%**, an improvement over the old
   7-symbol (USDCAD-included) figure of 0.77% — dropping USDCAD didn't just
   remove a risk outlier, it measurably improved the portfolio. AUDUSD/
   USDCHF/CADCHF show **zero negative windows** across 9 wider-window/OOS
-  runs and 15 walk-forward windows, and **zero parameter-cliffs** across 363
+  runs and 15 same-settings-over-time windows, and **zero parameter-cliffs** across 363
   dense-grid combinations (121 × 3) — nothing resembling USDCAD's risk
   profile anywhere. **Caveat**: this batch used `Model=1` (1-minute OHLC),
   not this project's usual `Model=4`, a documented-different-results setting
@@ -211,7 +211,7 @@ breakdown: `INDEX.md`.
    re-run the combined-portfolio diversification analysis for the 6-symbol
    set~~ — **done 2026-09-24, clean across the board.** Combined DD improved
    to 0.32%; zero negative windows across 9 wider-window/OOS + 15
-   walk-forward runs; zero parameter-cliffs across 363 dense-grid combos.
+   same-settings-over-time runs; zero parameter-cliffs across 363 dense-grid combos.
    Used `Model=1` for speed — a `Model=4` re-confirmation on the more
    interesting windows remains a worthwhile, not urgent, follow-up. Detail:
    §2C above, `roboforex_study/reports/revalidation_2026_09_24/FINDING.md`.

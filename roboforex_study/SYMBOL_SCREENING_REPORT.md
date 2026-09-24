@@ -22,7 +22,7 @@
 > and characterization below (Tier 1 picks, "USDJPY carries known elevated
 > risk," AUDUSD as "the single most structurally robust symbol") predates
 > this spot-check and should be read with that in mind** — not retracted
-> outright (the spot-check was one window, not the full OOS/walk-forward/
+> outright (the spot-check was one window, not the full OOS/same-settings-over-time/
 > Monte Carlo battery), but no longer taken at face value either. A full
 > re-validation is more justified now than before the spot-check, pending a
 > scope/budget decision.
@@ -476,7 +476,7 @@ Loss circuit breaker (currently disabled in `CURRENT_PORTFOLIO.md`, §
 mattered here, and that Equity (not Balance) is the number that must be
 watched or automated against for USDCAD specifically. Whether that argues for
 enabling the circuit breaker before deploying USDCAD, deploying it anyway with
-manual equity monitoring, or holding it back until walk-forward/Monte Carlo
+manual equity monitoring, or holding it back until the same-settings-over-time check/Monte Carlo
 give more confidence is a decision for the user, not resolved here.
 
 ## D3. Dense Parameter-Neighborhood Check for Hidden Cliffs (complete — clean)
@@ -519,13 +519,21 @@ findings rather than conflating them: the parameter choice is fine, the
 multi-sequence-under-sustained-trend exposure is the real and separate risk
 already documented in §D2.
 
-## D4. Walk-Forward (Rolling-Window) Consistency Check (complete)
+## D4. Same-Settings-Over-Time (Rolling-Window) Consistency Check (complete)
+
+> **Naming correction (2026-09-24)**: this section was originally titled
+> "Walk-Forward." That was the wrong term — in Pardo's definition,
+> walk-forward analysis re-optimizes on each in-sample window and then tests
+> on the next one. What's below runs one *fixed* configuration through
+> sequential windows with no re-optimization, which is a stability check over
+> time, not walk-forward. True walk-forward has not been run in this study.
+> (The raw-data folder keeps its original name, `reports/walk_forward/`, so
+> existing links don't break.)
 
 **Method**: the actual deployment uses fixed, non-reoptimized parameters, so
-the meaningful walk-forward question here isn't "does re-optimizing each
-period help" but "does the fixed default configuration hold up across every
-sequential slice of time, not just the Full/OOS-A/OOS-B split already done
-(§D)." Split the full 2024.01.01–2026.09.19 history into 5 sequential
+the meaningful question here isn't "does re-optimizing each period help" but
+"does the fixed default configuration hold up across every sequential slice
+of time, not just the Full/OOS-A/OOS-B split already done (§D)." Split the full 2024.01.01–2026.09.19 history into 5 sequential
 ~6-month windows and ran all 4 Tier 1 candidates (deployed `.set` files)
 through each — 20 single-parameter backtests. Raw data:
 `roboforex_study/reports/walk_forward/`.
@@ -562,9 +570,12 @@ are" status already recorded in `CURRENT_PORTFOLIO.md`.
 **Method**: same approach as `GO_LIVE_VALIDATION_PLAN.md` §4.13 — extract each
 closed leg's net realized P&L (the Profit column on every `out`-type deal)
 directly from real backtest deal logs (no synthetic data), then resample
-**with replacement** to build 20,000 simulated equity paths of the same
-length as the original trade count, measuring how much historical trade
-*ordering* matters independent of the strategy's average edge. Reused the
+**with replacement** (a bootstrap) to build 20,000 simulated equity paths of
+the same length as the original trade count. Because each path draws trades
+with replacement — some repeat, some drop out — the path's *total* can vary,
+not just its order, which is what makes the P(net negative) column below
+meaningful (pure reordering of the same trades would always give the same
+total, so that column would be 0% by construction). Reused the
 full 2024.01–2026.09 deal logs already gathered for §D (no new backtests
 needed). Script and full output: `roboforex_study/reports/monte_carlo/`.
 
@@ -579,7 +590,7 @@ needed). Script and full output: `roboforex_study/reports/monte_carlo/`.
 deposit, for scale.)
 
 **AUDUSD and USDCHF never produced a net-negative simulated path across
-20,000 reshuffles** — the strongest possible result this method can give.
+20,000 bootstrap resamples** — the strongest possible result this method can give.
 **CADCHF is very close behind** (3 negative paths out of 20,000, 0.015%).
 
 **USDCAD is the clear outlier on a fifth independent method now**: its
@@ -591,14 +602,14 @@ directly explained by its own trade distribution: its pooled P&L set
 includes the -$78.37 single-leg loss from the stacked-sequence unwind
 investigated in §D2, and several other double-digit losses from that same
 episode's mass close — real, already-understood outcomes, not new tail
-risk, but resampling correctly surfaces that they make USDCAD's *ordering*
-risk measurably higher than the other three.
+risk, but resampling correctly surfaces that they make USDCAD's resampled
+downside measurably worse than the other three.
 
 **A methodological caveat specific to this DCA architecture, not present in
 the original single-symbol Monte Carlo**: bootstrap resampling treats each
 closed leg as an independent draw, but §D2 showed multiple legs from the
 same stacked sequence often close together in a single correlated event
-(the 11-leg mass close on 2026-07-17). Reshuffling independently can
+(the 11-leg mass close on 2026-07-17). Resampling legs independently can
 therefore either under- or over-represent how often several large losses
 actually land together in reality, compared to drawing them into the same
 simulated path purely by chance. This doesn't invalidate the result — the
@@ -606,13 +617,13 @@ same "can't invent a worse loss than observed" limitation already noted in
 `GO_LIVE_VALIDATION_PLAN.md` §4.13 still applies — but it's a real reason not
 to treat USDCAD's 0.33% figure as a precise tail-risk estimate, only as
 further confirmation (now via a fifth method) that it carries more
-sequencing risk than AUDUSD, USDCHF, or CADCHF.
+downside risk than AUDUSD, USDCHF, or CADCHF.
 
 **Consistent with, not contradicting, every other USDCAD finding in this
 report** (§B, §D2, §D4): kept in the portfolio per the user's decision, not
 disqualified, but this is now the fifth independent line of evidence
-(screening grid, OOS validation, trade-level investigation, walk-forward,
-Monte Carlo) all pointing the same direction — USDCAD is structurally the
+(screening grid, OOS validation, trade-level investigation,
+same-settings-over-time check, Monte Carlo) all pointing the same direction — USDCAD is structurally the
 riskiest of the 4 Tier 1 candidates, even though its overall expectancy
 remains positive.
 
@@ -626,7 +637,7 @@ remains positive.
 2. ~~Parameter sensitivity re-check specifically for EURJPY-style cliffs~~ —
    **done, see §D3**: clean across all 4 Tier 1 candidates, no hidden cliffs
    near any deployed default.
-3. ~~Walk-forward testing~~ — **done, see §D4**: AUDUSD/USDCHF/CADCHF clean
+3. ~~Same-settings-over-time check (originally mislabeled "walk-forward")~~ — **done, see §D4**: AUDUSD/USDCHF/CADCHF clean
    across all 5 rolling windows; USDCAD showed a second losing window
    (2025 H2, distinct from the already-investigated 2026 episode).
 4. ~~Monte Carlo analysis~~ — **done, see §D5**: AUDUSD/USDCHF never went

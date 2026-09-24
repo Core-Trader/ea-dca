@@ -15,7 +15,7 @@ CADCHF  OOS-A       169.25   1.85     0.37  102.79 (0.68%)  462.90 (3.07%)      
 CADCHF  OOS-B       112.10   5.57     1.35   15.28 (0.10%)   83.12 (0.55%)      45
 
 ====================================================================================================
-WALK-FORWARD (revalidation 2026-09-24, corrected InpBBAppliedPrice=2, Model=1)
+SAME SETTINGS OVER TIME - fixed params, not walk-forward (revalidation 2026-09-24, corrected InpBBAppliedPrice=2, Model=1)
 ====================================================================================================
 Symbol  Window              Profit     PF Recovery        EquityDD  Trades
 AUDUSD  2024 H1             103.21  11.94     3.12   33.11 (0.22%)      36
