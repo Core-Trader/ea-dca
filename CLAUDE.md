@@ -148,8 +148,9 @@ conversation carries forward to the next run.
 - **Close the live terminal first.** MT5 allows only one instance per data
   folder; if the terminal is already open, a second headless launch silently
   does nothing (exits fast, no report, no error). Check
-  `Get-Process -Name terminal64` before launching, and ask the user before
-  closing anything they have open.
+  `Get-Process -Name terminal64` before launching (a Windows-level check —
+  Git Bash's `ps` misses terminals the user opened; see the `pgrep` bullet
+  below), and ask the user before closing anything they have open.
 - **Always pass `ExpertParameters=<bare filename>.set` explicitly**, with the
   `.set` file copied into `MQL5\Profiles\Tester\` first — not an absolute
   path. With no `ExpertParameters`, or with an absolute path (confirmed to
@@ -235,9 +236,19 @@ conversation carries forward to the next run.
   while one is already open silently no-ops (see above), this meant only
   the *first* job in a 6-job batch actually ran — the other 5 each fired
   into an already-busy terminal and did nothing, producing no report and no
-  error either. **Use `ps aux | grep -q "[t]erminal64"` instead** (the
-  bracket trick avoids grep matching its own process) — confirmed working
-  in this environment. Whenever chaining sequential headless launches,
+  error either. **Check at the Windows level with `Get-Process`, never with
+  `ps`.** From PowerShell: `Get-Process -Name terminal64 -ErrorAction
+  SilentlyContinue`. From Git Bash (exits 0 while a terminal is running,
+  so it works directly as a `while` wait-loop condition):
+  ```
+  powershell -NoProfile -Command "exit [int](-not (Get-Process terminal64 -ErrorAction SilentlyContinue))"
+  ```
+  Don't use `ps aux | grep terminal64` — this file used to recommend it.
+  Confirmed 2026-09-24: in Git Bash, `ps` only lists processes started from
+  inside the MSYS shell, so a terminal the user opened normally from Windows
+  is invisible to it. The check reported "clear" while the user's live
+  RoboForex terminal was open, and all 4 queued headless launches silently
+  no-oped against it. Whenever chaining sequential headless launches,
   verify the wait mechanism actually blocks (e.g. by checking elapsed time
   or watching the log advance) rather than trusting that a loop "looks
   right" — an always-false condition produces no error, just silent,
