@@ -1,6 +1,6 @@
 # EA-DCA-V1.0 — Project Handoff
 
-**Last updated**: 2026-09-25, as of commit `a13dcff` (the commit adding this
+**Last updated**: 2026-09-25, as of commit `8ddf6e2` (the commit adding this
 update will be one ahead of that by the time you read it).
 
 **Starting a new session or machine?** Paste `prompts/SESSION_HANDOFF.md`.
@@ -61,10 +61,25 @@ breakdown: `INDEX.md`.
   - No TP or stop change tested reaches break-even. The untested lever is
     entry filtering (MA filter, higher-TF direction, BB width, minimum
     distance), which needs no code change.
-  - **All 8 `tpsl_mode/tpsl_test_sets/*.set` use the stale
-    `InpBBAppliedPrice=3` / `InpMAAppliedPrice=1`.** Corrected, Test B is
-    worse (PF 0.67 → 0.60). Fixing the files changes the DCA regression
-    baseline (`test_A`) as well, which is an owner decision.
+  - All 8 `tpsl_mode/tpsl_test_sets/*.set` used the stale
+    `InpBBAppliedPrice=3` / `InpMAAppliedPrice=1`. Corrected, Test B is
+    worse (PF 0.67 → 0.60). **Fixed 2026-09-25**, and `test_A` re-baselined:
+    the new DCA-mode reference is $287.55, PF 3.32, 80 trades
+    (`tpsl_mode/TPSL_MODE_AUDIT.md` §6).
+
+  **Phase 2 result** (`tpsl_mode/reports/phase2_multisymbol_2026_09_25/FINDING.md`):
+  6 portfolio symbols × 5 entry-filter variants, 2024.01–2026.09, `Model=4`.
+  - No filter gives an edge. The base configuration totals −$163.58
+    (profitable on 3/6 symbols by $0.25–$19.67). The best filter, D1
+    direction, totals −$85.74.
+  - Trend filters raise the win rate to 65–85% but shrink wins to 10–27
+    pips, against a steady ~−50 per stop-out.
+  - The BB width filter at 0.5% never binds.
+
+  **Phase 3 (proposed, not approved):** optimize the SL distance or ATR SL
+  and the exit strategy with the D1 filter. Tune on 2024.01–2025.06 and
+  check unseen on 2025.07–2026.09. Proposed stopping rule: park TP/SL mode
+  unless it holds PF > ~1.2 unseen on at least 4 of 6 symbols.
 
 ### B. FTMO go-live validation track — paused, one open decision
 
@@ -284,15 +299,17 @@ Rules: `CLAUDE.md` → "Session rules carried over" → TRL equity logger.
    Combined DD re-measured from logger logs the same day: 0.38% for all 6.
    Next, if wanted: import a report + log pair into TRL, and decide whether
    to retire the equity forensic EA.
-8. **TP/SL mode improvement** (§2A). Phase 1 (diagnosis) is done. Needs owner
-   decisions on two things:
-   - whether to fix the stale price inputs in `tpsl_mode/tpsl_test_sets/`,
-     which means re-baselining `test_A`;
-   - phase 2 scope: TP/SL mode on the 6 portfolio symbols plus EURUSD,
-     including entry-filter variants.
-9. Delete the old OneDrive project folder once satisfied the new location
+8. **TP/SL mode improvement** (§2A). Phases 1 (diagnosis) and 2 (6 symbols,
+   entry filters) are done; neither found an edge. Waiting on the owner:
+   approve phase 3 (SL/exit optimization with the D1 filter, unseen-period
+   check, and the stopping rule), or park TP/SL mode now.
+9. **Consolidate backtest output into `reports/backtests/`** (gitignored).
+   Proposed 2026-09-25, not started: waiting on the owner's decisions about
+   the keep-committed list, grey-area CSVs, and copying vs moving the equity
+   logs and terminal-root reports.
+10. Delete the old OneDrive project folder once satisfied the new location
    works (user's own manual step, not blocking anything).
-10. Lower priority, pick up whenever there's appetite: the Safe-vs-Linear
+11. Lower priority, pick up whenever there's appetite: the Safe-vs-Linear
    multiplier decision (§2B), and the multiplier/BB-range/exit-strategy
    expansion for RoboForex symbols (§2C), now unblocked since the
    re-validation is done.
