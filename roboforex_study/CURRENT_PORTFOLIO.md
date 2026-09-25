@@ -159,6 +159,14 @@ profile, consistent with USDCAD having been the dominant contributor to that
 combined drawdown all along. (Original 7-symbol figure, pre-fix/pre-drop,
 for historical reference: `SYMBOL_SCREENING_REPORT.md` §C.)
 
+**Update 2026-09-25, measured tick by tick:** re-measured from TRL equity
+logs on `Model=4` (every tick, 5-minute lows) instead of one snapshot per H4
+bar on `Model=1`. All 6 combined: **0.38%** ($345), against 0.61% for the
+existing 3 alone and 1.65% for the worst single symbol. Slightly deeper than
+0.32%, as expected from the finer measurement; same ranking and same
+conclusion. This is now the figure to use. Detail:
+`roboforex_study/reports/combined_dd_logger_2026_09_25/FINDING.md`.
+
 **USDCHF/CADCHF co-dependency — checked, not a concern in practice**
 (`SYMBOL_SCREENING_REPORT.md` §D6): they do correlate at 0.34 (the highest
 pair in the matrix) and share a real overlapping drawdown episode in January

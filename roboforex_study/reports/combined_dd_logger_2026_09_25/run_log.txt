@@ -1,0 +1,14 @@
+=== started Fri Sep 25 09:33:32 HVGMT 2026 ===
+[09:33:33] Launching TRL_rep_RF_EA_DCA_CENT_V1_Logged_GBPUSD_1y
+[09:34:19] OK report TRL_rep_RF_EA_DCA_CENT_V1_Logged_GBPUSD_1y.htm
+[09:34:19] NEWLOG GBPUSD :: TRL_equity_TRL_EA_DCA_CENT_V1_Logged_GBPUSD_H4_20250301.csv 
+[09:34:20] Launching TRL_rep_RF_EA_DCA_CENT_V1_Logged_USDJPY_1y
+[09:35:03] OK report TRL_rep_RF_EA_DCA_CENT_V1_Logged_USDJPY_1y.htm
+[09:35:03] NEWLOG USDJPY :: TRL_equity_TRL_EA_DCA_CENT_V1_Logged_USDJPY_H4_20250301.csv 
+[09:35:03] Launching TRL_rep_RF_EA_DCA_CENT_V1_Logged_AUDUSD_1y
+[09:35:39] OK report TRL_rep_RF_EA_DCA_CENT_V1_Logged_AUDUSD_1y.htm
+[09:35:39] NEWLOG AUDUSD :: TRL_equity_TRL_EA_DCA_CENT_V1_Logged_AUDUSD_H4_20250301.csv 
+[09:35:40] Launching TRL_rep_RF_EA_DCA_CENT_V1_Logged_CADCHF_1y
+[09:36:17] OK report TRL_rep_RF_EA_DCA_CENT_V1_Logged_CADCHF_1y.htm
+[09:36:17] NEWLOG CADCHF :: TRL_equity_TRL_EA_DCA_CENT_V1_Logged_CADCHF_H4_20250301.csv 
+=== finished Fri Sep 25 09:36:17 HVGMT 2026 ===

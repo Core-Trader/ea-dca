@@ -1,0 +1,21 @@
+5-minute windows: 67688  (2025-03-01 to 2026-02-27)
+
+Per-symbol check against each MT5 report
+Symbol         Logger DD (low)     MT5 Equity DD Maximal
+EURUSD        250.69 ( 1.65%)            251.89 (1.66%)
+GBPUSD        111.11 ( 0.74%)            111.13 (0.74%)
+USDJPY         90.30 ( 0.60%)             90.03 (0.60%)
+AUDUSD        101.65 ( 0.67%)            100.92 (0.67%)
+USDCHF        192.21 ( 1.28%)            195.49 (1.30%)
+CADCHF         85.68 ( 0.56%)             85.41 (0.56%)
+
+Combined portfolio (each symbol on its own $15,000; % of combined peak)
+Combination                      DD close   DD low (conservative)   Net profit
+Existing only (EUR/GBP/JPY)         0.59%          0.61% ( 280.07)       724.98
+Existing + AUDUSD                   0.56%          0.58% ( 350.55)       879.82
+Existing + USDCHF                   0.56%          0.56% ( 339.20)      1030.91
+Existing + CADCHF                   0.44%          0.46% ( 276.63)       885.79
+Existing + USDCHF + CADCHF          0.45%          0.45% ( 338.14)      1191.72
+Existing + USDCHF + AUDUSD          0.46%          0.47% ( 350.35)      1185.75
+Existing + CADCHF + AUDUSD          0.44%          0.46% ( 347.98)      1040.63
+All 6 deployed symbols              0.38%          0.38% ( 345.12)      1346.56

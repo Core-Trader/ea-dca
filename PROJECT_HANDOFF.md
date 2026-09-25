@@ -1,6 +1,6 @@
 # EA-DCA-V1.0 — Project Handoff
 
-**Last updated**: 2026-09-25, as of commit `074007b` (the commit adding this
+**Last updated**: 2026-09-25, as of commit `28144be` (the commit adding this
 update will be one ahead of that by the time you read it).
 
 **Starting a new session or machine?** Paste `prompts/SESSION_HANDOFF.md`.
@@ -214,11 +214,15 @@ Rules: `CLAUDE.md` → "Session rules carried over" → TRL equity logger.
   folder; equity logs in `%APPDATA%\MetaQuotes\Terminal\Common\Files\TRL\`
   (the FTMO ones carry a `_2` suffix). Run log:
   `trl_logger/results/batch_log_2026-09-25.txt`.
-- **Forensic EAs:** the logger supersedes `EA_DCA_CENT_V1_EquityForensic.mq5`
-  (per-interval min/max equity from every tick vs one bar-close snapshot), but
-  keep it until `roboforex_study/reports/revalidation_2026_09_24/correlation_study/combined_dd_6symbol.py`
-  is adapted to the logger's irregular timestamps (align by time, use
-  `equity_min`); expect a somewhat deeper combined DD than 0.32%.
+- **Combined drawdown re-measured with the logger (2026-09-25):** all 6
+  deployed symbols **0.38%** ($345) on `Model=4`, vs 0.32% from the old
+  bar-close method; existing 3 alone 0.61%. Each symbol's logger drawdown
+  matches MT5's Equity DD Maximal within $3.28, which validates the method.
+  Detail: `roboforex_study/reports/combined_dd_logger_2026_09_25/FINDING.md`.
+- **Forensic EAs:** the logger now covers everything
+  `EA_DCA_CENT_V1_EquityForensic.mq5` did, at finer resolution, and its
+  combined-DD analysis has been redone from logger logs. It can be retired
+  whenever the owner wants (it is still in the repo).
   `DCA_EA_Forensic.mq5` (signal/gate trace) and `DCA_EA_TPSL_Forensic.mq5`
   (per-position MFE/MAE) are not covered by the logger and stay.
 - **Open:** import a report + log pair into TRL (Data & import → Companion
@@ -257,8 +261,9 @@ Rules: `CLAUDE.md` → "Session rules carried over" → TRL equity logger.
 6. **Deploy the 6-symbol RoboForex portfolio**: the checklist in
    `roboforex_study/CURRENT_PORTFOLIO.md` (owner's step on the live terminal).
 7. ~~Attach and verify the TRL equity logger~~ — **done 2026-09-25** (§2E).
-   Next, if wanted: import a report + log pair into TRL, and adapt the
-   combined-DD script to logger logs before retiring the equity forensic EA.
+   Combined DD re-measured from logger logs the same day: 0.38% for all 6.
+   Next, if wanted: import a report + log pair into TRL, and decide whether
+   to retire the equity forensic EA.
 8. Delete the old OneDrive project folder once satisfied the new location
    works (user's own manual step, not blocking anything).
 9. Lower priority, pick up whenever there's appetite: the Safe-vs-Linear
