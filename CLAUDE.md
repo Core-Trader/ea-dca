@@ -44,6 +44,18 @@ history remains the safety net either way — treat it accordingly:
   project, "proceed with phase N" or "build X" from the user is itself the
   request to commit that unit of work once it's done and verified (compiles
   clean at minimum), not a separate ask each time.
+- **Push only when the owner explicitly asks** (e.g. "push"). The owner's
+  global `settings.json` allows `git push` without a prompt, so this rule is
+  the only guard. Push `master` to `origin/master` with a plain `git push`.
+  Before pushing, check `git diff --name-only origin/master..master` has no
+  `.ex5`/`.ex4` files. If the push fails, report the error and stop: don't
+  pull, rebase or retry with force.
+- **Never change `git config user.name`/`user.email`.** Commits carry the
+  attribution trailers the harness provides (`Co-Authored-By: Claude …` and
+  `Claude-Session: …`); copy them exactly as given for the current session.
+- **Deliberately untracked:** `MT5_BACKTESTING_BEST_PRACTICES.md` and
+  `MT5_EA_OPTIMIZATION_TUTORIAL.md`. Keep them out of commits unless the
+  owner asks.
 
 ## Verify a new study's "default" `.set` before running anything on it
 
@@ -59,7 +71,7 @@ user spotted it independently — by then it had propagated into 13 different
 **Before starting a new study, or building a new "default" `.set` from any
 existing reference file, run:**
 ```
-python scripts/verify_set_against_defaults.py <path-to-ea.mq5> <path-to-new.set>
+py scripts/verify_set_against_defaults.py <path-to-ea.mq5> <path-to-new.set>
 ```
 This diffs every field in the `.set` against the EA's own compiled `input`
 defaults (parsed directly from the `.mq5` source, resolving custom and
@@ -298,3 +310,46 @@ conversation carries forward to the next run.
   Launch with: `"C:\FTMO Global Markets MT5 Terminal\terminal64.exe" /portable /config:"C:\<windows-style path>\<name>.ini"` — run in the foreground (no `&`, no
   `run_in_background`) so the tool call actually waits for completion instead
   of returning as soon as the process is merely launched.
+
+## Session rules carried over (written down 2026-09-25)
+
+These were agreed in working sessions and were not in the repo before.
+
+- **Python:** on this machine `python` in Git Bash is the Windows Store stub.
+  Use `py`.
+- **Live terminal:** the owner may run the EA live on the RoboForex terminal.
+  Never close a terminal yourself; ask the owner to close it. Check with
+  `Get-Process terminal64` (see Strategy Tester above), never `ps`.
+- **Model 1 screening:** allowed only when the owner asks for speed. Any
+  conclusion drawn from it must be confirmed with Model 4 before it counts
+  (precedent: `roboforex_study/reports/revalidation_2026_09_24/FINDING.md`).
+- **Batches of runs:** one background script is fine as long as each launch
+  inside it runs in the foreground of that script. Claude Code may report a
+  background task as "killed" under memory pressure while the script keeps
+  running: check the script's own log and `Get-Process terminal64` before
+  concluding anything. Never restart a stopped batch without asking; prefer
+  smaller batches.
+- **Methodology wording and sourcing:**
+  - One fixed configuration re-run across sequential windows is a
+    "same-settings-over-time check". Walk-forward (Pardo) re-optimises on
+    each window; it has not been run in this project.
+  - Monte Carlo: reordering the same trades gives a drawdown distribution
+    only (the total never changes). A P(net negative) figure needs a
+    bootstrap (resampling with replacement). Name the method used.
+  - Thresholds with no source are marked as the owner's own choice. A caveat
+    needs a source before it goes into a guide.
+- **TRL equity logger** (from the Trading Research Lab project; state in
+  `PROJECT_HANDOFF.md` §2E, scripts in `trl_logger/`):
+  - Read-only: everything under `C:\DEV\Trading_Research_Lab\`. Never edit the
+    original EAs; work on `TRL_<EA>_Logged.mq5` / `TRL_<EA>_Control.mq5` copies.
+  - In the terminals, create only `TRL_`-prefixed files (`MQL5\Experts\TRL_Corpus\`,
+    `Profiles\Tester\TRL_*.set`, `TRL_rep_*` reports).
+  - `.ini` files hold a `[Tester]` section only. Never enter passwords, trade,
+    enable algo trading, attach EAs to charts or change `[Experts]`.
+  - Log single tests only; the logger is silent in optimisations. Logs land in
+    `%APPDATA%\MetaQuotes\Terminal\Common\Files\TRL\` (shared by both
+    terminals; repeated names get `_2`, `_3`).
+  - Never commit `.ex5`, the equity logs, or real account data.
+- **Communication:** English, short and plain. Lead with the result, say what
+  was verified and how, and ask before anything irreversible or visible to
+  others.

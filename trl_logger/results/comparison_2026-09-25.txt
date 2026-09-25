@@ -1,0 +1,13 @@
+pair                                          deals C/L  same  final bal C / L         window                    log
+RF EA_DCA_CENT_V1 USDCHF_1y                   151/151     YES  15 305.93 / 15 305.93   2025.03.01 - 2026.03.01   TRL_equity_TRL_EA_DCA_CENT_V1_Logged_USDCHF_H4_20250301.csv [trl-equity-log-1 v1.0.1]
+RF EA_DCA_CENT_V1 EURUSD_1y                   153/153     YES  15 220.01 / 15 220.01   2025.03.01 - 2026.03.01   TRL_equity_TRL_EA_DCA_CENT_V1_Logged_EURUSD_H4_20250301.csv [trl-equity-log-1 v1.0.1]
+RF EA_DCA_CENT_V1 USDCHF_full                 421/421     YES  15 528.64 / 15 528.64   2024.01.01 - 2026.09.19   TRL_equity_TRL_EA_DCA_CENT_V1_Logged_USDCHF_H4_20240101.csv [trl-equity-log-1 v1.0.1]
+RF DCA_EA USDCHF_1y                           151/151     YES  15 305.93 / 15 305.93   2025.03.01 - 2026.03.01   TRL_equity_TRL_DCA_EA_Logged_USDCHF_H4_20250301.csv [trl-equity-log-1 v1.0.1]
+RF DCA_EA EURUSD_1y                           153/153     YES  15 220.01 / 15 220.01   2025.03.01 - 2026.03.01   TRL_equity_TRL_DCA_EA_Logged_EURUSD_H4_20250301.csv [trl-equity-log-1 v1.0.1]
+RF DCA_EA USDCHF_full                         421/421     YES  15 528.64 / 15 528.64   2024.01.01 - 2026.09.19   TRL_equity_TRL_DCA_EA_Logged_USDCHF_H4_20240101.csv [trl-equity-log-1 v1.0.1]
+FTMO EA_DCA_CENT_V1 USDCHF_1y                 137/137     YES  100 231.23 / 100 231.23 2025.03.01 - 2026.03.01   TRL_equity_TRL_EA_DCA_CENT_V1_Logged_USDCHF_H4_20250301_2.csv [trl-equity-log-1 v1.0.1]
+FTMO EA_DCA_CENT_V1 EURUSD_1y                 159/159     YES  100 284.70 / 100 284.70 2025.03.01 - 2026.03.01   TRL_equity_TRL_EA_DCA_CENT_V1_Logged_EURUSD_H4_20250301_2.csv [trl-equity-log-1 v1.0.1]
+FTMO EA_DCA_CENT_V1 USDCHF_full               389/389     YES  100 497.48 / 100 497.48 2024.01.01 - 2026.09.19   TRL_equity_TRL_EA_DCA_CENT_V1_Logged_USDCHF_H4_20240101_2.csv [trl-equity-log-1 v1.0.1]
+FTMO DCA_EA USDCHF_1y                         137/137     YES  100 231.23 / 100 231.23 2025.03.01 - 2026.03.01   TRL_equity_TRL_DCA_EA_Logged_USDCHF_H4_20250301_2.csv [trl-equity-log-1 v1.0.1]
+FTMO DCA_EA EURUSD_1y                         159/159     YES  100 284.70 / 100 284.70 2025.03.01 - 2026.03.01   TRL_equity_TRL_DCA_EA_Logged_EURUSD_H4_20250301_2.csv [trl-equity-log-1 v1.0.1]
+FTMO DCA_EA USDCHF_full                       389/389     YES  100 497.48 / 100 497.48 2024.01.01 - 2026.09.19   TRL_equity_TRL_DCA_EA_Logged_USDCHF_H4_20240101_2.csv [trl-equity-log-1 v1.0.1]

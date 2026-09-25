@@ -1,0 +1,74 @@
+=== TRL batch started Fri Sep 25 06:40:26 HVGMT 2026 ===
+[06:40:27] Launching TRL_rep_RF_EA_DCA_CENT_V1_Control_USDCHF_1y
+[06:41:08] OK report C:/RoboForex MT5 Terminal/TRL_rep_RF_EA_DCA_CENT_V1_Control_USDCHF_1y.htm
+[06:41:08] NEWLOG TRL_rep_RF_EA_DCA_CENT_V1_Control_USDCHF_1y :: 
+[06:41:09] Launching TRL_rep_RF_EA_DCA_CENT_V1_Logged_USDCHF_1y
+[06:41:48] OK report C:/RoboForex MT5 Terminal/TRL_rep_RF_EA_DCA_CENT_V1_Logged_USDCHF_1y.htm
+[06:41:48] NEWLOG TRL_rep_RF_EA_DCA_CENT_V1_Logged_USDCHF_1y :: TRL_equity_TRL_EA_DCA_CENT_V1_Logged_USDCHF_H4_20250301.csv 
+[06:41:49] Launching TRL_rep_RF_EA_DCA_CENT_V1_Control_EURUSD_1y
+[06:42:45] OK report C:/RoboForex MT5 Terminal/TRL_rep_RF_EA_DCA_CENT_V1_Control_EURUSD_1y.htm
+[06:42:45] NEWLOG TRL_rep_RF_EA_DCA_CENT_V1_Control_EURUSD_1y :: 
+[06:42:46] Launching TRL_rep_RF_EA_DCA_CENT_V1_Logged_EURUSD_1y
+[06:43:48] OK report C:/RoboForex MT5 Terminal/TRL_rep_RF_EA_DCA_CENT_V1_Logged_EURUSD_1y.htm
+[06:43:49] NEWLOG TRL_rep_RF_EA_DCA_CENT_V1_Logged_EURUSD_1y :: TRL_equity_TRL_EA_DCA_CENT_V1_Logged_EURUSD_H4_20250301.csv 
+[06:43:49] Launching TRL_rep_RF_EA_DCA_CENT_V1_Control_USDCHF_full
+[06:45:20] OK report C:/RoboForex MT5 Terminal/TRL_rep_RF_EA_DCA_CENT_V1_Control_USDCHF_full.htm
+[06:45:21] NEWLOG TRL_rep_RF_EA_DCA_CENT_V1_Control_USDCHF_full :: 
+[06:45:21] Launching TRL_rep_RF_EA_DCA_CENT_V1_Logged_USDCHF_full
+[06:46:49] OK report C:/RoboForex MT5 Terminal/TRL_rep_RF_EA_DCA_CENT_V1_Logged_USDCHF_full.htm
+[06:46:49] NEWLOG TRL_rep_RF_EA_DCA_CENT_V1_Logged_USDCHF_full :: TRL_equity_TRL_EA_DCA_CENT_V1_Logged_USDCHF_H4_20240101.csv 
+[06:46:50] Launching TRL_rep_RF_DCA_EA_Control_USDCHF_1y
+[06:47:28] OK report C:/RoboForex MT5 Terminal/TRL_rep_RF_DCA_EA_Control_USDCHF_1y.htm
+[06:47:28] NEWLOG TRL_rep_RF_DCA_EA_Control_USDCHF_1y :: 
+[06:47:29] Launching TRL_rep_RF_DCA_EA_Logged_USDCHF_1y
+[06:48:03] OK report C:/RoboForex MT5 Terminal/TRL_rep_RF_DCA_EA_Logged_USDCHF_1y.htm
+[06:48:03] NEWLOG TRL_rep_RF_DCA_EA_Logged_USDCHF_1y :: TRL_equity_TRL_DCA_EA_Logged_USDCHF_H4_20250301.csv 
+[06:48:04] Launching TRL_rep_RF_DCA_EA_Control_EURUSD_1y
+[06:48:51] OK report C:/RoboForex MT5 Terminal/TRL_rep_RF_DCA_EA_Control_EURUSD_1y.htm
+[06:48:51] NEWLOG TRL_rep_RF_DCA_EA_Control_EURUSD_1y :: 
+[06:48:51] Launching TRL_rep_RF_DCA_EA_Logged_EURUSD_1y
+[06:49:42] OK report C:/RoboForex MT5 Terminal/TRL_rep_RF_DCA_EA_Logged_EURUSD_1y.htm
+[06:49:42] NEWLOG TRL_rep_RF_DCA_EA_Logged_EURUSD_1y :: TRL_equity_TRL_DCA_EA_Logged_EURUSD_H4_20250301.csv 
+[06:49:43] Launching TRL_rep_RF_DCA_EA_Control_USDCHF_full
+[06:51:08] OK report C:/RoboForex MT5 Terminal/TRL_rep_RF_DCA_EA_Control_USDCHF_full.htm
+[06:51:08] NEWLOG TRL_rep_RF_DCA_EA_Control_USDCHF_full :: 
+[06:51:09] Launching TRL_rep_RF_DCA_EA_Logged_USDCHF_full
+[06:52:38] OK report C:/RoboForex MT5 Terminal/TRL_rep_RF_DCA_EA_Logged_USDCHF_full.htm
+[06:52:39] NEWLOG TRL_rep_RF_DCA_EA_Logged_USDCHF_full :: TRL_equity_TRL_DCA_EA_Logged_USDCHF_H4_20240101.csv 
+[06:52:39] Launching TRL_rep_FTMO_EA_DCA_CENT_V1_Control_USDCHF_1y
+[06:53:22] OK report C:/FTMO Global Markets MT5 Terminal/TRL_rep_FTMO_EA_DCA_CENT_V1_Control_USDCHF_1y.htm
+[06:53:23] NEWLOG TRL_rep_FTMO_EA_DCA_CENT_V1_Control_USDCHF_1y :: 
+[06:53:23] Launching TRL_rep_FTMO_EA_DCA_CENT_V1_Logged_USDCHF_1y
+[06:54:09] OK report C:/FTMO Global Markets MT5 Terminal/TRL_rep_FTMO_EA_DCA_CENT_V1_Logged_USDCHF_1y.htm
+[06:54:09] NEWLOG TRL_rep_FTMO_EA_DCA_CENT_V1_Logged_USDCHF_1y :: TRL_equity_TRL_EA_DCA_CENT_V1_Logged_USDCHF_H4_20250301_2.csv 
+[06:54:09] Launching TRL_rep_FTMO_EA_DCA_CENT_V1_Control_EURUSD_1y
+[06:55:01] OK report C:/FTMO Global Markets MT5 Terminal/TRL_rep_FTMO_EA_DCA_CENT_V1_Control_EURUSD_1y.htm
+[06:55:01] NEWLOG TRL_rep_FTMO_EA_DCA_CENT_V1_Control_EURUSD_1y :: 
+[06:55:01] Launching TRL_rep_FTMO_EA_DCA_CENT_V1_Logged_EURUSD_1y
+[06:55:52] OK report C:/FTMO Global Markets MT5 Terminal/TRL_rep_FTMO_EA_DCA_CENT_V1_Logged_EURUSD_1y.htm
+[06:55:52] NEWLOG TRL_rep_FTMO_EA_DCA_CENT_V1_Logged_EURUSD_1y :: TRL_equity_TRL_EA_DCA_CENT_V1_Logged_EURUSD_H4_20250301_2.csv 
+[06:55:53] Launching TRL_rep_FTMO_EA_DCA_CENT_V1_Control_USDCHF_full
+[06:57:41] OK report C:/FTMO Global Markets MT5 Terminal/TRL_rep_FTMO_EA_DCA_CENT_V1_Control_USDCHF_full.htm
+[06:57:41] NEWLOG TRL_rep_FTMO_EA_DCA_CENT_V1_Control_USDCHF_full :: 
+[06:57:42] Launching TRL_rep_FTMO_EA_DCA_CENT_V1_Logged_USDCHF_full
+[06:59:49] OK report C:/FTMO Global Markets MT5 Terminal/TRL_rep_FTMO_EA_DCA_CENT_V1_Logged_USDCHF_full.htm
+[06:59:49] NEWLOG TRL_rep_FTMO_EA_DCA_CENT_V1_Logged_USDCHF_full :: TRL_equity_TRL_EA_DCA_CENT_V1_Logged_USDCHF_H4_20240101_2.csv 
+[06:59:50] Launching TRL_rep_FTMO_DCA_EA_Control_USDCHF_1y
+[07:00:37] OK report C:/FTMO Global Markets MT5 Terminal/TRL_rep_FTMO_DCA_EA_Control_USDCHF_1y.htm
+[07:00:37] NEWLOG TRL_rep_FTMO_DCA_EA_Control_USDCHF_1y :: 
+[07:00:38] Launching TRL_rep_FTMO_DCA_EA_Logged_USDCHF_1y
+[07:01:21] OK report C:/FTMO Global Markets MT5 Terminal/TRL_rep_FTMO_DCA_EA_Logged_USDCHF_1y.htm
+[07:01:21] NEWLOG TRL_rep_FTMO_DCA_EA_Logged_USDCHF_1y :: TRL_equity_TRL_DCA_EA_Logged_USDCHF_H4_20250301_2.csv 
+[07:01:22] Launching TRL_rep_FTMO_DCA_EA_Control_EURUSD_1y
+[07:02:10] OK report C:/FTMO Global Markets MT5 Terminal/TRL_rep_FTMO_DCA_EA_Control_EURUSD_1y.htm
+[07:02:10] NEWLOG TRL_rep_FTMO_DCA_EA_Control_EURUSD_1y :: 
+[07:02:11] Launching TRL_rep_FTMO_DCA_EA_Logged_EURUSD_1y
+[07:02:59] OK report C:/FTMO Global Markets MT5 Terminal/TRL_rep_FTMO_DCA_EA_Logged_EURUSD_1y.htm
+[07:02:59] NEWLOG TRL_rep_FTMO_DCA_EA_Logged_EURUSD_1y :: TRL_equity_TRL_DCA_EA_Logged_EURUSD_H4_20250301_2.csv 
+[07:03:00] Launching TRL_rep_FTMO_DCA_EA_Control_USDCHF_full
+[07:04:38] OK report C:/FTMO Global Markets MT5 Terminal/TRL_rep_FTMO_DCA_EA_Control_USDCHF_full.htm
+[07:04:39] NEWLOG TRL_rep_FTMO_DCA_EA_Control_USDCHF_full :: 
+[07:04:39] Launching TRL_rep_FTMO_DCA_EA_Logged_USDCHF_full
+[07:06:19] OK report C:/FTMO Global Markets MT5 Terminal/TRL_rep_FTMO_DCA_EA_Logged_USDCHF_full.htm
+[07:06:20] NEWLOG TRL_rep_FTMO_DCA_EA_Logged_USDCHF_full :: TRL_equity_TRL_DCA_EA_Logged_USDCHF_H4_20240101_2.csv 
+=== TRL batch finished Fri Sep 25 07:06:20 HVGMT 2026 ===

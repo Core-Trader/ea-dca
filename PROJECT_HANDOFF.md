@@ -1,7 +1,9 @@
 # EA-DCA-V1.0 — Project Handoff
 
-**Last updated**: 2026-09-25, as of commit `91567fa` (the commit adding this
+**Last updated**: 2026-09-25, as of commit `074007b` (the commit adding this
 update will be one ahead of that by the time you read it).
+
+**Starting a new session or machine?** Paste `prompts/SESSION_HANDOFF.md`.
 
 > **Maintenance note**: this is a living document, not a snapshot. Update it
 > whenever a workstream's status changes, a decision gets made, or a major
@@ -164,7 +166,7 @@ breakdown: `INDEX.md`.
   full re-validation risks building on a foundation that just proved
   unstable once already.
 
-### D. Repo infrastructure — just migrated, convention changed
+### D. Repo infrastructure — migrated 2026-09-20, terminals are plain copies
 
 - **2026-09-20**: moved from OneDrive
   (`C:\Users\vasco\OneDrive\Documentos\000 Trading\001 EA Vault\EA-DCA-V1.0`)
@@ -182,6 +184,45 @@ breakdown: `INDEX.md`.
   against an EA's own compiled defaults — catches exactly the kind of
   silent drift that caused the §2C incident above; run it before starting
   any new study or building a new baseline `.set`).
+- **2026-09-25**: session-only rules written into `CLAUDE.md` ("Session rules
+  carried over"), and a paste-ready handoff prompt added at
+  `prompts/SESSION_HANDOFF.md`.
+
+### E. TRL equity logger — attached and verified 2026-09-25
+
+The Trading Research Lab logger (`C:\DEV\Trading_Research_Lab\mql5\Include\TRL_EquityLogger.mqh`,
+v1.0.1, read-only) records the floating-equity path of a single Strategy
+Tester run, so TRL can import real floating drawdown alongside the report.
+Rules: `CLAUDE.md` → "Session rules carried over" → TRL equity logger.
+
+- **Built:** `TRL_EA_DCA_CENT_V1_{Logged,Control}.mq5` and
+  `TRL_DCA_EA_{Logged,Control}.mq5` in `MQL5\Experts\TRL_Corpus\` on both
+  terminals, made with `trl_logger/insert_trl.py`. Each Logged copy is its
+  original plus exactly four `// TRL` lines (include; `TrlEquityInit()` before
+  `return(INIT_SUCCEEDED)`; `TrlEquityFinish()` first in `OnDeinit`;
+  `TrlEquityOnTick()` first in `OnTick`). Each Control copy is byte-identical
+  to its original. The originals in `src/experts/` are untouched. All 8
+  compiled with 0 errors, 0 warnings.
+- **Verified:** 24 Model 4 single tests (`trl_logger/run_trl_batch.sh`):
+  2 EAs × 2 terminals × 3 setups (USDCHF and EURUSD 2025.03.01–2026.03.01,
+  USDCHF 2024.01.01–2026.09.19) × Control/Logged. All 12 pairs have identical
+  deal lists and final balances (`trl_logger/results/comparison_2026-09-25.txt`),
+  so the logger does not change trading. Each log header shows
+  `trl-equity-log-1` v1.0.1. Accounts checked in the terminal logs: RoboForex
+  `52010662`, FTMO `540291482`.
+- **Where things are:** reports `TRL_rep_*.htm` in each terminal's root
+  folder; equity logs in `%APPDATA%\MetaQuotes\Terminal\Common\Files\TRL\`
+  (the FTMO ones carry a `_2` suffix). Run log:
+  `trl_logger/results/batch_log_2026-09-25.txt`.
+- **Forensic EAs:** the logger supersedes `EA_DCA_CENT_V1_EquityForensic.mq5`
+  (per-interval min/max equity from every tick vs one bar-close snapshot), but
+  keep it until `roboforex_study/reports/revalidation_2026_09_24/correlation_study/combined_dd_6symbol.py`
+  is adapted to the logger's irregular timestamps (align by time, use
+  `equity_min`); expect a somewhat deeper combined DD than 0.32%.
+  `DCA_EA_Forensic.mq5` (signal/gate trace) and `DCA_EA_TPSL_Forensic.mq5`
+  (per-position MFE/MAE) are not covered by the logger and stay.
+- **Open:** import a report + log pair into TRL (Data & import → Companion
+  files) — done in the TRL app by the owner, not from this repo.
 
 ## 3. Immediate next steps, in priority order
 
@@ -213,13 +254,17 @@ breakdown: `INDEX.md`.
    Ran on `Model=1`; `Model=4` confirmation on the 4 most sensitive windows
    done the same day (profit 2-5% lower, conclusion unchanged). Detail:
    §2C above, `roboforex_study/reports/revalidation_2026_09_24/FINDING.md`.
-6. Delete the old OneDrive project folder once satisfied the new location
+6. **Deploy the 6-symbol RoboForex portfolio**: the checklist in
+   `roboforex_study/CURRENT_PORTFOLIO.md` (owner's step on the live terminal).
+7. ~~Attach and verify the TRL equity logger~~ — **done 2026-09-25** (§2E).
+   Next, if wanted: import a report + log pair into TRL, and adapt the
+   combined-DD script to logger logs before retiring the equity forensic EA.
+8. Delete the old OneDrive project folder once satisfied the new location
    works (user's own manual step, not blocking anything).
-7. Lower priority, pick up whenever there's appetite: the Safe-vs-Linear
+9. Lower priority, pick up whenever there's appetite: the Safe-vs-Linear
    multiplier decision (§2B), porting TP/SL mode into `EA_DCA_CENT_V1.mq5`
-   (§2A), and the explicitly-deferred multiplier/BB-range/exit-strategy
-   expansion for RoboForex symbols (§2C) — the last of these still
-   shouldn't start before #2 resolves.
+   (§2A), and the multiplier/BB-range/exit-strategy expansion for RoboForex
+   symbols (§2C), now unblocked since the re-validation is done.
 
 ## 4. Where the durable rules live (not duplicated here)
 

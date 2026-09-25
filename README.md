@@ -14,6 +14,7 @@ backtest reports behind each conclusion.
 | [`CLAUDE.md`](CLAUDE.md) | Working rules: git discipline, compiling, terminal sync, Strategy Tester gotchas |
 | [`INDEX.md`](INDEX.md) | Full map of the repo, folder by folder |
 | [`roboforex_study/CURRENT_PORTFOLIO.md`](roboforex_study/CURRENT_PORTFOLIO.md) | The symbols and `.set` files currently intended for the cent account |
+| [`prompts/SESSION_HANDOFF.md`](prompts/SESSION_HANDOFF.md) | Paste-ready prompt for continuing this work in a new session or on another machine |
 
 ## What's in the repo
 
@@ -27,6 +28,8 @@ backtest reports behind each conclusion.
 | `tpsl_mode/` | TP/SL mode design audit, root-cause work, and test `.set` files |
 | `roboforex_study/` | Multi-symbol screening study, portfolio `.set` files, raw backtest output and analysis scripts |
 | `scripts/` | `verify_set_against_defaults.py` and `sync_to_terminals.ps1` |
+| `trl_logger/` | Tooling to attach and verify the Trading Research Lab equity logger |
+| `prompts/` | `SESSION_HANDOFF.md`, the session handoff prompt |
 
 ## Requirements
 
@@ -52,7 +55,7 @@ backtest reports behind each conclusion.
 4. **Check the `.set` file** before starting a new study or baseline. This
    lists every value that differs from the EA's compiled defaults:
    ```
-   python scripts/verify_set_against_defaults.py src/experts/EA_DCA_CENT_V1.mq5 <path-to.set>
+   py scripts/verify_set_against_defaults.py src/experts/EA_DCA_CENT_V1.mq5 <path-to.set>
    ```
 5. **Backtest** with Model "Every tick based on real ticks". Before trusting a
    report, confirm its Settings section shows the symbol, dates and inputs you

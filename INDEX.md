@@ -110,6 +110,26 @@ out to both MT5 terminals' plain (non-symlinked) copies, including the
 bare-named root-level indicator files. **Run this after any change to `src/`**
 — see `CLAUDE.md`'s "Sync to terminals" section.
 
+## Session handoff — `prompts/`
+
+`SESSION_HANDOFF.md` — paste-ready prompt for starting a new Claude Code
+session or machine on this repo: reading order, git rules, working method,
+and the end-of-session update routine. It points to the files below rather
+than copying them.
+
+## TRL equity logger — `trl_logger/`
+
+Tooling for attaching the Trading Research Lab equity logger to this
+project's EAs and proving it doesn't change trading. Status and results:
+`PROJECT_HANDOFF.md` §2E. Rules: `CLAUDE.md` → "Session rules carried over".
+
+| Path | What it is |
+|---|---|
+| `insert_trl.py` | Builds `TRL_<EA>_Logged.mq5` (the four `// TRL` lines) and a byte-identical `TRL_<EA>_Control.mq5`, keeping the source's line endings |
+| `run_trl_batch.sh` | Runs the logged/control pairs as Model 4 single tests on both terminals (aborts if MT5 is open) |
+| `compare_trl.py` | Checks each pair's deal list and final balance match, and each log's header |
+| `results/` | The 2026-09-25 run log and comparison (per-run report copies are gitignored) |
+
 ## Everything else
 
 - `README.md` — short landing page pointing to this file, `PROJECT_HANDOFF.md`
