@@ -189,6 +189,18 @@ added (`InpTradeMode` defaulting to `MODE_DCA`, matching every existing `.set`):
 **$192.13 net profit, PF 4.93, RF 2.67, Sharpe 3.09, 57 trades — an exact match**,
 confirming the new code path has zero effect on existing DCA behaviour.
 
+> **Re-baselined 2026-09-25.** Every `.set` in `tpsl_test_sets/` carried the
+> stale `InpBBAppliedPrice=3` / `InpMAAppliedPrice=1` (the EA's defaults are 2
+> and 0), so every number in this document was measured on the wrong
+> Bollinger Band price. All 8 files were corrected (those two lines only).
+> **New `test_A` DCA-mode reference** (`DCA_EA.mq5`, FTMO `540291482`, EURUSD
+> H4, 2025.01.01–2026.01.22, `Model=4`, $100,000, 1:30): **$287.55 net, PF
+> 3.32, RF 1.13, Sharpe 1.32, equity DD $254.14 (0.25%), 80 trades.** Any
+> future TP/SL-mode code change must reproduce this exactly. Report:
+> `reports/test_A_rebaseline_2026_09_25/`. The TP/SL-mode results below were
+> not re-run; see `reports/phase1_forensic_2026_09_25/FINDING.md` for Test B
+> on the corrected inputs.
+
 ## 7. TP/SL-mode functional test — Fixed Pips SL: PASS (Test B)
 
 `tpsl_test_sets/test_B_fixed_pips.set` (`InpTradeMode=1`, `InpSLType=0` Fixed Pips,
