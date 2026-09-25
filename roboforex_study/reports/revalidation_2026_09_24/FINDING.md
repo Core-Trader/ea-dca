@@ -109,6 +109,24 @@ as the original methodology) and §D6 is superseded by item 1's fresh 6-symbol
 combined-DD analysis above, which already answers the co-dependency question
 more directly for the current deployed set.
 
+## Model=4 confirmation (2026-09-24, closes the Model=1 caveat)
+
+Re-ran the 4 windows most likely to move under real ticks with `Model=4`,
+same corrected `.set` files, Settings section verified on each. Raw reports
+and `extract_m4.py`: `model4_confirm/`.
+
+| Run | Profit (M1 → M4) | PF (M1 → M4) | Equity DD (M1 → M4) | Trades (M1 → M4) |
+|---|---|---|---|---|
+| USDCHF Full | $542.24 → $528.64 (−2.5%) | 2.21 → 2.17 | 3.26% → 3.18% | 210 → 210 |
+| USDCHF OOS-A | $147.55 → $139.58 (−5.4%) | 1.55 → 1.51 | 3.26% → 3.18% | 98 → 98 |
+| AUDUSD Full | $616.31 → $605.21 (−1.8%) | 3.36 → 3.31 | 2.50% → 2.29% | 201 → 200 |
+| CADCHF Full | $548.04 → $523.00 (−4.6%) | 2.72 → 2.67 | 3.07% → 3.05% | 209 → 208 |
+
+`Model=1` ran 2-5% optimistic on profit, with near-identical trade counts
+and drawdowns. No conclusion above changes. The windows not re-run under
+`Model=4` (OOS-B, the other same-settings-over-time slices, the dense grids)
+are expected to shift by a similar small margin.
+
 ## Bottom line
 
 Both follow-on items closed. The 6-symbol portfolio (post-USDCAD-drop) is

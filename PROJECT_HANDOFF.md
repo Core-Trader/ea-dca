@@ -1,6 +1,6 @@
 # EA-DCA-V1.0 — Project Handoff
 
-**Last updated**: 2026-09-24, as of commit `20edace` (the commit adding this
+**Last updated**: 2026-09-25, as of commit `91567fa` (the commit adding this
 update will be one ahead of that by the time you read it).
 
 > **Maintenance note**: this is a living document, not a snapshot. Update it
@@ -145,18 +145,16 @@ breakdown: `INDEX.md`.
   USDCHF/CADCHF show **zero negative windows** across 9 wider-window/OOS
   runs and 15 same-settings-over-time windows, and **zero parameter-cliffs** across 363
   dense-grid combinations (121 × 3) — nothing resembling USDCAD's risk
-  profile anywhere. **Caveat**: this batch used `Model=1` (1-minute OHLC),
-  not this project's usual `Model=4`, a documented-different-results setting
-  for this EA — treat as a clean fast screen, worth a `Model=4` spot-check
-  before final sign-off, though nothing suggests the conclusion would
-  change. Full detail:
+  profile anywhere. The batch ran on `Model=1` (1-minute OHLC) for speed.
+  Full detail:
   `roboforex_study/reports/revalidation_2026_09_24/FINDING.md`.
 
-- **Next action, not yet decided**: whether a `Model=4` re-confirmation pass
-  is worth doing on the more interesting windows above (e.g. USDCHF's
-  Full/OOS-A 3.26% DD episode) before treating this re-validation as fully
-  final — a scope/budget call, not resolved here. Otherwise, the RoboForex
-  workstream's immediate open items are now resolved; remaining work is the
+- **2026-09-24, `Model=4` confirmation done**: re-ran the 4 most sensitive
+  windows (USDCHF Full/OOS-A, AUDUSD Full, CADCHF Full) on real ticks.
+  Profit came in 2-5% lower than `Model=1`; trade counts matched within 1
+  and equity DD within 0.2 points. No conclusion changed, so the 6-symbol
+  re-validation stands. The RoboForex workstream's validation items are
+  closed; next is deployment (`CURRENT_PORTFOLIO.md` checklist) or the
   lower-priority items below.
 
 - **Explicitly not started, and shouldn't be until the above resolves**:
@@ -212,8 +210,8 @@ breakdown: `INDEX.md`.
    set~~ — **done 2026-09-24, clean across the board.** Combined DD improved
    to 0.32%; zero negative windows across 9 wider-window/OOS + 15
    same-settings-over-time runs; zero parameter-cliffs across 363 dense-grid combos.
-   Used `Model=1` for speed — a `Model=4` re-confirmation on the more
-   interesting windows remains a worthwhile, not urgent, follow-up. Detail:
+   Ran on `Model=1`; `Model=4` confirmation on the 4 most sensitive windows
+   done the same day (profit 2-5% lower, conclusion unchanged). Detail:
    §2C above, `roboforex_study/reports/revalidation_2026_09_24/FINDING.md`.
 6. Delete the old OneDrive project folder once satisfied the new location
    works (user's own manual step, not blocking anything).

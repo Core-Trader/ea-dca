@@ -7,10 +7,10 @@
 > re-run through the full wider-window/OOS, dense parameter-cliff, and
 > same-settings-over-time battery (33 backtests + 3 optimizations total) — **zero
 > negative windows, zero parameter-cliffs, nothing resembling USDCAD's risk
-> profile anywhere**. One caveat: this batch used `Model=1` for speed, not
-> this project's usual `Model=4` — a confirmed-different-results setting for
-> this EA (`CLAUDE.md`), so treat these as a clean fast screen, not a final
-> `Model=4`-confirmed sign-off. Full detail:
+> profile anywhere**. The batch ran on `Model=1` for speed; a `Model=4`
+> re-run of the 4 most sensitive windows (USDCHF Full/OOS-A, AUDUSD Full,
+> CADCHF Full) confirmed it: profit 2-5% lower under real ticks, trade counts
+> and drawdowns near-identical, no conclusion changed. Full detail:
 > `roboforex_study/reports/revalidation_2026_09_24/FINDING.md`.
 
 > ⚠ **USDCAD dropped from the deployed portfolio, 2026-09-24 — "for now",
@@ -253,9 +253,9 @@ execution, not further testing:
       for AUDUSD/USDCHF/CADCHF — **done 2026-09-24**, clean across the board
       (zero negative windows in wider-window/OOS or same-settings-over-time windows, no
       parameter cliffs, combined 6-symbol diversification improved to
-      0.32%). One open caveat: run used `Model=1` for speed, not this
-      project's usual `Model=4` — worth a `Model=4` spot-check on the more
-      interesting windows before treating this as fully final. Detail:
+      0.32%). Ran on `Model=1`; `Model=4` confirmation on the 4 most
+      sensitive windows done 2026-09-24 — profit 2-5% lower, nothing
+      else material, conclusion unchanged. Detail:
       `roboforex_study/reports/revalidation_2026_09_24/FINDING.md`.
 - [x] **USDCAD decision superseded 2026-09-24**: dropped from the deployed
       portfolio (not disqualified permanently — see warning above) after

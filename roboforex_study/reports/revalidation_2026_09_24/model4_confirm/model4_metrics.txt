@@ -1,0 +1,5 @@
+Run                 Profit     PF  Recov          EquityDD  Trades
+USDCHF_full         528.64   2.17   1.11    477.94 (3.18%)     210
+USDCHF_oosA         139.58   1.51   0.29    477.94 (3.18%)      98
+AUDUSD_full         605.21   3.31   1.75    346.35 (2.29%)     200
+CADCHF_full         523.00   2.67   1.14    459.30 (3.05%)     208
