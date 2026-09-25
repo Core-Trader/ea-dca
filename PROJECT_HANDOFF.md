@@ -1,6 +1,6 @@
 # EA-DCA-V1.0 — Project Handoff
 
-**Last updated**: 2026-09-25, as of commit `28144be` (the commit adding this
+**Last updated**: 2026-09-25, as of commit `a13dcff` (the commit adding this
 update will be one ahead of that by the time you read it).
 
 **Starting a new session or machine?** Paste `prompts/SESSION_HANDOFF.md`.
@@ -41,10 +41,30 @@ breakdown: `INDEX.md`.
   Balance/Equity divergence root-cause investigation is closed: Fix 1
   confirmed and kept, Fix 2 tested and rejected (see
   `tpsl_mode/TPSL_EQUITY_BALANCE_ROOT_CAUSE.md`).
-- **Not yet ported**: the validated TP/SL feature has not been ported into
-  `EA_DCA_CENT_V1.mq5` (the cent-account track EA) — `DCA_EA.mq5` and
-  `EA_DCA_CENT_V1.mq5` still diverge only by the cent-account-specific Max
-  Floating Loss circuit breaker, per `EA_DCA_CENT_V1.mq5`'s own header.
+- **Already in the cent EA** (corrected 2026-09-25; this file previously said
+  "not yet ported"): `EA_DCA_CENT_V1.mq5` carries TP/SL mode, confirmed
+  trade-for-trade identical to `DCA_EA.mq5` (`tpsl_mode/TPSL_MODE_AUDIT.md`
+  §13). The two EAs differ only by the cent-account Max Floating Loss
+  circuit breaker. TP/SL mode has not been run on the RoboForex account.
+- **TP/SL mode is not profitable yet — improvement work started 2026-09-25.**
+  Plan agreed with the owner, each phase approved before its backtests:
+  1. Diagnose with the forensic EA (**done**).
+  2. Test on several symbols.
+  3. Optimize TP/SL-only settings, tuned on one period and checked on a later
+     unseen one.
+  4. Change logic only if 1–3 show a real gap. Any change is gated to TP/SL
+     mode, and DCA mode's deal lists must stay identical to the current build.
+
+  **Phase 1 result** (`tpsl_mode/reports/phase1_forensic_2026_09_25/FINDING.md`):
+  - The entries lack edge as standalone trades. EURUSD Test B wins 56%, but
+    averages +24 pips per win against −48 per loss.
+  - No TP or stop change tested reaches break-even. The untested lever is
+    entry filtering (MA filter, higher-TF direction, BB width, minimum
+    distance), which needs no code change.
+  - **All 8 `tpsl_mode/tpsl_test_sets/*.set` use the stale
+    `InpBBAppliedPrice=3` / `InpMAAppliedPrice=1`.** Corrected, Test B is
+    worse (PF 0.67 → 0.60). Fixing the files changes the DCA regression
+    baseline (`test_A`) as well, which is an owner decision.
 
 ### B. FTMO go-live validation track — paused, one open decision
 
@@ -264,12 +284,18 @@ Rules: `CLAUDE.md` → "Session rules carried over" → TRL equity logger.
    Combined DD re-measured from logger logs the same day: 0.38% for all 6.
    Next, if wanted: import a report + log pair into TRL, and decide whether
    to retire the equity forensic EA.
-8. Delete the old OneDrive project folder once satisfied the new location
+8. **TP/SL mode improvement** (§2A). Phase 1 (diagnosis) is done. Needs owner
+   decisions on two things:
+   - whether to fix the stale price inputs in `tpsl_mode/tpsl_test_sets/`,
+     which means re-baselining `test_A`;
+   - phase 2 scope: TP/SL mode on the 6 portfolio symbols plus EURUSD,
+     including entry-filter variants.
+9. Delete the old OneDrive project folder once satisfied the new location
    works (user's own manual step, not blocking anything).
-9. Lower priority, pick up whenever there's appetite: the Safe-vs-Linear
-   multiplier decision (§2B), porting TP/SL mode into `EA_DCA_CENT_V1.mq5`
-   (§2A), and the multiplier/BB-range/exit-strategy expansion for RoboForex
-   symbols (§2C), now unblocked since the re-validation is done.
+10. Lower priority, pick up whenever there's appetite: the Safe-vs-Linear
+   multiplier decision (§2B), and the multiplier/BB-range/exit-strategy
+   expansion for RoboForex symbols (§2C), now unblocked since the
+   re-validation is done.
 
 ## 4. Where the durable rules live (not duplicated here)
 

@@ -1,0 +1,58 @@
+=== stale: 40 trades, net -293.9 pips / $-33.24
+win rate 47.5%  avg win    35.7 pips  avg loss   -46.3 pips
+  SL exits  n= 19  avg result   -51.2  avg MFE    14.3  avg MAE   -48.6  avg hours    28.9
+  EA exits  n= 21  avg result    32.3  avg MFE    43.4  avg MAE   -11.9  avg hours    29.4
+  EA-exit winners: giveback 25.5% of MFE
+  Losing trades that were in profit first:
+    MFE >= 10 pips before losing: 9/21
+    MFE >= 20 pips before losing: 6/21
+    MFE >= 30 pips before losing: 3/21
+    MFE >= 50 pips before losing: 1/21
+  Winners' worst adverse move (MAE) vs the 50-pip SL:
+    MAE >= 20 pips: 5/19
+    MAE >= 30 pips: 4/19
+    MAE >= 40 pips: 1/19
+  What-if fixed TP (pips) on the same trades:
+    TP 20: net  -214.0 pips (actual -293.9), TP hit on 21/40
+    TP 30: net  -307.4 pips (actual -293.9), TP hit on 14/40
+    TP 40: net  -365.3 pips (actual -293.9), TP hit on 11/40
+    TP 50: net  -318.3 pips (actual -293.9), TP hit on 7/40
+    TP 60: net  -256.3 pips (actual -293.9), TP hit on 6/40
+    TP 80: net  -349.3 pips (actual -293.9), TP hit on 3/40
+  What-if tighter SL (pips) on the same trades:
+    SL 30: net  -161.7 pips (actual -293.9), winners cut: 4/19
+    SL 40: net  -173.2 pips (actual -293.9), winners cut: 1/19
+  What-if TP + tighter SL (pessimistic: SL assumed first if both reached):
+    TP 30 / SL 30: net  -393.8 pips
+    TP 30 / SL 40: net  -427.3 pips
+    TP 40 / SL 40: net  -334.6 pips
+
+=== pricefix: 52 trades, net -412.5 pips / $-44.73
+win rate 55.8%  avg win    23.9 pips  avg loss   -48.0 pips
+  SL exits  n= 22  avg result   -50.2  avg MFE    19.1  avg MAE   -49.7  avg hours    33.9
+  EA exits  n= 30  avg result    23.1  avg MFE    30.8  avg MAE   -15.4  avg hours    27.2
+  EA-exit winners: giveback 25.2% of MFE
+  Losing trades that were in profit first:
+    MFE >= 10 pips before losing: 13/23
+    MFE >= 20 pips before losing: 8/23
+    MFE >= 30 pips before losing: 6/23
+    MFE >= 50 pips before losing: 2/23
+  Winners' worst adverse move (MAE) vs the 50-pip SL:
+    MAE >= 20 pips: 12/29
+    MAE >= 30 pips: 7/29
+    MAE >= 40 pips: 2/29
+  What-if fixed TP (pips) on the same trades:
+    TP 20: net  -143.1 pips (actual -412.5), TP hit on 22/52
+    TP 30: net  -114.8 pips (actual -412.5), TP hit on 17/52
+    TP 40: net  -251.5 pips (actual -412.5), TP hit on 13/52
+    TP 50: net  -260.3 pips (actual -412.5), TP hit on 9/52
+    TP 60: net  -313.2 pips (actual -412.5), TP hit on 5/52
+    TP 80: net  -430.8 pips (actual -412.5), TP hit on 2/52
+  What-if tighter SL (pips) on the same trades:
+    SL 30: net  -309.8 pips (actual -412.5), winners cut: 7/29
+    SL 40: net  -297.5 pips (actual -412.5), winners cut: 2/29
+  What-if TP + tighter SL (pessimistic: SL assumed first if both reached):
+    TP 30 / SL 30: net  -497.0 pips
+    TP 30 / SL 40: net  -506.7 pips
+    TP 40 / SL 40: net  -406.7 pips
+
